@@ -1,0 +1,37 @@
+{
+  "containerVersion": {
+    "tag": [
+      {
+        "name": "Purchase Conversion",
+        "type": "awct",
+        "parameter": [
+          {
+            "key": "conversionId",
+            "value": "123456789",
+            "type": "template"
+          }
+        ],
+        "firingTriggerId": ["1"]
+      },
+      {
+        "name": "Purchase Conversion - Backup",
+        "type": "awct",
+        "parameter": [
+          {
+            "key": "conversionId",
+            "value": "123456789",
+            "type": "template"
+          }
+        ],
+        "firingTriggerId": ["1"]
+      }
+    ],
+    "trigger": [
+      {
+        "name": "Form Submit",
+        "type": "formSubmit",
+        "triggerId": "1"
+      }
+    ]
+  }
+}

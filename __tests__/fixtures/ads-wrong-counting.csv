@@ -1,0 +1,3 @@
+Conversion name,Category,Value,Count,Attribution model,Click-through conversion window,View-through conversion window,Status
+Purchase,Purchase,50,Every,Last click,30 days,1 day,Enabled
+Order Complete,Sale,100,Every,Last click,30 days,1 day,Enabled

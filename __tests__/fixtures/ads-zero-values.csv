@@ -1,0 +1,3 @@
+Conversion name,Category,Value,Count,Attribution model,Click-through conversion window,View-through conversion window,Status
+Purchase,Purchase,0,One,Last click,30 days,1 day,Enabled
+Checkout Complete,Sale,0,One,Last click,30 days,1 day,Enabled

@@ -1,0 +1,19 @@
+{
+  "containerVersion": {
+    "tag": [
+      {
+        "name": "GA4 - Configuration",
+        "type": "gaawe",
+        "firingTriggerId": ["1"]
+      }
+    ],
+    "trigger": [
+      {
+        "name": "All Pages",
+        "type": "pageview",
+        "triggerId": "1"
+      }
+    ],
+    "variable": []
+  }
+}
