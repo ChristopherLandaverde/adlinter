@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AdLint
+
+**Free, privacy-first audit tool for Google Tag Manager + Google Ads.**
+
+AdLint analyzes your GTM container export and Google Ads conversion CSV to surface tracking issues before they cost you money. All processing runs entirely in the browser — no data ever leaves your machine.
+
+## What It Does
+
+Upload your files, get a full diagnostic report in seconds:
+
+- **70 automated checks** across GTM configuration, Google Ads conversions, and cross-platform alignment
+- **Context-aware severity** — checks adapt based on your business model, sales cycle, and consent requirements
+- **Smart skipping** — passed informational checks are hidden automatically so you only see what matters
+- **Rich inline diagnostics** — every finding includes structured details (affected tags, missing variables, mismatched values) right in the report
+
+### Check Coverage
+
+| Category | Checks | Examples |
+|----------|--------|---------|
+| GTM Core | 12 | Conversion Linker, consent violations, duplicate tags, enhanced conversions, naming conventions |
+| GTM Advanced | 18 | DataLayer analysis, tag sequencing, circular dependencies, trigger overlap, container complexity |
+| Ads Core | 11 | Duplicate conversions, zero-value purchases, counting methods, attribution windows, disabled conversions |
+| Ads Advanced | 15 | Value outliers, ROAS feasibility, Smart Bidding readiness, primary conversion designation |
+| Cross-Platform | 4 | Tag-to-conversion matching, value mismatches, tag count parity |
+| Cross Advanced | 10 | Dynamic value passing, conversion label matching, transaction ID deduplication, funnel coverage |
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) and upload your files.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### How to Get Your Files
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**GTM Container Export:**
+1. Open Google Tag Manager
+2. Go to **Admin** > **Export Container**
+3. Choose the latest version and save the `.json` file
 
-## Learn More
+**Google Ads Conversions:**
+1. Open Google Ads
+2. Go to **Tools** > **Conversions**
+3. Click **Download** and select CSV format
 
-To learn more about Next.js, take a look at the following resources:
+## Running Tests
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm test
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+244 tests covering all checks, parsers, integration scenarios, and edge cases.
 
-## Deploy on Vercel
+## Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Next.js 16 / React 19
+- TypeScript
+- Tailwind CSS
+- Jest (testing)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Privacy
+
+AdLint is a fully client-side application. Your GTM and Google Ads data is parsed and analyzed in the browser using JavaScript. Nothing is sent to any server.
+
+## License
+
+MIT
