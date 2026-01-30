@@ -5,14 +5,17 @@ import { useRouter } from 'next/navigation';
 import UploadCard from '@/components/UploadCard';
 import { parseGTMJSON } from '@/lib/parsers/gtmParser';
 import { parseAdsCSV } from '@/lib/parsers/adsParser';
-import { GTMContainer, AdsData } from '@/lib/types';
+import { parseAdsReportCSV } from '@/lib/parsers/adsReportParser';
+import { GTMContainer, AdsData, AdsReportData } from '@/lib/types';
 
 export default function Home() {
   const router = useRouter();
   const [gtmData, setGtmData] = useState<GTMContainer | null>(null);
   const [adsData, setAdsData] = useState<AdsData | null>(null);
+  const [reportData, setReportData] = useState<AdsReportData | null>(null);
   const [gtmFileName, setGtmFileName] = useState('');
   const [adsFileName, setAdsFileName] = useState('');
+  const [reportFileName, setReportFileName] = useState('');
   const [error, setError] = useState('');
 
   const handleGTMUpload = async (file: File) => {
@@ -43,14 +46,29 @@ export default function Home() {
     }
   };
 
+  const handleReportUpload = async (file: File) => {
+    try {
+      const text = await file.text();
+      const parsed = parseAdsReportCSV(text);
+      setReportData(parsed);
+      setReportFileName(file.name);
+      setError('');
+      sessionStorage.setItem('reportData', JSON.stringify(parsed));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to parse report file.';
+      setError(message);
+    }
+  };
+
   const handleRunAudit = () => {
-    if (!gtmData && !adsData) return;
+    if (!gtmData && !adsData && !reportData) return;
     if (gtmData) sessionStorage.setItem('gtmData', JSON.stringify(gtmData));
     if (adsData) sessionStorage.setItem('adsData', JSON.stringify(adsData));
+    if (reportData) sessionStorage.setItem('reportData', JSON.stringify(reportData));
     router.push('/audit');
   };
 
-  const hasFile = gtmData || adsData;
+  const hasFile = gtmData || adsData || reportData;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -96,7 +114,7 @@ export default function Home() {
 
       {/* Upload Cards */}
       <div className="container mx-auto px-4 max-w-3xl">
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
           <UploadCard
             title="GTM Container"
             description="Export from GTM: Admin &rarr; Export Container"
@@ -114,6 +132,15 @@ export default function Home() {
             onFileUpload={handleAdsUpload}
             uploaded={!!adsData}
             fileName={adsFileName}
+          />
+          <UploadCard
+            title="Performance Report"
+            description="Export from Ads: Reports &rarr; Conversions &rarr; Download"
+            accept=".csv,.json"
+            icon={'\uD83D\uDCC8'}
+            onFileUpload={handleReportUpload}
+            uploaded={!!reportData}
+            fileName={reportFileName}
           />
         </div>
 
@@ -137,11 +164,19 @@ export default function Home() {
           )}
           {hasFile && (
             <p className="text-sm text-gray-500 mt-3">
-              {gtmData && adsData
-                ? 'Both files loaded \u2014 full audit with cross-checks'
-                : gtmData
-                  ? 'GTM only \u2014 upload Ads CSV for cross-checks'
-                  : 'Ads only \u2014 upload GTM JSON for cross-checks'}
+              {gtmData && adsData && reportData
+                ? 'All files loaded \u2014 full audit with cross-checks and performance analysis'
+                : gtmData && adsData
+                  ? 'GTM + Ads loaded \u2014 upload report for performance checks'
+                  : gtmData && reportData
+                    ? 'GTM + Report loaded \u2014 upload Ads CSV for full cross-checks'
+                    : adsData && reportData
+                      ? 'Ads + Report loaded \u2014 upload GTM JSON for full cross-checks'
+                      : gtmData
+                        ? 'GTM only \u2014 upload Ads CSV or report for more checks'
+                        : adsData
+                          ? 'Ads only \u2014 upload GTM JSON or report for more checks'
+                          : 'Report only \u2014 upload GTM or Ads for cross-checks'}
             </p>
           )}
         </div>
@@ -153,7 +188,7 @@ export default function Home() {
           <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">
             How to get your files
           </h2>
-          <div className="grid md:grid-cols-2 gap-8 text-sm text-gray-600">
+          <div className="grid md:grid-cols-3 gap-8 text-sm text-gray-600">
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">GTM Container Export</h3>
               <ol className="list-decimal list-inside space-y-1">
@@ -172,6 +207,16 @@ export default function Home() {
                 <li>Click the <strong>Download</strong> button</li>
                 <li>Select CSV format</li>
                 <li>Save the .csv file</li>
+              </ol>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">Performance Report</h3>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Open Google Ads</li>
+                <li>Go to <strong>Reports</strong></li>
+                <li>Create a Conversion action report</li>
+                <li>Include metrics: conversions, value, VTC</li>
+                <li>Download as CSV or JSON</li>
               </ol>
             </div>
           </div>

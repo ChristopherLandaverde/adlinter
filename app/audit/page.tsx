@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
-import { AuditResults, AuditCheck, GTMContainer, AdsData, Severity } from '@/lib/types';
+import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, Severity } from '@/lib/types';
 
 const severityConfig: Record<Severity, { label: string; bg: string; border: string; text: string; badge: string }> = {
   critical: {
@@ -193,16 +193,18 @@ export default function AuditPage() {
   useEffect(() => {
     const gtmDataStr = sessionStorage.getItem('gtmData');
     const adsDataStr = sessionStorage.getItem('adsData');
+    const reportDataStr = sessionStorage.getItem('reportData');
 
-    if (!gtmDataStr && !adsDataStr) {
+    if (!gtmDataStr && !adsDataStr && !reportDataStr) {
       router.push('/');
       return;
     }
 
     const gtmData: GTMContainer | null = gtmDataStr ? JSON.parse(gtmDataStr) : null;
     const adsData: AdsData | null = adsDataStr ? JSON.parse(adsDataStr) : null;
+    const reportData: AdsReportData | null = reportDataStr ? JSON.parse(reportDataStr) : null;
 
-    const auditResults = runAudit(gtmData, adsData);
+    const auditResults = runAudit(gtmData, adsData, undefined, reportData);
     setResults(auditResults);
     setLoading(false);
   }, [router]);
@@ -216,7 +218,7 @@ export default function AuditPage() {
     );
   }
 
-  const allChecks = [...results.gtm, ...results.ads, ...results.cross];
+  const allChecks = [...results.gtm, ...results.ads, ...results.cross, ...results.report];
 
   // Smart skipping: filter out passed info checks
   const isSkipped = (c: AuditCheck) => c.severity === 'info' && c.passed;
@@ -229,12 +231,15 @@ export default function AuditPage() {
   const severityOrder: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
   failedChecks.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
-  const auditType =
-    results.gtm.length > 0 && results.ads.length > 0
-      ? 'Full Audit (GTM + Ads)'
-      : results.gtm.length > 0
-        ? 'GTM Audit'
-        : 'Ads Audit';
+  const parts: string[] = [];
+  if (results.gtm.length > 0) parts.push('GTM');
+  if (results.ads.length > 0) parts.push('Ads');
+  if (results.report.length > 0) parts.push('Report');
+  const auditType = parts.length === 3
+    ? 'Full Audit (GTM + Ads + Report)'
+    : parts.length > 0
+      ? `${parts.join(' + ')} Audit`
+      : 'Audit';
 
   return (
     <main className="min-h-screen bg-gray-50">

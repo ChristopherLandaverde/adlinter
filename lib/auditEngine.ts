@@ -1,20 +1,23 @@
-import { GTMContainer, AdsData, AuditResults, AuditContext } from './types';
+import { GTMContainer, AdsData, AdsReportData, AuditResults, AuditContext } from './types';
 import { allGTMChecks } from './checks/gtmChecks';
 import { allAdsChecks } from './checks/adsChecks';
 import { allCrossChecks } from './checks/crossChecks';
 import { allAdvancedGTMChecks } from './checks/advancedGTMChecks';
 import { allAdvancedAdsChecks } from './checks/advancedAdsChecks';
 import { allAdvancedCrossChecks } from './checks/advancedCrossChecks';
+import { allReportChecks, allReportCrossChecks } from './checks/adsReportChecks';
 
 export const runAudit = (
   gtmData: GTMContainer | null = null,
   adsData: AdsData | null = null,
-  context?: AuditContext
+  context?: AuditContext,
+  reportData?: AdsReportData | null
 ): AuditResults => {
   const results: AuditResults = {
     gtm: [],
     ads: [],
     cross: [],
+    report: [],
     summary: {
       critical: 0,
       warning: 0,
@@ -50,8 +53,17 @@ export const runAudit = (
     results.cross = [...basicCrossResults, ...advancedCrossResults];
   }
 
+  // Run report checks if report data provided
+  if (reportData) {
+    const pureResults = allReportChecks.map(check => check(reportData));
+    const crossResults = allReportCrossChecks.map(check =>
+      check(reportData, adsData)
+    );
+    results.report = [...pureResults, ...crossResults];
+  }
+
   // Calculate summary
-  const allChecks = [...results.gtm, ...results.ads, ...results.cross];
+  const allChecks = [...results.gtm, ...results.ads, ...results.cross, ...results.report];
   allChecks.forEach(check => {
     if (check.passed) {
       results.summary.passed++;

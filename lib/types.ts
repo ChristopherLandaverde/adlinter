@@ -22,7 +22,27 @@ export interface AuditResults {
   gtm: AuditCheck[];
   ads: AuditCheck[];
   cross: AuditCheck[];
+  report: AuditCheck[];
   summary: AuditSummary;
+}
+
+// Google Ads Performance Report Data Structures
+export interface AdsReportConversion {
+  name: string;
+  conversions: number;
+  allConversions: number;
+  viewThroughConversions: number;
+  conversionsValue: number;
+  allConversionsValue: number;
+  valuePerConversion: number;
+  valuePerAllConversions: number;
+  conversionValuePerCost: number;
+  currentModelAttributedConversions: number;
+  category?: string;
+}
+
+export interface AdsReportData {
+  conversions: AdsReportConversion[];
 }
 
 // GTM Data Structures
