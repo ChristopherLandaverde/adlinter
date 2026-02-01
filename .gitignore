@@ -38,6 +38,11 @@ yarn-error.log*
 /advanced/
 /cursorrules/
 
+# python
+.venv/
+__pycache__/
+.pytest_cache/
+
 # vercel
 .vercel
 
