@@ -1,5 +1,37 @@
 # AdLint — Progress Log
 
+## v1.3 — Audit Results Redesign + Python Backend Scaffold
+**Commit:** `bfbd5ef`
+
+Redesigned the audit results page with interactive charts and filtering, added a Python backend scaffold, and included test fixture files.
+
+### Frontend — Audit Results Page (`app/audit/page.tsx`)
+- Added **recharts** pie and bar charts for visual severity/source breakdowns
+- Added **source filter** tabs (GTM, Ads, Cross, Report) and **severity filter** chips
+- Added slide-in detail panel for individual check results
+- Improved styling: updated severity color palette, added source badge config
+- Extracted useMemo/useCallback for filtering and summary computation
+
+### Frontend — CSS (`app/globals.css`)
+- Added `slideIn` keyframe animation and `.animate-slideIn` utility
+- Added `.line-clamp-1` utility class
+- Added Tailwind `@custom-variant dark` directive
+- Removed `prefers-color-scheme: dark` media query
+
+### Dependencies
+- Added `recharts ^3.7.0`
+
+### Python Backend (`backend/`)
+- Scaffolded Python package with `pyproject.toml`
+- Added `adlint/gtm_factory.py` module
+- Added initial test suite (`tests/test_gtm_factory.py`)
+
+### Misc
+- Added `test files/` directory with GTM JSON fixture and reference screenshots
+- Updated `.gitignore` for Python artifacts (`.venv`, `__pycache__`, `.pytest_cache`)
+
+---
+
 ## v1.2 — Google Ads Performance Report Linter
 **Commit:** `1ed7dc7`
 
