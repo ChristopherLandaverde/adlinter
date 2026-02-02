@@ -238,7 +238,7 @@ function DetailsRenderer({ details }: { details: Record<string, unknown> }) {
               <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{label}</div>
               <div className="space-y-1">
                 {(value as string[]).map((item, i) => (
-                  <div key={i} className="flex items-start gap-2 text-sm text-gray-300 bg-gray-900/50 rounded px-3 py-1.5 border border-gray-700">
+                  <div key={i} className="flex items-start gap-2 text-sm text-gray-700 bg-gray-50 rounded px-3 py-1.5 border border-gray-200">
                     <span className="text-gray-500 shrink-0 mt-0.5">&#x2022;</span>
                     <span className="font-mono text-xs break-all">{item}</span>
                   </div>
@@ -255,7 +255,7 @@ function DetailsRenderer({ details }: { details: Record<string, unknown> }) {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-700">
+                    <tr className="border-b border-gray-200">
                       {Object.keys(value[0] as Record<string, unknown>).map(k => (
                         <th key={k} className="text-left text-xs font-semibold text-gray-500 py-1.5 px-2 uppercase tracking-wide">{k}</th>
                       ))}
@@ -263,9 +263,9 @@ function DetailsRenderer({ details }: { details: Record<string, unknown> }) {
                   </thead>
                   <tbody>
                     {(value as Record<string, unknown>[]).map((item, i) => (
-                      <tr key={i} className="border-b border-gray-800">
+                      <tr key={i} className="border-b border-gray-200">
                         {Object.values(item).map((v, j) => (
-                          <td key={j} className="py-1.5 px-2 text-gray-300 font-mono text-xs">{String(v)}</td>
+                          <td key={j} className="py-1.5 px-2 text-gray-700 font-mono text-xs">{String(v)}</td>
                         ))}
                       </tr>
                     ))}
@@ -280,7 +280,7 @@ function DetailsRenderer({ details }: { details: Record<string, unknown> }) {
           return (
             <div key={key} className="flex items-center gap-2 text-sm">
               <span className="text-gray-500 text-xs font-semibold uppercase tracking-wide">{label}:</span>
-              <span className="font-medium text-gray-300">{String(value)}</span>
+              <span className="font-medium text-gray-700">{String(value)}</span>
             </div>
           );
         }
@@ -291,9 +291,9 @@ function DetailsRenderer({ details }: { details: Record<string, unknown> }) {
               <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{label}</div>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(value as Record<string, unknown>).map(([k, v]) => (
-                  <div key={k} className="bg-gray-900/50 rounded px-3 py-1.5 border border-gray-700 text-sm">
+                  <div key={k} className="bg-gray-50 rounded px-3 py-1.5 border border-gray-200 text-sm">
                     <span className="text-gray-500 text-xs">{k}: </span>
-                    <span className="font-medium text-gray-300">{String(v)}</span>
+                    <span className="font-medium text-gray-700">{String(v)}</span>
                   </div>
                 ))}
               </div>
@@ -338,9 +338,9 @@ function SlideOverPanel({
         onClick={onClose}
       />
       {/* Panel */}
-      <div className="fixed right-0 top-0 h-full w-full sm:w-[480px] bg-gray-900 shadow-2xl z-50 flex flex-col animate-slideIn border-l border-gray-700">
+      <div className="fixed right-0 top-0 h-full w-full sm:w-[480px] bg-white shadow-2xl z-50 flex flex-col animate-slideIn border-l border-gray-200">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 p-5 border-b border-gray-800">
+        <div className="flex items-start justify-between gap-3 p-5 border-b border-gray-200">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${config.badge}`}>
@@ -353,11 +353,11 @@ function SlideOverPanel({
                 <span className="text-xs text-gray-500">{affected} item{affected !== 1 ? 's' : ''} affected</span>
               )}
             </div>
-            <h2 className="text-lg font-bold text-gray-100 leading-tight">{check.title}</h2>
+            <h2 className="text-lg font-bold text-gray-900 leading-tight">{check.title}</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-500 hover:text-gray-300 transition-colors shrink-0"
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors shrink-0"
           >
             <IconX />
           </button>
@@ -368,13 +368,13 @@ function SlideOverPanel({
           {/* Description */}
           <div>
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Description</h3>
-            <p className="text-sm text-gray-300 leading-relaxed">{check.description}</p>
+            <p className="text-sm text-gray-600 leading-relaxed">{check.description}</p>
           </div>
 
           {/* Recommendation */}
           <div>
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recommendation</h3>
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 text-sm text-blue-300 leading-relaxed">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700 leading-relaxed">
               {check.recommendation}
             </div>
           </div>
@@ -383,7 +383,7 @@ function SlideOverPanel({
           {check.details && (
             <div>
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Details</h3>
-              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <DetailsRenderer details={check.details} />
               </div>
             </div>
@@ -420,12 +420,12 @@ function HealthRing({ score, passed, total }: { score: number; passed: number; t
               stroke="none"
             >
               <Cell fill={ringColor} />
-              <Cell fill="#1f2937" />
+              <Cell fill="#e5e7eb" />
             </Pie>
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-gray-100">{score}%</span>
+          <span className="text-2xl font-bold text-gray-900">{score}%</span>
         </div>
       </div>
       <span className="text-xs text-gray-500 mt-1">{passed}/{total} checks passed</span>
@@ -440,8 +440,8 @@ function SeverityDonut({ data }: { data: { name: string; value: number; color: s
   if (total === 0) return null;
 
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-800 p-5">
-      <h3 className="text-sm font-semibold text-gray-200 mb-4">Issue Distribution</h3>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <h3 className="text-sm font-semibold text-gray-900 mb-4">Issue Distribution</h3>
       <div className="flex items-center gap-6">
         <div className="w-40 h-40 shrink-0">
           <ResponsiveContainer width="100%" height="100%">
@@ -453,7 +453,7 @@ function SeverityDonut({ data }: { data: { name: string; value: number; color: s
                 innerRadius={45}
                 outerRadius={70}
                 dataKey="value"
-                stroke="#111827"
+                stroke="#ffffff"
                 strokeWidth={2}
               >
                 {data.map((entry, i) => (
@@ -465,7 +465,7 @@ function SeverityDonut({ data }: { data: { name: string; value: number; color: s
                   const v = typeof value === 'number' ? value : 0;
                   return `${v} (${Math.round((v / total) * 100)}%)`;
                 }}
-                contentStyle={{ borderRadius: '8px', border: '1px solid #374151', backgroundColor: '#1f2937', color: '#e5e7eb', fontSize: '13px' }}
+                contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', color: '#374151', fontSize: '13px' }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -475,10 +475,10 @@ function SeverityDonut({ data }: { data: { name: string; value: number; color: s
             <div key={d.name} className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                <span className="text-gray-400">{d.name}</span>
+                <span className="text-gray-600">{d.name}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-200">{d.value}</span>
+                <span className="font-semibold text-gray-900">{d.value}</span>
                 <span className="text-gray-500 text-xs w-10 text-right">{total > 0 ? Math.round((d.value / total) * 100) : 0}%</span>
               </div>
             </div>
@@ -496,14 +496,14 @@ function CategoryBarChart({ data }: { data: { name: string; critical: number; wa
   if (!hasData) return null;
 
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-800 p-5">
-      <h3 className="text-sm font-semibold text-gray-200 mb-4">Issues by Category</h3>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <h3 className="text-sm font-semibold text-gray-900 mb-4">Issues by Category</h3>
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ left: 10, right: 20 }}>
             <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
             <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#9ca3af' }} width={80} />
-            <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #374151', backgroundColor: '#1f2937', color: '#e5e7eb', fontSize: '13px' }} />
+            <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', color: '#374151', fontSize: '13px' }} />
             <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '12px', color: '#9ca3af' }} />
             <Bar dataKey="critical" name="Critical" stackId="a" fill={BAR_COLORS.critical} radius={[0, 0, 0, 0]} />
             <Bar dataKey="warning" name="Warning" stackId="a" fill={BAR_COLORS.warning} />
@@ -549,13 +549,13 @@ function Sidebar({
         <div className="fixed inset-0 bg-black/30 z-30 lg:hidden" onClick={onClose} />
       )}
       <aside className={`
-        fixed top-0 left-0 h-full w-60 bg-gray-900 text-white z-40 flex flex-col transition-transform duration-200
+        fixed top-0 left-0 h-full w-60 bg-white border-r border-gray-200 z-40 flex flex-col transition-transform duration-200
         lg:translate-x-0 lg:static lg:z-auto
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Logo */}
-        <div className="p-5 border-b border-gray-800">
-          <span className="text-xl font-bold text-blue-400">AdLint</span>
+        <div className="p-5 border-b border-gray-200">
+          <span className="text-xl font-bold text-blue-600">AdLint</span>
           <span className="text-xs text-gray-500 ml-2">Audit</span>
         </div>
 
@@ -574,15 +574,15 @@ function Sidebar({
                 className={`
                   w-full flex items-center gap-3 px-5 py-2.5 text-sm transition-colors
                   ${isActive
-                    ? 'bg-blue-600/20 text-blue-400 border-r-2 border-blue-400'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+                    ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }
                 `}
               >
                 {item.icon}
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.id !== 'all' && count > 0 && (
-                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${isActive ? 'bg-blue-600/30 text-blue-300' : 'bg-gray-800 text-gray-500'}`}>
+                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${isActive ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
                     {count}
                   </span>
                 )}
@@ -592,7 +592,7 @@ function Sidebar({
         </nav>
 
         {/* Bottom */}
-        <div className="p-4 border-t border-gray-800">
+        <div className="p-4 border-t border-gray-200">
           <button
             onClick={onNewAudit}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors"
@@ -769,9 +769,9 @@ export default function AuditPage() {
 
   if (loading || !results) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 gap-3">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white gap-3">
         <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-gray-400 text-lg">Analyzing your setup...</p>
+        <p className="text-gray-600 text-lg">Analyzing your setup...</p>
       </div>
     );
   }
@@ -783,7 +783,7 @@ export default function AuditPage() {
   // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-950 flex">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex">
       {/* Sidebar */}
       <Sidebar
         activeNav={activeNav}
@@ -800,22 +800,22 @@ export default function AuditPage() {
       {/* Main content */}
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Top bar */}
-        <header className="bg-gray-900 border-b border-gray-800 px-4 lg:px-6 py-3 flex items-center justify-between sticky top-0 z-20">
+        <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 px-4 lg:px-6 py-3 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-800 text-gray-400"
+              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
             >
               <IconMenu />
             </button>
             <div>
-              <h1 className="text-lg font-bold text-gray-100">Audit Results</h1>
+              <h1 className="text-lg font-bold text-gray-900">Audit Results</h1>
               <span className="text-xs text-gray-500">{auditType}</span>
             </div>
           </div>
           <button
             onClick={() => router.push('/')}
-            className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
+            className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
           >
             &larr; Back
           </button>
@@ -827,45 +827,45 @@ export default function AuditPage() {
             {/* KPI Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
               {/* Critical */}
-              <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-red-500/10 text-red-400 shrink-0"><IconShield /></div>
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-red-50 text-red-600 shrink-0"><IconShield /></div>
                 <div>
-                  <div className="text-2xl font-bold text-red-400">{results.summary.critical}</div>
-                  <div className="text-xs text-red-400/80 font-medium">Critical</div>
+                  <div className="text-2xl font-bold text-red-600">{results.summary.critical}</div>
+                  <div className="text-xs text-red-600/80 font-medium">Critical</div>
                   <div className="text-[10px] text-gray-500 mt-0.5">{results.summary.critical} of {displayed.length} checks</div>
                 </div>
               </div>
               {/* Warning */}
-              <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 shrink-0"><IconAlertTriangle /></div>
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-amber-50 text-amber-600 shrink-0"><IconAlertTriangle /></div>
                 <div>
-                  <div className="text-2xl font-bold text-amber-400">{results.summary.warning}</div>
-                  <div className="text-xs text-amber-400/80 font-medium">Warnings</div>
+                  <div className="text-2xl font-bold text-amber-600">{results.summary.warning}</div>
+                  <div className="text-xs text-amber-600/80 font-medium">Warnings</div>
                   <div className="text-[10px] text-gray-500 mt-0.5">{results.summary.warning} of {displayed.length} checks</div>
                 </div>
               </div>
               {/* Info */}
-              <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 shrink-0"><IconInfoCircle /></div>
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-blue-50 text-blue-600 shrink-0"><IconInfoCircle /></div>
                 <div>
-                  <div className="text-2xl font-bold text-blue-400">{results.summary.info}</div>
-                  <div className="text-xs text-blue-400/80 font-medium">Info</div>
+                  <div className="text-2xl font-bold text-blue-600">{results.summary.info}</div>
+                  <div className="text-xs text-blue-600/80 font-medium">Info</div>
                   <div className="text-[10px] text-gray-500 mt-0.5">{results.summary.info} of {displayed.length} checks</div>
                 </div>
               </div>
               {/* Passed */}
-              <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-green-500/10 text-green-400 shrink-0"><IconCheckCircle /></div>
+              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-green-50 text-green-600 shrink-0"><IconCheckCircle /></div>
                 <div>
-                  <div className="text-2xl font-bold text-green-400">{results.summary.passed}</div>
-                  <div className="text-xs text-green-400/80 font-medium">Passed</div>
+                  <div className="text-2xl font-bold text-green-600">{results.summary.passed}</div>
+                  <div className="text-xs text-green-600/80 font-medium">Passed</div>
                   <div className="text-[10px] text-gray-500 mt-0.5">{passedAll.length} of {displayed.length} checks</div>
                 </div>
               </div>
             </div>
 
             {/* Health ring */}
-            <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 flex items-center justify-center lg:w-48 shrink-0">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex items-center justify-center lg:w-48 shrink-0">
               <HealthRing score={healthScore} passed={passedAll.length} total={displayed.length} />
             </div>
           </div>
@@ -880,9 +880,9 @@ export default function AuditPage() {
 
           {/* ── ZONE 3: Issues Table ───────────────────────────────────── */}
           {failedAll.length > 0 ? (
-            <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-6">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
               {/* Table toolbar */}
-              <div className="p-4 border-b border-gray-800 flex flex-col sm:flex-row gap-3">
+              <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row gap-3">
                 {/* Search */}
                 <div className="relative flex-1">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconSearch /></div>
@@ -891,7 +891,7 @@ export default function AuditPage() {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Search issues..."
-                    className="w-full pl-9 pr-3 py-2 text-sm bg-gray-800 border border-gray-700 text-gray-200 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 {/* Severity toggles */}
@@ -907,7 +907,7 @@ export default function AuditPage() {
                           flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors
                           ${active
                             ? `${cfg.badge} border-transparent`
-                            : 'bg-gray-800 text-gray-500 border-gray-700'
+                            : 'bg-gray-50 text-gray-500 border-gray-200'
                           }
                         `}
                       >
@@ -923,27 +923,27 @@ export default function AuditPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-800/50 border-b border-gray-800">
+                    <tr className="bg-gray-50 border-b border-gray-200">
                       <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide w-28">
-                        <button className="flex items-center gap-1 hover:text-gray-200" onClick={() => handleSort('severity')}>
+                        <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => handleSort('severity')}>
                           Severity
                           <IconSort active={sortColumn === 'severity'} direction={sortDir} />
                         </button>
                       </th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide">
-                        <button className="flex items-center gap-1 hover:text-gray-200" onClick={() => handleSort('title')}>
+                        <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => handleSort('title')}>
                           Issue
                           <IconSort active={sortColumn === 'title'} direction={sortDir} />
                         </button>
                       </th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide w-28">
-                        <button className="flex items-center gap-1 hover:text-gray-200" onClick={() => handleSort('source')}>
+                        <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => handleSort('source')}>
                           Source
                           <IconSort active={sortColumn === 'source'} direction={sortDir} />
                         </button>
                       </th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide w-24">
-                        <button className="flex items-center gap-1 hover:text-gray-200" onClick={() => handleSort('affected')}>
+                        <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => handleSort('affected')}>
                           Items
                           <IconSort active={sortColumn === 'affected'} direction={sortDir} />
                         </button>
@@ -970,10 +970,10 @@ export default function AuditPage() {
                             key={check.id + check.source}
                             onClick={() => setSelectedCheck(isSelected ? null : check)}
                             className={`
-                              border-b border-gray-800/50 cursor-pointer transition-colors
+                              border-b border-gray-100 cursor-pointer transition-colors
                               ${isSelected
-                                ? 'bg-blue-500/10 border-l-2 border-l-blue-500'
-                                : 'hover:bg-gray-800/50 border-l-2 border-l-transparent'
+                                ? 'bg-blue-50 border-l-2 border-l-blue-500'
+                                : 'hover:bg-gray-50 border-l-2 border-l-transparent'
                               }
                             `}
                           >
@@ -984,7 +984,7 @@ export default function AuditPage() {
                               </div>
                             </td>
                             <td className="py-3 px-4">
-                              <div className="font-medium text-gray-200 leading-tight">{check.title}</div>
+                              <div className="font-medium text-gray-900 leading-tight">{check.title}</div>
                               <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">{check.description}</div>
                             </td>
                             <td className="py-3 px-4">
@@ -992,11 +992,11 @@ export default function AuditPage() {
                                 {src.label}
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-gray-400 font-medium">
+                            <td className="py-3 px-4 text-gray-500 font-medium">
                               {affected > 0 ? affected : '\u2014'}
                             </td>
                             <td className="py-3 px-2">
-                              <IconChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'rotate-90 text-blue-400' : 'text-gray-600'}`} />
+                              <IconChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'rotate-90 text-blue-600' : 'text-gray-400'}`} />
                             </td>
                           </tr>
                         );
@@ -1007,40 +1007,40 @@ export default function AuditPage() {
               </div>
 
               {/* Table footer */}
-              <div className="px-4 py-3 border-t border-gray-800 text-xs text-gray-500">
+              <div className="px-4 py-3 border-t border-gray-200 text-xs text-gray-500">
                 Showing {tableData.length} of {failedAll.length} issues
               </div>
             </div>
           ) : (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-8 text-center mb-6">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center mb-6">
               <div className="text-4xl mb-3">{'\uD83C\uDF89'}</div>
-              <h2 className="text-xl font-bold text-green-400 mb-1">All checks passed!</h2>
-              <p className="text-green-400/70 text-sm">Your setup looks great. No issues detected.</p>
+              <h2 className="text-xl font-bold text-green-700 mb-1">All checks passed!</h2>
+              <p className="text-green-700/70 text-sm">Your setup looks great. No issues detected.</p>
             </div>
           )}
 
           {/* ── Passed Checks ──────────────────────────────────────────── */}
           {passedAll.length > 0 && (
-            <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-6">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
               <button
                 onClick={() => setShowPassed(!showPassed)}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-400 hover:bg-gray-800/50 transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-green-400"><IconCheckCircle /></span>
+                  <span className="text-green-600"><IconCheckCircle /></span>
                   <span>Passed Checks ({passedAll.length})</span>
                 </div>
                 <IconChevronRight className={`w-4 h-4 transition-transform ${showPassed ? 'rotate-90' : ''}`} />
               </button>
               {showPassed && (
-                <div className="border-t border-gray-800">
+                <div className="border-t border-gray-200">
                   {passedAll.map(check => (
                     <div
                       key={check.id + check.source}
-                      className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-800/50 last:border-0 text-sm"
+                      className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 last:border-0 text-sm"
                     >
-                      <span className="text-green-400 shrink-0">{'\u2713'}</span>
-                      <span className="text-gray-300 flex-1">{check.title}</span>
+                      <span className="text-green-600 shrink-0">{'\u2713'}</span>
+                      <span className="text-gray-700 flex-1">{check.title}</span>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${sourceConfig[check.source].badge}`}>
                         {sourceConfig[check.source].label}
                       </span>
