@@ -1,6 +1,7 @@
 import { runAudit } from '@/lib/auditEngine';
 import { parseGTMJSON } from '@/lib/parsers/gtmParser';
 import { parseAdsCSV } from '@/lib/parsers/adsParser';
+import { parseAdsReportCSV } from '@/lib/parsers/adsReportParser';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -67,5 +68,60 @@ describe('Integration Tests', () => {
     expect(results.gtm.length).toBe(0);
     expect(results.ads.length).toBeGreaterThan(0);
     expect(results.cross.length).toBe(0);
+  });
+
+  it('should run report-only audit', () => {
+    const reportJson = readFileSync(
+      join(__dirname, 'fixtures/report-clean.json'),
+      'utf-8'
+    );
+    const reportData = parseAdsReportCSV(reportJson);
+
+    const results = runAudit(null, null, undefined, reportData);
+
+    expect(results.gtm.length).toBe(0);
+    expect(results.ads.length).toBe(0);
+    expect(results.report.length).toBeGreaterThan(0);
+    // 9 pure checks + 2 cross checks = 11
+    expect(results.report.length).toBe(11);
+  });
+
+  it('should run full audit with all three file types', () => {
+    const gtmJson = readFileSync(
+      join(__dirname, 'fixtures/gtm-container-clean.json'),
+      'utf-8'
+    );
+    const adsCSV = readFileSync(
+      join(__dirname, 'fixtures/ads-clean.csv'),
+      'utf-8'
+    );
+    const reportJson = readFileSync(
+      join(__dirname, 'fixtures/report-clean.json'),
+      'utf-8'
+    );
+
+    const gtmData = parseGTMJSON(gtmJson);
+    const adsData = parseAdsCSV(adsCSV);
+    const reportData = parseAdsReportCSV(reportJson);
+
+    const results = runAudit(gtmData, adsData, undefined, reportData);
+
+    expect(results.gtm.length).toBeGreaterThan(0);
+    expect(results.ads.length).toBeGreaterThan(0);
+    expect(results.cross.length).toBeGreaterThan(0);
+    expect(results.report.length).toBeGreaterThan(0);
+
+    // Summary should count all checks
+    const totalChecks =
+      results.gtm.length +
+      results.ads.length +
+      results.cross.length +
+      results.report.length;
+    const summaryTotal =
+      results.summary.critical +
+      results.summary.warning +
+      results.summary.info +
+      results.summary.passed;
+    expect(summaryTotal).toBe(totalChecks);
   });
 });

@@ -1,0 +1,67 @@
+[
+  {
+    "Conversion action": "Purchase",
+    "Conversions": "150",
+    "All conv.": "180",
+    "View-through conv.": "30",
+    "Conv. value": "15000",
+    "All conv. value": "18000",
+    "Value / conv.": "100",
+    "Value / all conv.": "100",
+    "Conv. value / cost": "5.0",
+    "Current model conv.": "145",
+    "Category": "Purchase"
+  },
+  {
+    "Conversion action": "Add to Cart",
+    "Conversions": "400",
+    "All conv.": "450",
+    "View-through conv.": "50",
+    "Conv. value": "0",
+    "All conv. value": "0",
+    "Value / conv.": "0",
+    "Value / all conv.": "0",
+    "Conv. value / cost": "0",
+    "Current model conv.": "390",
+    "Category": "Add to cart"
+  },
+  {
+    "Conversion action": "Begin Checkout",
+    "Conversions": "250",
+    "All conv.": "280",
+    "View-through conv.": "40",
+    "Conv. value": "0",
+    "All conv. value": "0",
+    "Value / conv.": "0",
+    "Value / all conv.": "0",
+    "Conv. value / cost": "0",
+    "Current model conv.": "245",
+    "Category": "Begin checkout"
+  },
+  {
+    "Conversion action": "Lead Form Submit",
+    "Conversions": "80",
+    "All conv.": "95",
+    "View-through conv.": "15",
+    "Conv. value": "4000",
+    "All conv. value": "4750",
+    "Value / conv.": "50",
+    "Value / all conv.": "50",
+    "Conv. value / cost": "3.2",
+    "Current model conv.": "78",
+    "Category": "Lead"
+  },
+  {
+    "Conversion action": "Newsletter Signup",
+    "Conversions": "200",
+    "All conv.": "230",
+    "View-through conv.": "30",
+    "Conv. value": "0",
+    "All conv. value": "0",
+    "Value / conv.": "0",
+    "Value / all conv.": "0",
+    "Conv. value / cost": "0",
+    "Current model conv.": "195",
+    "Category": "Sign-up"
+  }
+]
