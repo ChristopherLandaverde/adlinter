@@ -574,8 +574,8 @@ function Sidebar({
                 className={`
                   w-full flex items-center gap-3 px-5 py-2.5 text-sm transition-colors
                   ${isActive
-                    ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'bg-blue-50 text-blue-600 border-l-[3px] border-l-blue-600'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-l-[3px] border-l-transparent'
                   }
                 `}
               >
@@ -651,21 +651,34 @@ export default function AuditPage() {
   const failedAll = useMemo(() => displayed.filter(c => !c.passed), [displayed]);
   const passedAll = useMemo(() => displayed.filter(c => c.passed), [displayed]);
 
-  // Nav counts (failed issues per source)
+  // Nav counts (unfiltered — sidebar always shows totals per source)
   const navCounts = useMemo((): Record<NavFilter, number> => {
     const counts: Record<NavFilter, number> = { all: failedAll.length, gtm: 0, ads: 0, cross: 0, report: 0 };
     for (const c of failedAll) counts[c.source]++;
     return counts;
   }, [failedAll]);
 
+  // ─── Global nav filter applied to everything ────────────────────────────
+  const filteredDisplayed = useMemo(() =>
+    activeNav === 'all' ? displayed : displayed.filter(c => c.source === activeNav),
+    [displayed, activeNav]
+  );
+  const filteredFailed = useMemo(() => filteredDisplayed.filter(c => !c.passed), [filteredDisplayed]);
+  const filteredPassed = useMemo(() => filteredDisplayed.filter(c => c.passed), [filteredDisplayed]);
+
+  // KPI summary derived from filtered data
+  const filteredSummary = useMemo(() => {
+    const s = { critical: 0, warning: 0, info: 0, passed: 0 };
+    for (const c of filteredDisplayed) {
+      if (c.passed) { s.passed++; }
+      else { s[c.severity]++; }
+    }
+    return s;
+  }, [filteredDisplayed]);
+
   // Filtered + sorted issues for the table
   const tableData = useMemo(() => {
-    let items = [...failedAll];
-
-    // Nav filter
-    if (activeNav !== 'all') {
-      items = items.filter(c => c.source === activeNav);
-    }
+    let items = [...filteredFailed];
 
     // Severity filter
     items = items.filter(c => severityFilters.has(c.severity));
@@ -700,18 +713,17 @@ export default function AuditPage() {
     });
 
     return items;
-  }, [failedAll, activeNav, severityFilters, search, sortColumn, sortDir]);
+  }, [filteredFailed, severityFilters, search, sortColumn, sortDir]);
 
-  // Chart data
+  // Chart data — derived from filtered data
   const donutData = useMemo(() => {
-    if (!results) return [];
     return [
-      { name: 'Critical', value: results.summary.critical, color: DONUT_COLORS[0] },
-      { name: 'Warning', value: results.summary.warning, color: DONUT_COLORS[1] },
-      { name: 'Info', value: results.summary.info, color: DONUT_COLORS[2] },
-      { name: 'Passed', value: results.summary.passed, color: DONUT_COLORS[3] },
+      { name: 'Critical', value: filteredSummary.critical, color: DONUT_COLORS[0] },
+      { name: 'Warning', value: filteredSummary.warning, color: DONUT_COLORS[1] },
+      { name: 'Info', value: filteredSummary.info, color: DONUT_COLORS[2] },
+      { name: 'Passed', value: filteredSummary.passed, color: DONUT_COLORS[3] },
     ].filter(d => d.value > 0);
-  }, [results]);
+  }, [filteredSummary]);
 
   const barData = useMemo(() => {
     const buckets: Record<Source, { critical: number; warning: number; info: number }> = {
@@ -720,7 +732,7 @@ export default function AuditPage() {
       cross: { critical: 0, warning: 0, info: 0 },
       report: { critical: 0, warning: 0, info: 0 },
     };
-    for (const c of failedAll) {
+    for (const c of filteredFailed) {
       buckets[c.source][c.severity]++;
     }
     return (Object.keys(buckets) as Source[])
@@ -729,7 +741,7 @@ export default function AuditPage() {
         ...buckets[key],
       }))
       .filter(d => d.critical + d.warning + d.info > 0);
-  }, [failedAll]);
+  }, [filteredFailed]);
 
   // ─── Sort handler ────────────────────────────────────────────────────────
 
@@ -776,8 +788,8 @@ export default function AuditPage() {
     );
   }
 
-  const healthScore = displayed.length > 0
-    ? Math.round((passedAll.length / displayed.length) * 100)
+  const healthScore = filteredDisplayed.length > 0
+    ? Math.round((filteredPassed.length / filteredDisplayed.length) * 100)
     : 100;
 
   // ─── Render ──────────────────────────────────────────────────────────────
@@ -830,48 +842,48 @@ export default function AuditPage() {
               <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-red-50 text-red-600 shrink-0"><IconShield /></div>
                 <div>
-                  <div className="text-2xl font-bold text-red-600">{results.summary.critical}</div>
+                  <div className="text-2xl font-bold text-red-600">{filteredSummary.critical}</div>
                   <div className="text-xs text-red-600/80 font-medium">Critical</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">{results.summary.critical} of {displayed.length} checks</div>
+                  <div className="text-[10px] text-gray-500 mt-0.5">{filteredSummary.critical} of {filteredDisplayed.length} checks</div>
                 </div>
               </div>
               {/* Warning */}
               <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-amber-50 text-amber-600 shrink-0"><IconAlertTriangle /></div>
                 <div>
-                  <div className="text-2xl font-bold text-amber-600">{results.summary.warning}</div>
+                  <div className="text-2xl font-bold text-amber-600">{filteredSummary.warning}</div>
                   <div className="text-xs text-amber-600/80 font-medium">Warnings</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">{results.summary.warning} of {displayed.length} checks</div>
+                  <div className="text-[10px] text-gray-500 mt-0.5">{filteredSummary.warning} of {filteredDisplayed.length} checks</div>
                 </div>
               </div>
               {/* Info */}
               <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-blue-50 text-blue-600 shrink-0"><IconInfoCircle /></div>
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">{results.summary.info}</div>
+                  <div className="text-2xl font-bold text-blue-600">{filteredSummary.info}</div>
                   <div className="text-xs text-blue-600/80 font-medium">Info</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">{results.summary.info} of {displayed.length} checks</div>
+                  <div className="text-[10px] text-gray-500 mt-0.5">{filteredSummary.info} of {filteredDisplayed.length} checks</div>
                 </div>
               </div>
               {/* Passed */}
               <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-green-50 text-green-600 shrink-0"><IconCheckCircle /></div>
                 <div>
-                  <div className="text-2xl font-bold text-green-600">{results.summary.passed}</div>
+                  <div className="text-2xl font-bold text-green-600">{filteredSummary.passed}</div>
                   <div className="text-xs text-green-600/80 font-medium">Passed</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">{passedAll.length} of {displayed.length} checks</div>
+                  <div className="text-[10px] text-gray-500 mt-0.5">{filteredPassed.length} of {filteredDisplayed.length} checks</div>
                 </div>
               </div>
             </div>
 
             {/* Health ring */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex items-center justify-center lg:w-48 shrink-0">
-              <HealthRing score={healthScore} passed={passedAll.length} total={displayed.length} />
+              <HealthRing score={healthScore} passed={filteredPassed.length} total={filteredDisplayed.length} />
             </div>
           </div>
 
           {/* ── ZONE 2: Charts ─────────────────────────────────────────── */}
-          {failedAll.length > 0 && (
+          {filteredFailed.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
               <SeverityDonut data={donutData} />
               <CategoryBarChart data={barData} />
@@ -879,7 +891,7 @@ export default function AuditPage() {
           )}
 
           {/* ── ZONE 3: Issues Table ───────────────────────────────────── */}
-          {failedAll.length > 0 ? (
+          {filteredFailed.length > 0 ? (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
               {/* Table toolbar */}
               <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row gap-3">
@@ -1008,7 +1020,7 @@ export default function AuditPage() {
 
               {/* Table footer */}
               <div className="px-4 py-3 border-t border-gray-200 text-xs text-gray-500">
-                Showing {tableData.length} of {failedAll.length} issues
+                Showing {tableData.length} of {filteredFailed.length} issues
               </div>
             </div>
           ) : (
@@ -1020,7 +1032,7 @@ export default function AuditPage() {
           )}
 
           {/* ── Passed Checks ──────────────────────────────────────────── */}
-          {passedAll.length > 0 && (
+          {filteredPassed.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
               <button
                 onClick={() => setShowPassed(!showPassed)}
@@ -1028,13 +1040,13 @@ export default function AuditPage() {
               >
                 <div className="flex items-center gap-2">
                   <span className="text-green-600"><IconCheckCircle /></span>
-                  <span>Passed Checks ({passedAll.length})</span>
+                  <span>Passed Checks ({filteredPassed.length})</span>
                 </div>
                 <IconChevronRight className={`w-4 h-4 transition-transform ${showPassed ? 'rotate-90' : ''}`} />
               </button>
               {showPassed && (
                 <div className="border-t border-gray-200">
-                  {passedAll.map(check => (
+                  {filteredPassed.map(check => (
                     <div
                       key={check.id + check.source}
                       className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 last:border-0 text-sm"
