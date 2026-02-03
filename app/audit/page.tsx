@@ -14,6 +14,7 @@ import {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 type Source = 'gtm' | 'ads' | 'cross' | 'report';
+type Tab = 'gtm' | 'ads';
 
 const severityConfig: Record<Severity, { label: string; color: string; bg: string; border: string; text: string; badge: string; dot: string }> = {
   critical: {
@@ -55,7 +56,6 @@ const sourceConfig: Record<Source, { label: string; badge: string }> = {
 const severityOrder: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
 
 const DONUT_COLORS = ['#dc2626', '#d97706', '#2563eb', '#16a34a'];
-const BAR_COLORS = { critical: '#dc2626', warning: '#d97706', info: '#2563eb' };
 
 // ─── Icons (inline SVG for zero-dependency) ──────────────────────────────────
 
@@ -117,58 +117,6 @@ function IconSearch() {
   );
 }
 
-function IconMenu() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
-  );
-}
-
-function IconOverview() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
-    </svg>
-  );
-}
-
-function IconGTM() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" d="M7 8l5-5 5 5M7 16l5 5 5-5" />
-      <path strokeLinecap="round" d="M12 3v18" />
-    </svg>
-  );
-}
-
-function IconAds() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-    </svg>
-  );
-}
-
-function IconCross() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" d="M8 4v16M16 4v16M4 8h16M4 16h16" />
-    </svg>
-  );
-}
-
-function IconReport() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-  );
-}
-
 function IconSort({ active, direction }: { active: boolean; direction: 'asc' | 'desc' }) {
   if (!active) {
     return (
@@ -183,6 +131,14 @@ function IconSort({ active, direction }: { active: boolean; direction: 'asc' | '
         ? <path strokeLinecap="round" d="M7 14l5-5 5 5" />
         : <path strokeLinecap="round" d="M7 10l5 5 5-5" />
       }
+    </svg>
+  );
+}
+
+function IconCross() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" d="M8 4v16M16 4v16M4 8h16M4 16h16" />
     </svg>
   );
 }
@@ -336,7 +292,7 @@ function SlideOverPanel({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:bg-transparent lg:backdrop-blur-none"
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
         onClick={onClose}
       />
       {/* Panel */}
@@ -407,15 +363,15 @@ function HealthRing({ score, passed, total }: { score: number; passed: number; t
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative w-32 h-32">
+      <div className="relative w-24 h-24">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius={42}
-              outerRadius={56}
+              innerRadius={32}
+              outerRadius={42}
               startAngle={90}
               endAngle={-270}
               dataKey="value"
@@ -427,10 +383,10 @@ function HealthRing({ score, passed, total }: { score: number; passed: number; t
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-gray-900">{score}%</span>
+          <span className="text-xl font-bold text-gray-900">{score}%</span>
         </div>
       </div>
-      <span className="text-xs text-gray-500 mt-1">{passed}/{total} checks passed</span>
+      <span className="text-xs text-gray-500 mt-1">{passed}/{total} passed</span>
     </div>
   );
 }
@@ -445,15 +401,15 @@ function SeverityDonut({ data }: { data: { name: string; value: number; color: s
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
       <h3 className="text-sm font-semibold text-gray-900 mb-4">Issue Distribution</h3>
       <div className="flex items-center gap-6">
-        <div className="w-40 h-40 shrink-0">
+        <div className="w-36 h-36 shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={45}
-                outerRadius={70}
+                innerRadius={40}
+                outerRadius={60}
                 dataKey="value"
                 stroke="#ffffff"
                 strokeWidth={2}
@@ -497,14 +453,16 @@ function CategoryBarChart({ data }: { data: { name: string; critical: number; wa
   const hasData = data.some(d => d.critical + d.warning + d.info > 0);
   if (!hasData) return null;
 
+  const BAR_COLORS = { critical: '#dc2626', warning: '#d97706', info: '#2563eb' };
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
       <h3 className="text-sm font-semibold text-gray-900 mb-4">Issues by Category</h3>
-      <div className="h-48">
+      <div className="h-40">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ left: 10, right: 20 }}>
             <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-            <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#9ca3af' }} width={80} />
+            <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#9ca3af' }} width={60} />
             <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', color: '#374151', fontSize: '13px' }} />
             <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '12px', color: '#9ca3af' }} />
             <Bar dataKey="critical" name="Critical" stackId="a" fill={BAR_COLORS.critical} radius={[0, 0, 0, 0]} />
@@ -517,188 +475,37 @@ function CategoryBarChart({ data }: { data: { name: string; critical: number; wa
   );
 }
 
-// ─── Sidebar ─────────────────────────────────────────────────────────────────
+// ─── Issues Table Component ──────────────────────────────────────────────────
 
-type NavFilter = 'all' | Source;
-
-const navItems: { id: NavFilter; label: string; icon: React.ReactNode }[] = [
-  { id: 'all', label: 'Overview', icon: <IconOverview /> },
-  { id: 'gtm', label: 'GTM Issues', icon: <IconGTM /> },
-  { id: 'ads', label: 'Ads Issues', icon: <IconAds /> },
-  { id: 'cross', label: 'Cross-Check', icon: <IconCross /> },
-  { id: 'report', label: 'Report', icon: <IconReport /> },
-];
-
-function Sidebar({
-  activeNav,
-  onNavChange,
-  isOpen,
-  onClose,
-  counts,
-  onNewAudit,
+function IssuesTable({
+  checks,
+  search,
+  onSearchChange,
+  severityFilters,
+  onToggleSeverity,
+  sortColumn,
+  sortDir,
+  onSort,
+  selectedCheck,
+  onSelectCheck,
+  title,
 }: {
-  activeNav: NavFilter;
-  onNavChange: (nav: NavFilter) => void;
-  isOpen: boolean;
-  onClose: () => void;
-  counts: Record<NavFilter, number>;
-  onNewAudit: () => void;
+  checks: TaggedCheck[];
+  search: string;
+  onSearchChange: (v: string) => void;
+  severityFilters: Set<Severity>;
+  onToggleSeverity: (sev: Severity) => void;
+  sortColumn: 'severity' | 'title' | 'source' | 'affected';
+  sortDir: 'asc' | 'desc';
+  onSort: (col: 'severity' | 'title' | 'source' | 'affected') => void;
+  selectedCheck: TaggedCheck | null;
+  onSelectCheck: (check: TaggedCheck | null) => void;
+  title: string;
 }) {
-  return (
-    <>
-      {/* Mobile backdrop */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/30 z-30 lg:hidden" onClick={onClose} />
-      )}
-      <aside className={`
-        fixed top-0 left-0 h-full w-60 bg-white border-r border-gray-200 z-40 flex flex-col transition-transform duration-200
-        lg:translate-x-0 lg:static lg:z-auto
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        {/* Logo */}
-        <div className="p-5 border-b border-gray-200">
-          <span className="text-xl font-bold text-blue-600">AdLint</span>
-          <span className="text-xs text-gray-500 ml-2">Audit</span>
-        </div>
+  const failedChecks = checks.filter(c => !c.passed);
 
-        {/* Nav */}
-        <nav className="flex-1 py-3">
-          {navItems.map(item => {
-            const isActive = activeNav === item.id;
-            const count = counts[item.id];
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onNavChange(item.id);
-                  onClose();
-                }}
-                className={`
-                  w-full flex items-center gap-3 px-5 py-2.5 text-sm transition-colors
-                  ${isActive
-                    ? 'bg-blue-50 text-blue-600 border-l-[3px] border-l-blue-600'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-l-[3px] border-l-transparent'
-                  }
-                `}
-              >
-                {item.icon}
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.id !== 'all' && count > 0 && (
-                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${isActive ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Bottom */}
-        <div className="p-4 border-t border-gray-200">
-          <button
-            onClick={onNewAudit}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors"
-          >
-            Run New Audit
-          </button>
-        </div>
-      </aside>
-    </>
-  );
-}
-
-// ─── Main Page ───────────────────────────────────────────────────────────────
-
-export default function AuditPage() {
-  const router = useRouter();
-  const [results, setResults] = useState<AuditResults | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeNav, setActiveNav] = useState<NavFilter>('all');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedCheck, setSelectedCheck] = useState<TaggedCheck | null>(null);
-  const [search, setSearch] = useState('');
-  const [severityFilters, setSeverityFilters] = useState<Set<Severity>>(new Set(['critical', 'warning', 'info']));
-  const [sortColumn, setSortColumn] = useState<'severity' | 'title' | 'source' | 'affected'>('severity');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
-  const [showPassed, setShowPassed] = useState(false);
-
-  // Audit counter for PDF unlock feature
-  const {
-    canExportPDF,
-    shouldShowUnlockModal,
-    incrementAuditCount,
-    markAsSubscribed,
-    dismissUnlockModal,
-  } = useAuditCounter();
-
-  // Track if we've already counted this audit session
-  const hasCountedAudit = useRef(false);
-
-  useEffect(() => {
-    const gtmDataStr = sessionStorage.getItem('gtmData');
-    const adsDataStr = sessionStorage.getItem('adsData');
-    const reportDataStr = sessionStorage.getItem('reportData');
-
-    if (!gtmDataStr && !adsDataStr && !reportDataStr) {
-      router.push('/');
-      return;
-    }
-
-    const gtmData: GTMContainer | null = gtmDataStr ? JSON.parse(gtmDataStr) : null;
-    const adsData: AdsData | null = adsDataStr ? JSON.parse(adsDataStr) : null;
-    const reportData: AdsReportData | null = reportDataStr ? JSON.parse(reportDataStr) : null;
-
-    const auditResults = runAudit(gtmData, adsData, undefined, reportData);
-    setResults(auditResults);
-    setLoading(false);
-
-    // Increment audit count once per audit session
-    if (!hasCountedAudit.current) {
-      hasCountedAudit.current = true;
-      incrementAuditCount();
-    }
-  }, [router, incrementAuditCount]);
-
-  const handleClosePanel = useCallback(() => setSelectedCheck(null), []);
-
-  // ─── Derived data ────────────────────────────────────────────────────────
-
-  const allTagged = useMemo(() => results ? tagChecks(results) : [], [results]);
-
-  // Smart skipping: filter out passed info checks
-  const displayed = useMemo(() => allTagged.filter(c => !(c.severity === 'info' && c.passed)), [allTagged]);
-
-  const failedAll = useMemo(() => displayed.filter(c => !c.passed), [displayed]);
-  const passedAll = useMemo(() => displayed.filter(c => c.passed), [displayed]);
-
-  // Nav counts (unfiltered — sidebar always shows totals per source)
-  const navCounts = useMemo((): Record<NavFilter, number> => {
-    const counts: Record<NavFilter, number> = { all: failedAll.length, gtm: 0, ads: 0, cross: 0, report: 0 };
-    for (const c of failedAll) counts[c.source]++;
-    return counts;
-  }, [failedAll]);
-
-  // ─── Global nav filter applied to everything ────────────────────────────
-  const filteredDisplayed = useMemo(() =>
-    activeNav === 'all' ? displayed : displayed.filter(c => c.source === activeNav),
-    [displayed, activeNav]
-  );
-  const filteredFailed = useMemo(() => filteredDisplayed.filter(c => !c.passed), [filteredDisplayed]);
-  const filteredPassed = useMemo(() => filteredDisplayed.filter(c => c.passed), [filteredDisplayed]);
-
-  // KPI summary derived from filtered data
-  const filteredSummary = useMemo(() => {
-    const s = { critical: 0, warning: 0, info: 0, passed: 0 };
-    for (const c of filteredDisplayed) {
-      if (c.passed) { s.passed++; }
-      else { s[c.severity]++; }
-    }
-    return s;
-  }, [filteredDisplayed]);
-
-  // Filtered + sorted issues for the table
   const tableData = useMemo(() => {
-    let items = [...filteredFailed];
+    let items = [...failedChecks];
 
     // Severity filter
     items = items.filter(c => severityFilters.has(c.severity));
@@ -733,35 +540,499 @@ export default function AuditPage() {
     });
 
     return items;
-  }, [filteredFailed, severityFilters, search, sortColumn, sortDir]);
+  }, [failedChecks, severityFilters, search, sortColumn, sortDir]);
 
-  // Chart data — derived from filtered data
-  const donutData = useMemo(() => {
-    return [
-      { name: 'Critical', value: filteredSummary.critical, color: DONUT_COLORS[0] },
-      { name: 'Warning', value: filteredSummary.warning, color: DONUT_COLORS[1] },
-      { name: 'Info', value: filteredSummary.info, color: DONUT_COLORS[2] },
-      { name: 'Passed', value: filteredSummary.passed, color: DONUT_COLORS[3] },
-    ].filter(d => d.value > 0);
-  }, [filteredSummary]);
+  if (failedChecks.length === 0) {
+    return (
+      <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+        <div className="text-3xl mb-2">{'\u2705'}</div>
+        <h3 className="text-lg font-bold text-green-700 mb-1">All {title} checks passed!</h3>
+        <p className="text-green-600 text-sm">No issues detected in this category.</p>
+      </div>
+    );
+  }
 
-  const barData = useMemo(() => {
-    const buckets: Record<Source, { critical: number; warning: number; info: number }> = {
-      gtm: { critical: 0, warning: 0, info: 0 },
-      ads: { critical: 0, warning: 0, info: 0 },
-      cross: { critical: 0, warning: 0, info: 0 },
-      report: { critical: 0, warning: 0, info: 0 },
-    };
-    for (const c of filteredFailed) {
-      buckets[c.source][c.severity]++;
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* Table toolbar */}
+      <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row gap-3">
+        {/* Search */}
+        <div className="relative flex-1">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconSearch /></div>
+          <input
+            type="text"
+            value={search}
+            onChange={e => onSearchChange(e.target.value)}
+            placeholder="Search issues..."
+            className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        {/* Severity toggles */}
+        <div className="flex items-center gap-1.5">
+          {(['critical', 'warning', 'info'] as Severity[]).map(sev => {
+            const cfg = severityConfig[sev];
+            const active = severityFilters.has(sev);
+            return (
+              <button
+                key={sev}
+                onClick={() => onToggleSeverity(sev)}
+                className={`
+                  flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors
+                  ${active
+                    ? `${cfg.badge} border-transparent`
+                    : 'bg-gray-50 text-gray-500 border-gray-200'
+                  }
+                `}
+              >
+                <span className={`w-2 h-2 rounded-full ${active ? cfg.dot : 'bg-gray-600'}`} />
+                {cfg.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide w-28">
+                <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => onSort('severity')}>
+                  Severity
+                  <IconSort active={sortColumn === 'severity'} direction={sortDir} />
+                </button>
+              </th>
+              <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide">
+                <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => onSort('title')}>
+                  Issue
+                  <IconSort active={sortColumn === 'title'} direction={sortDir} />
+                </button>
+              </th>
+              <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide w-28">
+                <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => onSort('source')}>
+                  Source
+                  <IconSort active={sortColumn === 'source'} direction={sortDir} />
+                </button>
+              </th>
+              <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide w-24">
+                <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => onSort('affected')}>
+                  Items
+                  <IconSort active={sortColumn === 'affected'} direction={sortDir} />
+                </button>
+              </th>
+              <th className="w-10" />
+            </tr>
+          </thead>
+          <tbody>
+            {tableData.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-12 text-center text-gray-500 text-sm">
+                  No issues match your filters.
+                </td>
+              </tr>
+            ) : (
+              tableData.map(check => {
+                const cfg = severityConfig[check.severity];
+                const src = sourceConfig[check.source];
+                const affected = countAffectedItems(check);
+                const isSelected = selectedCheck?.id === check.id && selectedCheck?.source === check.source;
+
+                return (
+                  <tr
+                    key={check.id + check.source}
+                    onClick={() => onSelectCheck(isSelected ? null : check)}
+                    className={`
+                      border-b border-gray-100 cursor-pointer transition-colors
+                      ${isSelected
+                        ? 'bg-blue-50 border-l-2 border-l-blue-500'
+                        : 'hover:bg-gray-50 border-l-2 border-l-transparent'
+                      }
+                    `}
+                  >
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${cfg.dot}`} />
+                        <span className={`text-xs font-medium ${cfg.text}`}>{cfg.label}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="font-medium text-gray-900 leading-tight">{check.title}</div>
+                      <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">{check.description}</div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${src.badge}`}>
+                        {src.label}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-gray-500 font-medium">
+                      {affected > 0 ? affected : '\u2014'}
+                    </td>
+                    <td className="py-3 px-2">
+                      <IconChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'rotate-90 text-blue-600' : 'text-gray-400'}`} />
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Table footer */}
+      <div className="px-4 py-3 border-t border-gray-200 text-xs text-gray-500">
+        Showing {tableData.length} of {failedChecks.length} issues
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Section Component ───────────────────────────────────────────────────
+
+function TabSection({
+  checks,
+  title,
+  icon,
+  color,
+  search,
+  onSearchChange,
+  severityFilters,
+  onToggleSeverity,
+  sortColumn,
+  sortDir,
+  onSort,
+  selectedCheck,
+  onSelectCheck,
+}: {
+  checks: TaggedCheck[];
+  title: string;
+  icon: React.ReactNode;
+  color: string;
+  search: string;
+  onSearchChange: (v: string) => void;
+  severityFilters: Set<Severity>;
+  onToggleSeverity: (sev: Severity) => void;
+  sortColumn: 'severity' | 'title' | 'source' | 'affected';
+  sortDir: 'asc' | 'desc';
+  onSort: (col: 'severity' | 'title' | 'source' | 'affected') => void;
+  selectedCheck: TaggedCheck | null;
+  onSelectCheck: (check: TaggedCheck | null) => void;
+}) {
+  const failed = checks.filter(c => !c.passed);
+  const passed = checks.filter(c => c.passed);
+  const [showPassed, setShowPassed] = useState(false);
+
+  const summary = useMemo(() => {
+    const s = { critical: 0, warning: 0, info: 0, passed: 0 };
+    for (const c of checks) {
+      if (c.passed) s.passed++;
+      else s[c.severity]++;
     }
-    return (Object.keys(buckets) as Source[])
-      .map(key => ({
-        name: sourceConfig[key].label,
-        ...buckets[key],
-      }))
-      .filter(d => d.critical + d.warning + d.info > 0);
-  }, [filteredFailed]);
+    return s;
+  }, [checks]);
+
+  const healthScore = checks.length > 0
+    ? Math.round((passed.length / checks.length) * 100)
+    : 100;
+
+  const donutData = [
+    { name: 'Critical', value: summary.critical, color: DONUT_COLORS[0] },
+    { name: 'Warning', value: summary.warning, color: DONUT_COLORS[1] },
+    { name: 'Info', value: summary.info, color: DONUT_COLORS[2] },
+    { name: 'Passed', value: summary.passed, color: DONUT_COLORS[3] },
+  ].filter(d => d.value > 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Section Header with KPIs */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
+          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-red-50 text-red-600 shrink-0"><IconShield /></div>
+            <div>
+              <div className="text-2xl font-bold text-red-600">{summary.critical}</div>
+              <div className="text-xs text-red-600/80 font-medium">Critical</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-amber-50 text-amber-600 shrink-0"><IconAlertTriangle /></div>
+            <div>
+              <div className="text-2xl font-bold text-amber-600">{summary.warning}</div>
+              <div className="text-xs text-amber-600/80 font-medium">Warnings</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-blue-50 text-blue-600 shrink-0"><IconInfoCircle /></div>
+            <div>
+              <div className="text-2xl font-bold text-blue-600">{summary.info}</div>
+              <div className="text-xs text-blue-600/80 font-medium">Info</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-green-50 text-green-600 shrink-0"><IconCheckCircle /></div>
+            <div>
+              <div className="text-2xl font-bold text-green-600">{summary.passed}</div>
+              <div className="text-xs text-green-600/80 font-medium">Passed</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Health ring */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex items-center justify-center lg:w-40 shrink-0">
+          <HealthRing score={healthScore} passed={passed.length} total={checks.length} />
+        </div>
+      </div>
+
+      {/* Charts */}
+      {failed.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <SeverityDonut data={donutData} />
+        </div>
+      )}
+
+      {/* Issues Table */}
+      <IssuesTable
+        checks={checks}
+        search={search}
+        onSearchChange={onSearchChange}
+        severityFilters={severityFilters}
+        onToggleSeverity={onToggleSeverity}
+        sortColumn={sortColumn}
+        sortDir={sortDir}
+        onSort={onSort}
+        selectedCheck={selectedCheck}
+        onSelectCheck={onSelectCheck}
+        title={title}
+      />
+
+      {/* Passed Checks */}
+      {passed.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <button
+            onClick={() => setShowPassed(!showPassed)}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-green-600"><IconCheckCircle /></span>
+              <span>Passed Checks ({passed.length})</span>
+            </div>
+            <IconChevronRight className={`w-4 h-4 transition-transform ${showPassed ? 'rotate-90' : ''}`} />
+          </button>
+          {showPassed && (
+            <div className="border-t border-gray-200">
+              {passed.map(check => (
+                <div
+                  key={check.id + check.source}
+                  className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 last:border-0 text-sm"
+                >
+                  <span className="text-green-600 shrink-0">{'\u2713'}</span>
+                  <span className="text-gray-700 flex-1">{check.title}</span>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${sourceConfig[check.source].badge}`}>
+                    {sourceConfig[check.source].label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Cross-Check Section (Always Visible) ────────────────────────────────────
+
+function CrossCheckSection({
+  checks,
+  selectedCheck,
+  onSelectCheck,
+}: {
+  checks: TaggedCheck[];
+  selectedCheck: TaggedCheck | null;
+  onSelectCheck: (check: TaggedCheck | null) => void;
+}) {
+  const failed = checks.filter(c => !c.passed);
+  const passed = checks.filter(c => c.passed);
+  const [showPassed, setShowPassed] = useState(false);
+
+  if (checks.length === 0) return null;
+
+  return (
+    <div className="mt-8 pt-8 border-t-2 border-orange-200">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 rounded-lg bg-orange-100 text-orange-600">
+          <IconCross />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Cross-Platform Checks</h2>
+          <p className="text-sm text-gray-500">Validation across GTM and Google Ads configurations</p>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          {failed.length > 0 && (
+            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-700">
+              {failed.length} issue{failed.length !== 1 ? 's' : ''}
+            </span>
+          )}
+          {passed.length > 0 && (
+            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700">
+              {passed.length} passed
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Failed Cross-Checks */}
+      {failed.length > 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4">
+          <div className="divide-y divide-gray-100">
+            {failed.map(check => {
+              const cfg = severityConfig[check.severity];
+              const isSelected = selectedCheck?.id === check.id && selectedCheck?.source === check.source;
+
+              return (
+                <div
+                  key={check.id}
+                  onClick={() => onSelectCheck(isSelected ? null : check)}
+                  className={`
+                    p-4 cursor-pointer transition-colors
+                    ${isSelected ? 'bg-blue-50 border-l-2 border-l-blue-500' : 'hover:bg-gray-50 border-l-2 border-l-transparent'}
+                  `}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-1.5 ${cfg.dot}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cfg.badge}`}>
+                          {cfg.label}
+                        </span>
+                      </div>
+                      <h3 className="font-medium text-gray-900">{check.title}</h3>
+                      <p className="text-sm text-gray-500 mt-1">{check.description}</p>
+                    </div>
+                    <IconChevronRight className={`w-4 h-4 shrink-0 transition-transform ${isSelected ? 'rotate-90 text-blue-600' : 'text-gray-400'}`} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center mb-4">
+          <div className="text-3xl mb-2">{'\u2705'}</div>
+          <h3 className="text-lg font-bold text-green-700 mb-1">All cross-checks passed!</h3>
+          <p className="text-green-600 text-sm">GTM and Google Ads configurations are properly aligned.</p>
+        </div>
+      )}
+
+      {/* Passed Cross-Checks */}
+      {passed.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <button
+            onClick={() => setShowPassed(!showPassed)}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-green-600"><IconCheckCircle /></span>
+              <span>Passed Cross-Checks ({passed.length})</span>
+            </div>
+            <IconChevronRight className={`w-4 h-4 transition-transform ${showPassed ? 'rotate-90' : ''}`} />
+          </button>
+          {showPassed && (
+            <div className="border-t border-gray-200">
+              {passed.map(check => (
+                <div
+                  key={check.id}
+                  className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 last:border-0 text-sm"
+                >
+                  <span className="text-green-600 shrink-0">{'\u2713'}</span>
+                  <span className="text-gray-700 flex-1">{check.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────
+
+export default function AuditPage() {
+  const router = useRouter();
+  const [results, setResults] = useState<AuditResults | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>('gtm');
+  const [selectedCheck, setSelectedCheck] = useState<TaggedCheck | null>(null);
+  const [search, setSearch] = useState('');
+  const [severityFilters, setSeverityFilters] = useState<Set<Severity>>(new Set(['critical', 'warning', 'info']));
+  const [sortColumn, setSortColumn] = useState<'severity' | 'title' | 'source' | 'affected'>('severity');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  // Audit counter for PDF unlock feature
+  const {
+    canExportPDF,
+    shouldShowUnlockModal,
+    incrementAuditCount,
+    markAsSubscribed,
+    dismissUnlockModal,
+  } = useAuditCounter();
+
+  // Track if we've already counted this audit session
+  const hasCountedAudit = useRef(false);
+
+  useEffect(() => {
+    const gtmDataStr = sessionStorage.getItem('gtmData');
+    const adsDataStr = sessionStorage.getItem('adsData');
+    const reportDataStr = sessionStorage.getItem('reportData');
+
+    if (!gtmDataStr && !adsDataStr && !reportDataStr) {
+      router.push('/');
+      return;
+    }
+
+    const gtmData: GTMContainer | null = gtmDataStr ? JSON.parse(gtmDataStr) : null;
+    const adsData: AdsData | null = adsDataStr ? JSON.parse(adsDataStr) : null;
+    const reportData: AdsReportData | null = reportDataStr ? JSON.parse(reportDataStr) : null;
+
+    const auditResults = runAudit(gtmData, adsData, undefined, reportData);
+    setResults(auditResults);
+    setLoading(false);
+
+    // Set initial tab based on available data
+    if (gtmData && !adsData) setActiveTab('gtm');
+    else if (adsData && !gtmData) setActiveTab('ads');
+
+    // Increment audit count once per audit session
+    if (!hasCountedAudit.current) {
+      hasCountedAudit.current = true;
+      incrementAuditCount();
+    }
+  }, [router, incrementAuditCount]);
+
+  const handleClosePanel = useCallback(() => setSelectedCheck(null), []);
+
+  // ─── Derived data ────────────────────────────────────────────────────────
+
+  const allTagged = useMemo(() => results ? tagChecks(results) : [], [results]);
+
+  // Filter out passed info checks
+  const displayed = useMemo(() => allTagged.filter(c => !(c.severity === 'info' && c.passed)), [allTagged]);
+
+  // Separate checks by category
+  const gtmChecks = useMemo(() => displayed.filter(c => c.source === 'gtm'), [displayed]);
+  const adsChecks = useMemo(() => displayed.filter(c => c.source === 'ads' || c.source === 'report'), [displayed]);
+  const crossChecks = useMemo(() => displayed.filter(c => c.source === 'cross'), [displayed]);
+
+  // Tab counts for badges
+  const gtmFailedCount = useMemo(() => gtmChecks.filter(c => !c.passed).length, [gtmChecks]);
+  const adsFailedCount = useMemo(() => adsChecks.filter(c => !c.passed).length, [adsChecks]);
+  const crossFailedCount = useMemo(() => crossChecks.filter(c => !c.passed).length, [crossChecks]);
+
+  // Check if tabs have data
+  const hasGTMData = gtmChecks.length > 0;
+  const hasAdsData = adsChecks.length > 0;
 
   // ─── Sort handler ────────────────────────────────────────────────────────
 
@@ -808,38 +1079,16 @@ export default function AuditPage() {
     );
   }
 
-  const healthScore = filteredDisplayed.length > 0
-    ? Math.round((filteredPassed.length / filteredDisplayed.length) * 100)
-    : 100;
-
   // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex">
-      {/* Sidebar */}
-      <Sidebar
-        activeNav={activeNav}
-        onNavChange={setActiveNav}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        counts={navCounts}
-        onNewAudit={() => {
-          sessionStorage.clear();
-          router.push('/');
-        }}
-      />
-
-      {/* Main content */}
-      <div className="flex-1 min-w-0 flex flex-col">
-        {/* Top bar */}
-        <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 px-4 lg:px-6 py-3 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
-            >
-              <IconMenu />
-            </button>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 px-4 lg:px-6 py-4 sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="text-xl font-bold text-blue-600">AdLint</span>
+            <div className="h-6 w-px bg-gray-200" />
             <div>
               <h1 className="text-lg font-bold text-gray-900">Audit Results</h1>
               <span className="text-xs text-gray-500">{auditType}</span>
@@ -855,245 +1104,138 @@ export default function AuditPage() {
               onDismissModal={dismissUnlockModal}
             />
             <button
-              onClick={() => router.push('/')}
+              onClick={() => {
+                sessionStorage.clear();
+                router.push('/');
+              }}
               className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
-              &larr; Back
+              New Audit
             </button>
           </div>
-        </header>
+        </div>
+      </header>
 
-        <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
-          {/* ── ZONE 1: KPI Strip ──────────────────────────────────────── */}
-          <div className="flex flex-col lg:flex-row gap-4 mb-6">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
-              {/* Critical */}
-              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-red-50 text-red-600 shrink-0"><IconShield /></div>
-                <div>
-                  <div className="text-2xl font-bold text-red-600">{filteredSummary.critical}</div>
-                  <div className="text-xs text-red-600/80 font-medium">Critical</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">{filteredSummary.critical} of {filteredDisplayed.length} checks</div>
-                </div>
-              </div>
-              {/* Warning */}
-              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-amber-50 text-amber-600 shrink-0"><IconAlertTriangle /></div>
-                <div>
-                  <div className="text-2xl font-bold text-amber-600">{filteredSummary.warning}</div>
-                  <div className="text-xs text-amber-600/80 font-medium">Warnings</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">{filteredSummary.warning} of {filteredDisplayed.length} checks</div>
-                </div>
-              </div>
-              {/* Info */}
-              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-blue-50 text-blue-600 shrink-0"><IconInfoCircle /></div>
-                <div>
-                  <div className="text-2xl font-bold text-blue-600">{filteredSummary.info}</div>
-                  <div className="text-xs text-blue-600/80 font-medium">Info</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">{filteredSummary.info} of {filteredDisplayed.length} checks</div>
-                </div>
-              </div>
-              {/* Passed */}
-              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-green-50 text-green-600 shrink-0"><IconCheckCircle /></div>
-                <div>
-                  <div className="text-2xl font-bold text-green-600">{filteredSummary.passed}</div>
-                  <div className="text-xs text-green-600/80 font-medium">Passed</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">{filteredPassed.length} of {filteredDisplayed.length} checks</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Health ring */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex items-center justify-center lg:w-48 shrink-0">
-              <HealthRing score={healthScore} passed={filteredPassed.length} total={filteredDisplayed.length} />
-            </div>
-          </div>
-
-          {/* ── ZONE 2: Charts ─────────────────────────────────────────── */}
-          {filteredFailed.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-              <SeverityDonut data={donutData} />
-              <CategoryBarChart data={barData} />
-            </div>
-          )}
-
-          {/* ── ZONE 3: Issues Table ───────────────────────────────────── */}
-          {filteredFailed.length > 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-              {/* Table toolbar */}
-              <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row gap-3">
-                {/* Search */}
-                <div className="relative flex-1">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconSearch /></div>
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    placeholder="Search issues..."
-                    className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                {/* Severity toggles */}
-                <div className="flex items-center gap-1.5">
-                  {(['critical', 'warning', 'info'] as Severity[]).map(sev => {
-                    const cfg = severityConfig[sev];
-                    const active = severityFilters.has(sev);
-                    return (
-                      <button
-                        key={sev}
-                        onClick={() => toggleSeverityFilter(sev)}
-                        className={`
-                          flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors
-                          ${active
-                            ? `${cfg.badge} border-transparent`
-                            : 'bg-gray-50 text-gray-500 border-gray-200'
-                          }
-                        `}
-                      >
-                        <span className={`w-2 h-2 rounded-full ${active ? cfg.dot : 'bg-gray-600'}`} />
-                        {cfg.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide w-28">
-                        <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => handleSort('severity')}>
-                          Severity
-                          <IconSort active={sortColumn === 'severity'} direction={sortDir} />
-                        </button>
-                      </th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide">
-                        <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => handleSort('title')}>
-                          Issue
-                          <IconSort active={sortColumn === 'title'} direction={sortDir} />
-                        </button>
-                      </th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide w-28">
-                        <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => handleSort('source')}>
-                          Source
-                          <IconSort active={sortColumn === 'source'} direction={sortDir} />
-                        </button>
-                      </th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide w-24">
-                        <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => handleSort('affected')}>
-                          Items
-                          <IconSort active={sortColumn === 'affected'} direction={sortDir} />
-                        </button>
-                      </th>
-                      <th className="w-10" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tableData.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="py-12 text-center text-gray-500 text-sm">
-                          No issues match your filters.
-                        </td>
-                      </tr>
-                    ) : (
-                      tableData.map(check => {
-                        const cfg = severityConfig[check.severity];
-                        const src = sourceConfig[check.source];
-                        const affected = countAffectedItems(check);
-                        const isSelected = selectedCheck?.id === check.id && selectedCheck?.source === check.source;
-
-                        return (
-                          <tr
-                            key={check.id + check.source}
-                            onClick={() => setSelectedCheck(isSelected ? null : check)}
-                            className={`
-                              border-b border-gray-100 cursor-pointer transition-colors
-                              ${isSelected
-                                ? 'bg-blue-50 border-l-2 border-l-blue-500'
-                                : 'hover:bg-gray-50 border-l-2 border-l-transparent'
-                              }
-                            `}
-                          >
-                            <td className="py-3 px-4">
-                              <div className="flex items-center gap-2">
-                                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${cfg.dot}`} />
-                                <span className={`text-xs font-medium ${cfg.text}`}>{cfg.label}</span>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="font-medium text-gray-900 leading-tight">{check.title}</div>
-                              <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">{check.description}</div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${src.badge}`}>
-                                {src.label}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-gray-500 font-medium">
-                              {affected > 0 ? affected : '\u2014'}
-                            </td>
-                            <td className="py-3 px-2">
-                              <IconChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'rotate-90 text-blue-600' : 'text-gray-400'}`} />
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Table footer */}
-              <div className="px-4 py-3 border-t border-gray-200 text-xs text-gray-500">
-                Showing {tableData.length} of {filteredFailed.length} issues
-              </div>
-            </div>
-          ) : (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center mb-6">
-              <div className="text-4xl mb-3">{'\uD83C\uDF89'}</div>
-              <h2 className="text-xl font-bold text-green-700 mb-1">All checks passed!</h2>
-              <p className="text-green-700/70 text-sm">Your setup looks great. No issues detected.</p>
-            </div>
-          )}
-
-          {/* ── Passed Checks ──────────────────────────────────────────── */}
-          {filteredPassed.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+      {/* Tabs */}
+      <div className="bg-white border-b border-gray-200 sticky top-[73px] z-10">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+          <nav className="flex gap-1">
+            {hasGTMData && (
               <button
-                onClick={() => setShowPassed(!showPassed)}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                onClick={() => setActiveTab('gtm')}
+                className={`
+                  relative px-5 py-3 text-sm font-medium transition-colors
+                  ${activeTab === 'gtm'
+                    ? 'text-purple-600'
+                    : 'text-gray-500 hover:text-gray-900'
+                  }
+                `}
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-green-600"><IconCheckCircle /></span>
-                  <span>Passed Checks ({filteredPassed.length})</span>
+                  <span>Google Tag Manager</span>
+                  {gtmFailedCount > 0 && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                      activeTab === 'gtm' ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {gtmFailedCount}
+                    </span>
+                  )}
                 </div>
-                <IconChevronRight className={`w-4 h-4 transition-transform ${showPassed ? 'rotate-90' : ''}`} />
+                {activeTab === 'gtm' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600" />
+                )}
               </button>
-              {showPassed && (
-                <div className="border-t border-gray-200">
-                  {filteredPassed.map(check => (
-                    <div
-                      key={check.id + check.source}
-                      className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 last:border-0 text-sm"
-                    >
-                      <span className="text-green-600 shrink-0">{'\u2713'}</span>
-                      <span className="text-gray-700 flex-1">{check.title}</span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${sourceConfig[check.source].badge}`}>
-                        {sourceConfig[check.source].label}
-                      </span>
-                    </div>
-                  ))}
+            )}
+            {hasAdsData && (
+              <button
+                onClick={() => setActiveTab('ads')}
+                className={`
+                  relative px-5 py-3 text-sm font-medium transition-colors
+                  ${activeTab === 'ads'
+                    ? 'text-sky-600'
+                    : 'text-gray-500 hover:text-gray-900'
+                  }
+                `}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Google Ads</span>
+                  {adsFailedCount > 0 && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                      activeTab === 'ads' ? 'bg-sky-100 text-sky-600' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {adsFailedCount}
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
-        </main>
+                {activeTab === 'ads' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-600" />
+                )}
+              </button>
+            )}
+            {crossChecks.length > 0 && (
+              <div className="flex items-center px-5 py-3 text-sm text-orange-600">
+                <div className="flex items-center gap-2">
+                  <IconCross />
+                  <span className="font-medium">Cross-Check</span>
+                  {crossFailedCount > 0 && (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600">
+                      {crossFailedCount}
+                    </span>
+                  )}
+                  <span className="text-xs text-gray-400 ml-1">(always visible)</span>
+                </div>
+              </div>
+            )}
+          </nav>
+        </div>
       </div>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
+        {/* Tab Content */}
+        {activeTab === 'gtm' && hasGTMData && (
+          <TabSection
+            checks={gtmChecks}
+            title="Google Tag Manager"
+            icon={<span className="text-purple-600">GTM</span>}
+            color="purple"
+            search={search}
+            onSearchChange={setSearch}
+            severityFilters={severityFilters}
+            onToggleSeverity={toggleSeverityFilter}
+            sortColumn={sortColumn}
+            sortDir={sortDir}
+            onSort={handleSort}
+            selectedCheck={selectedCheck}
+            onSelectCheck={setSelectedCheck}
+          />
+        )}
+
+        {activeTab === 'ads' && hasAdsData && (
+          <TabSection
+            checks={adsChecks}
+            title="Google Ads"
+            icon={<span className="text-sky-600">Ads</span>}
+            color="sky"
+            search={search}
+            onSearchChange={setSearch}
+            severityFilters={severityFilters}
+            onToggleSeverity={toggleSeverityFilter}
+            sortColumn={sortColumn}
+            sortDir={sortDir}
+            onSort={handleSort}
+            selectedCheck={selectedCheck}
+            onSelectCheck={setSelectedCheck}
+          />
+        )}
+
+        {/* Cross-Check Section (Always Visible) */}
+        <CrossCheckSection
+          checks={crossChecks}
+          selectedCheck={selectedCheck}
+          onSelectCheck={setSelectedCheck}
+        />
+      </main>
 
       {/* Slide-over detail panel */}
       <SlideOverPanel check={selectedCheck} onClose={handleClosePanel} />
