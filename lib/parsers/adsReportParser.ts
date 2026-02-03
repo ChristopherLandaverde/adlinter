@@ -1,84 +1,115 @@
 import Papa from 'papaparse';
 import { AdsReportData, AdsReportConversion } from '../types';
 
-// Column alias mapping: canonical key -> list of accepted header names
+// Column alias mapping: canonical key -> list of accepted header names (lowercase for matching)
 const COLUMN_ALIASES: Record<string, string[]> = {
   name: [
-    'Conversion action',
-    'Conversion name',
+    'conversion action',
+    'conversion name',
     'conversion_action_name',
     'segments.conversion_action_name',
     'name',
   ],
   conversions: [
-    'Conversions',
-    'Conv.',
-    'metrics.conversions',
     'conversions',
+    'conv.',
+    'metrics.conversions',
   ],
   allConversions: [
-    'All conv.',
-    'All conversions',
+    'all conv.',
+    'all conversions',
     'metrics.all_conversions',
     'all_conversions',
   ],
   viewThroughConversions: [
-    'View-through conv.',
-    'View-through conversions',
+    'view-through conv.',
+    'view-through conversions',
     'metrics.view_through_conversions',
     'view_through_conversions',
   ],
   conversionsValue: [
-    'Conv. value',
-    'Conversion value',
-    'Conversions value',
+    'conv. value',
+    'conversion value',
+    'conversions value',
     'metrics.conversions_value',
     'conversions_value',
   ],
   allConversionsValue: [
-    'All conv. value',
-    'All conversions value',
+    'all conv. value',
+    'all conversions value',
     'metrics.all_conversions_value',
     'all_conversions_value',
   ],
   valuePerConversion: [
-    'Value / conv.',
-    'Value per conversion',
+    'value / conv.',
+    'value per conversion',
     'metrics.value_per_conversion',
     'value_per_conversion',
   ],
   valuePerAllConversions: [
-    'Value / all conv.',
-    'Value per all conversions',
+    'value / all conv.',
+    'value per all conversions',
     'metrics.value_per_all_conversions',
     'value_per_all_conversions',
   ],
   conversionValuePerCost: [
-    'Conv. value / cost',
-    'ROAS',
+    'conv. value / cost',
+    'roas',
     'metrics.conversions_value_per_cost',
     'conversions_value_per_cost',
   ],
   currentModelAttributedConversions: [
-    'Current model conv.',
-    'Current model attributed conversions',
+    'current model conv.',
+    'current model attributed conversions',
     'metrics.current_model_attributed_conversions',
     'current_model_attributed_conversions',
   ],
   category: [
-    'Category',
-    'Conversion category',
+    'category',
+    'conversion category',
     'conversion_action_category',
     'segments.conversion_action_category',
-    'category',
   ],
 };
 
 const cleanNumeric = (val: string | number | undefined): number => {
   if (val === undefined || val === null || val === '') return 0;
   if (typeof val === 'number') return val;
-  // Strip currency symbols, commas, percent signs, whitespace
-  const cleaned = val.replace(/[$€£¥,\s%]/g, '');
+
+  // Strip currency symbols, percent signs, whitespace
+  let cleaned = val.replace(/[$€£¥\s%]/g, '');
+
+  // Handle European number format (1.000,00) vs US format (1,000.00)
+  // European: period as thousands separator, comma as decimal
+  // US: comma as thousands separator, period as decimal
+  const hasComma = cleaned.includes(',');
+  const hasPeriod = cleaned.includes('.');
+
+  if (hasComma && hasPeriod) {
+    // Both present: determine format by which comes last
+    const lastComma = cleaned.lastIndexOf(',');
+    const lastPeriod = cleaned.lastIndexOf('.');
+
+    if (lastComma > lastPeriod) {
+      // European format: 1.000,00 -> 1000.00
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    } else {
+      // US format: 1,000.00 -> 1000.00
+      cleaned = cleaned.replace(/,/g, '');
+    }
+  } else if (hasComma && !hasPeriod) {
+    // Only comma: could be EU decimal (0,5) or US thousands (1,000)
+    // If comma is followed by exactly 2 digits at end, treat as decimal
+    if (/,\d{2}$/.test(cleaned) && !/,\d{3}/.test(cleaned)) {
+      // European decimal: 0,50 or 1234,56
+      cleaned = cleaned.replace(',', '.');
+    } else {
+      // US thousands separator: 1,000 or 1,000,000
+      cleaned = cleaned.replace(/,/g, '');
+    }
+  }
+  // If only period or neither, parseFloat handles it correctly
+
   const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : num;
 };
@@ -88,6 +119,7 @@ const resolveColumn = (
   canonicalKey: string
 ): string | undefined => {
   const aliases = COLUMN_ALIASES[canonicalKey] || [];
+  // Row keys are already lowercased by transformHeader
   for (const alias of aliases) {
     if (alias in row) return row[alias];
   }
@@ -140,7 +172,7 @@ const parseCSV = (content: string): AdsReportData => {
   const parsed = Papa.parse(csvContent, {
     header: true,
     skipEmptyLines: true,
-    transformHeader: (header: string) => header.trim(),
+    transformHeader: (header: string) => header.trim().toLowerCase(),
   });
 
   if (!parsed.data || parsed.data.length === 0) {
@@ -149,13 +181,13 @@ const parseCSV = (content: string): AdsReportData => {
     );
   }
 
-  // Verify we have at least a name column
+  // Verify we have at least a name column (headers are lowercased)
   const headers = parsed.meta.fields || [];
   const nameAliases = COLUMN_ALIASES.name;
   const hasName = nameAliases.some(alias => headers.includes(alias));
   if (!hasName) {
     throw new Error(
-      `Missing conversion name column. Expected one of: ${nameAliases.join(', ')}. ` +
+      `Missing conversion name column. Expected one of: "Conversion action", "Conversion name". ` +
       `Please export from Google Ads: Tools & Settings > Conversions > Download report.`
     );
   }

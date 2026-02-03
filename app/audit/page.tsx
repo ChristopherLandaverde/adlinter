@@ -963,6 +963,7 @@ export default function AuditPage() {
   const router = useRouter();
   const [results, setResults] = useState<AuditResults | null>(null);
   const [loading, setLoading] = useState(true);
+  const [parseError, setParseError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('gtm');
   const [selectedCheck, setSelectedCheck] = useState<TaggedCheck | null>(null);
   const [search, setSearch] = useState('');
@@ -992,22 +993,31 @@ export default function AuditPage() {
       return;
     }
 
-    const gtmData: GTMContainer | null = gtmDataStr ? JSON.parse(gtmDataStr) : null;
-    const adsData: AdsData | null = adsDataStr ? JSON.parse(adsDataStr) : null;
-    const reportData: AdsReportData | null = reportDataStr ? JSON.parse(reportDataStr) : null;
+    try {
+      const gtmData: GTMContainer | null = gtmDataStr ? JSON.parse(gtmDataStr) : null;
+      const adsData: AdsData | null = adsDataStr ? JSON.parse(adsDataStr) : null;
+      const reportData: AdsReportData | null = reportDataStr ? JSON.parse(reportDataStr) : null;
 
-    const auditResults = runAudit(gtmData, adsData, undefined, reportData);
-    setResults(auditResults);
-    setLoading(false);
+      const auditResults = runAudit(gtmData, adsData, undefined, reportData);
+      setResults(auditResults);
+      setLoading(false);
 
-    // Set initial tab based on available data
-    if (gtmData && !adsData) setActiveTab('gtm');
-    else if (adsData && !gtmData) setActiveTab('ads');
+      // Set initial tab based on available data
+      if (gtmData && !adsData) setActiveTab('gtm');
+      else if (adsData && !gtmData) setActiveTab('ads');
 
-    // Increment audit count once per audit session
-    if (!hasCountedAudit.current) {
-      hasCountedAudit.current = true;
-      incrementAuditCount();
+      // Increment audit count once per audit session
+      if (!hasCountedAudit.current) {
+        hasCountedAudit.current = true;
+        incrementAuditCount();
+      }
+    } catch (err) {
+      console.error('Failed to parse audit data:', err);
+      setParseError(
+        'Failed to load audit data. The uploaded file may be corrupted or in an unexpected format. ' +
+        'Please go back and try uploading your files again.'
+      );
+      setLoading(false);
     }
   }, [router, incrementAuditCount]);
 
@@ -1067,6 +1077,31 @@ export default function AuditPage() {
     if (results.report.length > 0) parts.push('Report');
     return parts.length === 3 ? 'Full Audit' : parts.length > 0 ? `${parts.join(' + ')} Audit` : 'Audit';
   }, [results]);
+
+  // ─── Error state ─────────────────────────────────────────────────────────
+
+  if (parseError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-red-50 to-white gap-4 px-4">
+        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+          <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-semibold text-gray-900">Unable to Load Audit</h2>
+        <p className="text-gray-600 text-center max-w-md">{parseError}</p>
+        <button
+          onClick={() => {
+            sessionStorage.clear();
+            router.push('/');
+          }}
+          className="mt-4 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+        >
+          Start Over
+        </button>
+      </div>
+    );
+  }
 
   // ─── Loading state ───────────────────────────────────────────────────────
 
