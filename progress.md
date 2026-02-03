@@ -1,5 +1,60 @@
 # AdLint — Progress Log
 
+## v1.4 — Multi-Tool System + Tabbed Dashboard
+**Commit:** `b89a9f2`
+
+Major architecture overhaul: split the single audit tool into specialized tools with tiered checks, added tabbed dashboard navigation, PDF export with email capture, and comprehensive test coverage.
+
+### Multi-Tool System (`lib/tools.ts`, `app/tools/[slug]/page.tsx`)
+- Created tool configuration system with 6 tools (4 enabled, 2 placeholders):
+  - **GTM Container Auditor** (30 checks) — GTM-only analysis
+  - **Google Ads Linter** (27 checks) — Ads settings-only analysis
+  - **Performance Report Analyzer** (11 checks) — Report-only analysis
+  - **Full-Stack Audit** (82 checks) — Cross-source analysis with all files
+  - Meta Pixel Auditor (coming soon)
+  - TikTok Pixel Auditor (coming soon)
+- Added dynamic tool pages with `[slug]` routing
+- Refactored home page to tool selection grid with category filters (Google, Meta, TikTok)
+- Added reusable `FileDropZone` component extracted from audit page
+
+### New Check Modules (50+ new checks)
+- **`lib/checks/structureChecks.ts`** — Naming conventions, deprecated models, window alignment, category hygiene
+- **`lib/checks/signalQualityChecks.ts`** — Micro-pollution, primary gaps, signal freshness, value instability
+- **`lib/checks/performanceChecks.ts`** — ROAS outliers, statistical anomalies, coefficient of variation
+- **`lib/checks/edgeCaseChecks.ts`** — Purchase disabled, zero-value primaries, orphaned secondaries
+- **`lib/checks/settingsReportCrossChecks.ts`** — Ghost conversions, volume mismatches, attribution drift
+
+### Dashboard Redesign (`app/audit/page.tsx`)
+- Restructured with **tabbed navigation**: Overview, Checks, Export
+- Made sidebar filters (source, severity) **global** across all tabs
+- Added responsive summary cards with severity breakdown
+- Ported from dark theme to light theme matching landing page
+
+### PDF Export + Lead Generation
+- Added `PDFExportButton` component with jspdf integration
+- Implemented usage-based gating: 2 free exports, then email required
+- Added `useAuditCounter` hook for localStorage-based usage tracking
+- Added `/api/subscribe` route for email capture (file-based storage)
+
+### Test Coverage
+- Added comprehensive test suites for new check modules:
+  - `structureChecks.test.ts` (244 lines)
+  - `signalQualityChecks.test.ts` (186 lines)
+  - `performanceChecks.test.ts` (186 lines)
+  - `edgeCaseChecks.test.ts` (204 lines)
+  - `settingsReportCrossChecks.test.ts` (228 lines)
+- Added `adsReportChecks.test.ts` (718 lines) and `adsReportParser.test.ts` (124 lines)
+- Added test fixtures: `report-clean.json`, `report-dirty.json`
+
+### UI/UX
+- Changed site-wide font from Geist to **Space Grotesk**
+- Updated color scheme to light theme with consistent branding
+
+### Dependencies
+- Added `jspdf ^3.0.1`
+
+---
+
 ## v1.3 — Audit Results Redesign + Python Backend Scaffold
 **Commit:** `bfbd5ef`
 
