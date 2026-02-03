@@ -83,11 +83,12 @@ describe('Audit Engine', () => {
       expect(results.cross).toEqual([]);
     });
 
-    it('should run all 26 Ads checks (basic + advanced)', () => {
+    it('should run all Ads checks (basic + advanced + structure + edge cases)', () => {
       const adsData = loadCSV('ads-clean.csv');
       const results = runAudit(null, adsData);
 
-      expect(results.ads.length).toBe(26);
+      // 11 basic + 15 advanced + 8 structure + 8 edge cases = 42
+      expect(results.ads.length).toBe(42);
     });
   });
 
@@ -98,17 +99,20 @@ describe('Audit Engine', () => {
       const results = runAudit(gtmData, adsData);
 
       expect(results.gtm.length).toBe(30);
-      expect(results.ads.length).toBe(26);
+      // 11 basic + 15 advanced + 8 structure + 8 edge cases = 42
+      expect(results.ads.length).toBe(42);
+      // 4 basic cross + 10 advanced cross = 14
       expect(results.cross.length).toBe(14);
     });
 
-    it('should run all 70 checks total', () => {
+    it('should run all checks total (GTM + Ads + Cross)', () => {
       const gtmData = loadGTM('gtm-container-clean.json');
       const adsData = loadCSV('ads-clean.csv');
       const results = runAudit(gtmData, adsData);
 
       const total = results.gtm.length + results.ads.length + results.cross.length;
-      expect(total).toBe(70);
+      // 30 + 42 + 14 = 86
+      expect(total).toBe(86);
     });
   });
 
@@ -212,7 +216,8 @@ describe('Audit Engine', () => {
       const adsData: AdsData = { conversions: [] };
       const results = runAudit(null, adsData);
 
-      expect(results.ads.length).toBe(26);
+      // 11 basic + 15 advanced + 8 structure + 8 edge cases = 42
+      expect(results.ads.length).toBe(42);
       results.ads.forEach(check => {
         expect(check).toHaveProperty('id');
         expect(check).toHaveProperty('passed');

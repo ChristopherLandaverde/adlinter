@@ -1,0 +1,111 @@
+export type ToolCategory = 'google' | 'meta' | 'tiktok';
+
+export interface ToolFileSlot {
+  key: string;               // sessionStorage key
+  label: string;
+  accept: string;
+  required: boolean;
+  parser: 'gtm' | 'ads' | 'report';
+}
+
+export interface ToolConfig {
+  slug: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: ToolCategory;
+  enabled: boolean;
+  checkCount: number;
+  color: string;             // Tailwind color prefix (e.g. "blue", "emerald")
+  fileSlots: ToolFileSlot[];
+}
+
+export const tools: ToolConfig[] = [
+  {
+    slug: 'gtm-auditor',
+    name: 'GTM Container Auditor',
+    description: 'Audit your Google Tag Manager setup for misconfigurations, missing tags, and consent issues.',
+    icon: '🏷️',
+    category: 'google',
+    enabled: true,
+    checkCount: 30,
+    color: 'blue',
+    fileSlots: [
+      { key: 'gtmData', label: 'GTM Container JSON', accept: '.json', required: true, parser: 'gtm' },
+    ],
+  },
+  {
+    slug: 'google-ads-linter',
+    name: 'Google Ads Linter',
+    description: 'Check your Google Ads conversion actions for duplicates, wrong values, and attribution issues.',
+    icon: '💰',
+    category: 'google',
+    enabled: true,
+    checkCount: 27,
+    color: 'emerald',
+    fileSlots: [
+      { key: 'adsData', label: 'Google Ads Conversions CSV', accept: '.csv', required: true, parser: 'ads' },
+    ],
+  },
+  {
+    slug: 'performance-analyzer',
+    name: 'Performance Report Analyzer',
+    description: 'Analyze conversion performance data for anomalies, ROAS issues, and attribution drift.',
+    icon: '📈',
+    category: 'google',
+    enabled: true,
+    checkCount: 11,
+    color: 'violet',
+    fileSlots: [
+      { key: 'reportData', label: 'Performance Report (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'report' },
+    ],
+  },
+  {
+    slug: 'full-audit',
+    name: 'Full-Stack Audit',
+    description: 'Run all checks across GTM, Google Ads, and performance data with cross-source analysis.',
+    icon: '🔍',
+    category: 'google',
+    enabled: true,
+    checkCount: 82,
+    color: 'amber',
+    fileSlots: [
+      { key: 'gtmData', label: 'GTM Container JSON', accept: '.json', required: true, parser: 'gtm' },
+      { key: 'adsData', label: 'Google Ads Conversions CSV', accept: '.csv', required: true, parser: 'ads' },
+      { key: 'reportData', label: 'Performance Report (CSV or JSON)', accept: '.csv,.json', required: false, parser: 'report' },
+    ],
+  },
+  {
+    slug: 'meta-auditor',
+    name: 'Meta Pixel Auditor',
+    description: 'Audit your Meta Pixel and Conversions API setup for tracking issues.',
+    icon: '📘',
+    category: 'meta',
+    enabled: false,
+    checkCount: 0,
+    color: 'blue',
+    fileSlots: [],
+  },
+  {
+    slug: 'tiktok-auditor',
+    name: 'TikTok Pixel Auditor',
+    description: 'Audit your TikTok Pixel setup for event mismatches and missing parameters.',
+    icon: '🎵',
+    category: 'tiktok',
+    enabled: false,
+    checkCount: 0,
+    color: 'pink',
+    fileSlots: [],
+  },
+];
+
+export function getToolBySlug(slug: string): ToolConfig | undefined {
+  return tools.find((t) => t.slug === slug);
+}
+
+export const categories = [
+  { key: 'all', label: 'All' },
+  { key: 'google', label: 'Google' },
+  { key: 'meta', label: 'Meta' },
+  { key: 'tiktok', label: 'TikTok' },
+] as const;

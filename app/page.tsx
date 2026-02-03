@@ -1,74 +1,74 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import UploadCard from '@/components/UploadCard';
-import { parseGTMJSON } from '@/lib/parsers/gtmParser';
-import { parseAdsCSV } from '@/lib/parsers/adsParser';
-import { parseAdsReportCSV } from '@/lib/parsers/adsReportParser';
-import { GTMContainer, AdsData, AdsReportData } from '@/lib/types';
+import Link from 'next/link';
+import { tools, categories, type ToolConfig, type ToolCategory } from '@/lib/tools';
+
+const cardColorMap: Record<string, { bar: string; badge: string; badgeText: string }> = {
+  blue:    { bar: 'bg-blue-500',    badge: 'bg-blue-100',    badgeText: 'text-blue-700' },
+  emerald: { bar: 'bg-emerald-500', badge: 'bg-emerald-100', badgeText: 'text-emerald-700' },
+  violet:  { bar: 'bg-violet-500',  badge: 'bg-violet-100',  badgeText: 'text-violet-700' },
+  amber:   { bar: 'bg-amber-500',   badge: 'bg-amber-100',   badgeText: 'text-amber-700' },
+  pink:    { bar: 'bg-pink-500',    badge: 'bg-pink-100',    badgeText: 'text-pink-700' },
+};
+
+function ToolCard({ tool }: { tool: ToolConfig }) {
+  const colors = cardColorMap[tool.color] ?? cardColorMap.blue;
+
+  const card = (
+    <div
+      className={`group relative bg-white rounded-xl border border-gray-200 overflow-hidden transition-all ${
+        tool.enabled
+          ? 'hover:shadow-lg hover:border-gray-300 cursor-pointer'
+          : 'opacity-60 cursor-default'
+      }`}
+    >
+      {/* Color bar */}
+      <div className={`h-1.5 ${colors.bar}`} />
+
+      <div className="p-6">
+        <div className="flex items-start justify-between mb-3">
+          <span className="text-3xl">{tool.icon}</span>
+          {!tool.enabled && (
+            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">
+              Coming Soon
+            </span>
+          )}
+          {tool.enabled && tool.checkCount > 0 && (
+            <span className={`text-xs ${colors.badge} ${colors.badgeText} px-2 py-0.5 rounded-full font-medium`}>
+              {tool.checkCount} checks
+            </span>
+          )}
+        </div>
+
+        <h3 className="text-lg font-bold text-gray-900 mb-1">{tool.name}</h3>
+        <p className="text-sm text-gray-500 mb-4 line-clamp-2">{tool.description}</p>
+
+        {tool.enabled && (
+          <div className="flex items-center text-sm font-medium text-gray-400 group-hover:text-gray-900 transition-colors">
+            Open tool
+            <span className="ml-1 group-hover:translate-x-1 transition-transform" aria-hidden="true">
+              &rarr;
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (!tool.enabled) return card;
+
+  return (
+    <Link href={`/tools/${tool.slug}`} className="block">
+      {card}
+    </Link>
+  );
+}
 
 export default function Home() {
-  const router = useRouter();
-  const [gtmData, setGtmData] = useState<GTMContainer | null>(null);
-  const [adsData, setAdsData] = useState<AdsData | null>(null);
-  const [reportData, setReportData] = useState<AdsReportData | null>(null);
-  const [gtmFileName, setGtmFileName] = useState('');
-  const [adsFileName, setAdsFileName] = useState('');
-  const [reportFileName, setReportFileName] = useState('');
-  const [error, setError] = useState('');
+  const [filter, setFilter] = useState<'all' | ToolCategory>('all');
 
-  const handleGTMUpload = async (file: File) => {
-    try {
-      const text = await file.text();
-      const parsed = parseGTMJSON(text);
-      setGtmData(parsed);
-      setGtmFileName(file.name);
-      setError('');
-      sessionStorage.setItem('gtmData', JSON.stringify(parsed));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to parse GTM file.';
-      setError(message);
-    }
-  };
-
-  const handleAdsUpload = async (file: File) => {
-    try {
-      const text = await file.text();
-      const parsed = parseAdsCSV(text);
-      setAdsData(parsed);
-      setAdsFileName(file.name);
-      setError('');
-      sessionStorage.setItem('adsData', JSON.stringify(parsed));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to parse Ads CSV.';
-      setError(message);
-    }
-  };
-
-  const handleReportUpload = async (file: File) => {
-    try {
-      const text = await file.text();
-      const parsed = parseAdsReportCSV(text);
-      setReportData(parsed);
-      setReportFileName(file.name);
-      setError('');
-      sessionStorage.setItem('reportData', JSON.stringify(parsed));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to parse report file.';
-      setError(message);
-    }
-  };
-
-  const handleRunAudit = () => {
-    if (!gtmData && !adsData && !reportData) return;
-    if (gtmData) sessionStorage.setItem('gtmData', JSON.stringify(gtmData));
-    if (adsData) sessionStorage.setItem('adsData', JSON.stringify(adsData));
-    if (reportData) sessionStorage.setItem('reportData', JSON.stringify(reportData));
-    router.push('/audit');
-  };
-
-  const hasFile = gtmData || adsData || reportData;
+  const filtered = filter === 'all' ? tools : tools.filter((t) => t.category === filter);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -82,7 +82,7 @@ export default function Home() {
             </span>
           </div>
           <p className="text-sm text-gray-500 hidden sm:block">
-            GTM + Google Ads Audit Tool
+            Ad Tracking Audit Tools
           </p>
         </div>
       </header>
@@ -90,137 +90,48 @@ export default function Home() {
       {/* Hero */}
       <div className="container mx-auto px-4 pt-16 pb-10 text-center">
         <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-          Audit Your Google Ads + GTM Setup
+          Professional Ad Tracking Audits
           <br />
-          <span className="text-blue-600">in 60 Seconds</span>
+          <span className="text-blue-600">100% Free, 100% Private</span>
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-2">
-          Free tool that catches tracking issues before they cost you money.
-          Upload your GTM container export, your Ads conversion CSV, or both.
-        </p>
-        <p className="text-sm text-gray-400">
-          100% private &mdash; files never leave your browser.
+          Pick a tool below to audit your tracking setup. All processing happens
+          in your browser &mdash; your data never leaves your machine.
         </p>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="container mx-auto px-4 mb-6 max-w-3xl">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-            {error}
-          </div>
-        </div>
-      )}
-
-      {/* Upload Cards */}
-      <div className="container mx-auto px-4 max-w-3xl">
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <UploadCard
-            title="GTM Container"
-            description="Export from GTM: Admin &rarr; Export Container"
-            accept=".json"
-            icon={'\uD83D\uDCCA'}
-            onFileUpload={handleGTMUpload}
-            uploaded={!!gtmData}
-            fileName={gtmFileName}
-          />
-          <UploadCard
-            title="Google Ads Conversions"
-            description="Export from Ads: Tools &rarr; Conversions &rarr; Download"
-            accept=".csv"
-            icon={'\uD83D\uDCB0'}
-            onFileUpload={handleAdsUpload}
-            uploaded={!!adsData}
-            fileName={adsFileName}
-          />
-          <UploadCard
-            title="Performance Report"
-            description="Export from Ads: Reports &rarr; Conversions &rarr; Download"
-            accept=".csv,.json"
-            icon={'\uD83D\uDCC8'}
-            onFileUpload={handleReportUpload}
-            uploaded={!!reportData}
-            fileName={reportFileName}
-          />
-        </div>
-
-        {/* Run Audit Button */}
-        <div className="text-center mb-16">
-          <button
-            onClick={handleRunAudit}
-            disabled={!hasFile}
-            className={`px-10 py-3.5 rounded-xl text-lg font-semibold transition-all ${
-              hasFile
-                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            Run Audit
-          </button>
-          {!hasFile && (
-            <p className="text-sm text-gray-400 mt-3">
-              Upload at least one file to get started
-            </p>
-          )}
-          {hasFile && (
-            <p className="text-sm text-gray-500 mt-3">
-              {gtmData && adsData && reportData
-                ? 'All files loaded \u2014 full audit with cross-checks and performance analysis'
-                : gtmData && adsData
-                  ? 'GTM + Ads loaded \u2014 upload report for performance checks'
-                  : gtmData && reportData
-                    ? 'GTM + Report loaded \u2014 upload Ads CSV for full cross-checks'
-                    : adsData && reportData
-                      ? 'Ads + Report loaded \u2014 upload GTM JSON for full cross-checks'
-                      : gtmData
-                        ? 'GTM only \u2014 upload Ads CSV or report for more checks'
-                        : adsData
-                          ? 'Ads only \u2014 upload GTM JSON or report for more checks'
-                          : 'Report only \u2014 upload GTM or Ads for cross-checks'}
-            </p>
-          )}
+      {/* Filter Pills */}
+      <div className="container mx-auto px-4 max-w-4xl mb-8">
+        <div className="flex justify-center gap-2">
+          {categories.map((cat) => (
+            <button
+              key={cat.key}
+              onClick={() => setFilter(cat.key as 'all' | ToolCategory)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
+                filter === cat.key
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* How-to Section */}
-      <div className="bg-white border-t border-gray-100">
-        <div className="container mx-auto px-4 py-12 max-w-3xl">
-          <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">
-            How to get your files
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8 text-sm text-gray-600">
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">GTM Container Export</h3>
-              <ol className="list-decimal list-inside space-y-1">
-                <li>Open Google Tag Manager</li>
-                <li>Go to <strong>Admin</strong></li>
-                <li>Click <strong>Export Container</strong></li>
-                <li>Choose the latest version</li>
-                <li>Save the .json file</li>
-              </ol>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Google Ads Conversions</h3>
-              <ol className="list-decimal list-inside space-y-1">
-                <li>Open Google Ads</li>
-                <li>Go to <strong>Tools &rarr; Conversions</strong></li>
-                <li>Click the <strong>Download</strong> button</li>
-                <li>Select CSV format</li>
-                <li>Save the .csv file</li>
-              </ol>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Performance Report</h3>
-              <ol className="list-decimal list-inside space-y-1">
-                <li>Open Google Ads</li>
-                <li>Go to <strong>Reports</strong></li>
-                <li>Create a Conversion action report</li>
-                <li>Include metrics: conversions, value, VTC</li>
-                <li>Download as CSV or JSON</li>
-              </ol>
-            </div>
-          </div>
+      {/* Tool Grid */}
+      <div className="container mx-auto px-4 max-w-4xl pb-16">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map((tool) => (
+            <ToolCard key={tool.slug} tool={tool} />
+          ))}
         </div>
+
+        {filtered.length === 0 && (
+          <p className="text-center text-gray-400 py-12">
+            No tools in this category yet.
+          </p>
+        )}
       </div>
 
       {/* Footer */}

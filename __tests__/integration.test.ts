@@ -82,8 +82,8 @@ describe('Integration Tests', () => {
     expect(results.gtm.length).toBe(0);
     expect(results.ads.length).toBe(0);
     expect(results.report.length).toBeGreaterThan(0);
-    // 9 pure checks + 2 cross checks = 11
-    expect(results.report.length).toBe(11);
+    // 9 pure report checks + 2 report cross checks + 8 performance checks + 7 signal quality checks = 26
+    expect(results.report.length).toBe(26);
   });
 
   it('should run full audit with all three file types', () => {
