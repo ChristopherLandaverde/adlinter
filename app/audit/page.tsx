@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
 import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, Severity } from '@/lib/types';
+import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
+import { PDFExportButton } from '@/components/PDFExportButton';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
@@ -620,6 +622,18 @@ export default function AuditPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [showPassed, setShowPassed] = useState(false);
 
+  // Audit counter for PDF unlock feature
+  const {
+    canExportPDF,
+    shouldShowUnlockModal,
+    incrementAuditCount,
+    markAsSubscribed,
+    dismissUnlockModal,
+  } = useAuditCounter();
+
+  // Track if we've already counted this audit session
+  const hasCountedAudit = useRef(false);
+
   useEffect(() => {
     const gtmDataStr = sessionStorage.getItem('gtmData');
     const adsDataStr = sessionStorage.getItem('adsData');
@@ -637,7 +651,13 @@ export default function AuditPage() {
     const auditResults = runAudit(gtmData, adsData, undefined, reportData);
     setResults(auditResults);
     setLoading(false);
-  }, [router]);
+
+    // Increment audit count once per audit session
+    if (!hasCountedAudit.current) {
+      hasCountedAudit.current = true;
+      incrementAuditCount();
+    }
+  }, [router, incrementAuditCount]);
 
   const handleClosePanel = useCallback(() => setSelectedCheck(null), []);
 
@@ -825,12 +845,22 @@ export default function AuditPage() {
               <span className="text-xs text-gray-500">{auditType}</span>
             </div>
           </div>
-          <button
-            onClick={() => router.push('/')}
-            className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
-          >
-            &larr; Back
-          </button>
+          <div className="flex items-center gap-3">
+            <PDFExportButton
+              results={results}
+              auditType={auditType}
+              canExportPDF={canExportPDF}
+              shouldShowUnlockModal={shouldShowUnlockModal}
+              onSubscribe={markAsSubscribed}
+              onDismissModal={dismissUnlockModal}
+            />
+            <button
+              onClick={() => router.push('/')}
+              className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              &larr; Back
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
