@@ -147,8 +147,12 @@ const parseJSON = (content: string): AdsReportData => {
   }
 
   const conversions: AdsReportConversion[] = rows.map(row => {
-    const r = row as Record<string, string>;
-    return buildConversion(r);
+    // Lowercase all keys to match the alias lookup (same as CSV transformHeader)
+    const normalized: Record<string, string> = {};
+    for (const [key, value] of Object.entries(row)) {
+      normalized[key.trim().toLowerCase()] = String(value ?? '');
+    }
+    return buildConversion(normalized);
   });
 
   return { conversions };
