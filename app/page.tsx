@@ -75,12 +75,7 @@ export default function Home() {
       {/* Header */}
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-blue-600">AdLint</span>
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-              Free
-            </span>
-          </div>
+          <span className="text-2xl font-bold text-blue-600">AdLint</span>
           <p className="text-sm text-gray-500 hidden sm:block">
             Ad Tracking Audit Tools
           </p>

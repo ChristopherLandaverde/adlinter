@@ -1,4 +1,4 @@
-export type ToolCategory = 'google' | 'meta' | 'tiktok';
+export type ToolCategory = 'gtm' | 'google-ads' | 'meta' | 'tiktok';
 
 export interface ToolFileSlot {
   key: string;               // sessionStorage key
@@ -26,7 +26,7 @@ export const tools: ToolConfig[] = [
     name: 'GTM Container Auditor',
     description: 'Audit your Google Tag Manager setup for misconfigurations, missing tags, and consent issues.',
     icon: '🏷️',
-    category: 'google',
+    category: 'gtm',
     enabled: true,
     checkCount: 30,
     color: 'blue',
@@ -39,7 +39,7 @@ export const tools: ToolConfig[] = [
     name: 'Google Ads Linter',
     description: 'Check your Google Ads conversion actions for duplicates, wrong values, and attribution issues.',
     icon: '💰',
-    category: 'google',
+    category: 'google-ads',
     enabled: true,
     checkCount: 27,
     color: 'emerald',
@@ -52,7 +52,7 @@ export const tools: ToolConfig[] = [
     name: 'Performance Report Analyzer',
     description: 'Analyze conversion performance data for anomalies, ROAS issues, and attribution drift.',
     icon: '📈',
-    category: 'google',
+    category: 'google-ads',
     enabled: true,
     checkCount: 11,
     color: 'violet',
@@ -65,7 +65,7 @@ export const tools: ToolConfig[] = [
     name: 'Full-Stack Audit',
     description: 'Run all checks across GTM, Google Ads, and performance data with cross-source analysis.',
     icon: '🔍',
-    category: 'google',
+    category: 'gtm',
     enabled: true,
     checkCount: 82,
     color: 'amber',
@@ -105,7 +105,8 @@ export function getToolBySlug(slug: string): ToolConfig | undefined {
 
 export const categories = [
   { key: 'all', label: 'All' },
-  { key: 'google', label: 'Google' },
+  { key: 'gtm', label: 'Google Tag Manager' },
+  { key: 'google-ads', label: 'Google Ads' },
   { key: 'meta', label: 'Meta' },
   { key: 'tiktok', label: 'TikTok' },
 ] as const;
