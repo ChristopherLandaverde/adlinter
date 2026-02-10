@@ -23,6 +23,7 @@ export interface AuditResults {
   ads: AuditCheck[];
   cross: AuditCheck[];
   report: AuditCheck[];
+  meta: AuditCheck[];
   summary: AuditSummary;
 }
 
@@ -97,6 +98,25 @@ export interface AdsConversion {
 
 export interface AdsData {
   conversions: AdsConversion[];
+}
+
+// Meta Pixel Data Structures
+export interface MetaPixelEvent {
+  name: string;
+  eventType: 'standard' | 'custom';
+  status: string;
+  eventCount: number;
+  value: number;
+  currency?: string;
+  attributionWindow?: string;
+  optimizationGoal?: string;
+  parameters?: string[];
+}
+
+export interface MetaPixelData {
+  pixelId?: string;
+  pixelName?: string;
+  events: MetaPixelEvent[];
 }
 
 // Contextual Audit Data

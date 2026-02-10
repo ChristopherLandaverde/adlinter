@@ -1,4 +1,4 @@
-import { GTMContainer, AdsData, AdsReportData, AuditResults, AuditContext } from './types';
+import { GTMContainer, AdsData, AdsReportData, MetaPixelData, AuditResults, AuditContext } from './types';
 import { allGTMChecks } from './checks/gtmChecks';
 import { allAdsChecks } from './checks/adsChecks';
 import { allCrossChecks } from './checks/crossChecks';
@@ -12,18 +12,21 @@ import { allPerformanceChecks } from './checks/performanceChecks';
 import { allSignalQualityChecks } from './checks/signalQualityChecks';
 import { allSettingsReportCrossChecks } from './checks/settingsReportCrossChecks';
 import { allEdgeCaseChecks } from './checks/edgeCaseChecks';
+import { allMetaChecks } from './checks/metaChecks';
 
 export const runAudit = (
   gtmData: GTMContainer | null = null,
   adsData: AdsData | null = null,
   context?: AuditContext,
-  reportData?: AdsReportData | null
+  reportData?: AdsReportData | null,
+  metaData?: MetaPixelData | null
 ): AuditResults => {
   const results: AuditResults = {
     gtm: [],
     ads: [],
     cross: [],
     report: [],
+    meta: [],
     summary: {
       critical: 0,
       warning: 0,
@@ -95,8 +98,14 @@ export const runAudit = (
     results.ads = [...results.ads, ...edgeCaseResults];
   }
 
+  // Run Meta Pixel checks if meta data provided
+  if (metaData) {
+    const metaResults = allMetaChecks.map(check => check(metaData, context));
+    results.meta = metaResults;
+  }
+
   // Calculate summary
-  const allChecks = [...results.gtm, ...results.ads, ...results.cross, ...results.report];
+  const allChecks = [...results.gtm, ...results.ads, ...results.cross, ...results.report, ...results.meta];
   allChecks.forEach(check => {
     if (check.passed) {
       results.summary.passed++;

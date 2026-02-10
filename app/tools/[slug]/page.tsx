@@ -7,6 +7,7 @@ import { getToolBySlug, type ToolFileSlot } from '@/lib/tools';
 import { parseGTMJSON } from '@/lib/parsers/gtmParser';
 import { parseAdsCSV } from '@/lib/parsers/adsParser';
 import { parseAdsReportCSV } from '@/lib/parsers/adsReportParser';
+import { parseMetaPixelCSV } from '@/lib/parsers/metaPixelParser';
 import FileDropZone from '@/components/FileDropZone';
 import Link from 'next/link';
 
@@ -25,6 +26,8 @@ function parseFile(parser: ToolFileSlot['parser'], text: string) {
       return parseAdsCSV(text);
     case 'report':
       return parseAdsReportCSV(text);
+    case 'meta':
+      return parseMetaPixelCSV(text);
   }
 }
 
@@ -241,6 +244,16 @@ function ExportInstructions({ parser }: { parser: ToolFileSlot['parser'] }) {
           <li>Create a Conversion action report</li>
           <li>Include metrics: conversions, value, VTC</li>
           <li>Download as CSV or JSON</li>
+        </ol>
+      );
+    case 'meta':
+      return (
+        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
+          <li>Open Meta Events Manager</li>
+          <li>Select your Pixel</li>
+          <li>Go to <strong>Events</strong> tab</li>
+          <li>Click <strong>Export</strong> or download event data</li>
+          <li>Save as CSV or JSON</li>
         </ol>
       );
   }

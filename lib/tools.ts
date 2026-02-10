@@ -5,7 +5,7 @@ export interface ToolFileSlot {
   label: string;
   accept: string;
   required: boolean;
-  parser: 'gtm' | 'ads' | 'report';
+  parser: 'gtm' | 'ads' | 'report' | 'meta';
 }
 
 export interface ToolConfig {
@@ -78,13 +78,15 @@ export const tools: ToolConfig[] = [
   {
     slug: 'meta-auditor',
     name: 'Meta Pixel Auditor',
-    description: 'Audit your Meta Pixel and Conversions API setup for tracking issues.',
+    description: 'Audit your Meta Pixel events for misconfigurations, missing conversions, and optimization issues.',
     icon: '📘',
     category: 'meta',
-    enabled: false,
-    checkCount: 0,
-    color: 'blue',
-    fileSlots: [],
+    enabled: true,
+    checkCount: 10,
+    color: 'sky',
+    fileSlots: [
+      { key: 'metaData', label: 'Meta Events Export (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'meta' },
+    ],
   },
   {
     slug: 'tiktok-auditor',

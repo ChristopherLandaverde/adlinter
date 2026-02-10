@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
-import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, Severity } from '@/lib/types';
+import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, MetaPixelData, Severity } from '@/lib/types';
 import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
 import { PDFExportButton } from '@/components/PDFExportButton';
 import {
@@ -13,8 +13,8 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-type Source = 'gtm' | 'ads' | 'cross' | 'report';
-type Tab = 'gtm' | 'ads';
+type Source = 'gtm' | 'ads' | 'cross' | 'report' | 'meta';
+type Tab = 'gtm' | 'ads' | 'meta';
 
 const severityConfig: Record<Severity, { label: string; color: string; bg: string; border: string; text: string; badge: string; dot: string }> = {
   critical: {
@@ -51,6 +51,7 @@ const sourceConfig: Record<Source, { label: string; badge: string }> = {
   ads: { label: 'Ads', badge: 'bg-sky-100 text-sky-700' },
   cross: { label: 'Cross-Check', badge: 'bg-orange-100 text-orange-700' },
   report: { label: 'Report', badge: 'bg-teal-100 text-teal-700' },
+  meta: { label: 'Meta', badge: 'bg-blue-100 text-blue-700' },
 };
 
 const severityOrder: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
@@ -157,6 +158,7 @@ function tagChecks(results: AuditResults): TaggedCheck[] {
     ...tag(results.ads, 'ads'),
     ...tag(results.cross, 'cross'),
     ...tag(results.report, 'report'),
+    ...tag(results.meta, 'meta'),
   ];
 }
 
@@ -987,8 +989,9 @@ export default function AuditPage() {
     const gtmDataStr = sessionStorage.getItem('gtmData');
     const adsDataStr = sessionStorage.getItem('adsData');
     const reportDataStr = sessionStorage.getItem('reportData');
+    const metaDataStr = sessionStorage.getItem('metaData');
 
-    if (!gtmDataStr && !adsDataStr && !reportDataStr) {
+    if (!gtmDataStr && !adsDataStr && !reportDataStr && !metaDataStr) {
       router.push('/');
       return;
     }
@@ -997,13 +1000,15 @@ export default function AuditPage() {
       const gtmData: GTMContainer | null = gtmDataStr ? JSON.parse(gtmDataStr) : null;
       const adsData: AdsData | null = adsDataStr ? JSON.parse(adsDataStr) : null;
       const reportData: AdsReportData | null = reportDataStr ? JSON.parse(reportDataStr) : null;
+      const metaData: MetaPixelData | null = metaDataStr ? JSON.parse(metaDataStr) : null;
 
-      const auditResults = runAudit(gtmData, adsData, undefined, reportData);
+      const auditResults = runAudit(gtmData, adsData, undefined, reportData, metaData);
       setResults(auditResults);
       setLoading(false);
 
       // Set initial tab based on available data
-      if (gtmData && !adsData) setActiveTab('gtm');
+      if (metaData && !gtmData && !adsData) setActiveTab('meta');
+      else if (gtmData && !adsData) setActiveTab('gtm');
       else if (adsData && !gtmData) setActiveTab('ads');
 
       // Increment audit count once per audit session
@@ -1034,15 +1039,18 @@ export default function AuditPage() {
   const gtmChecks = useMemo(() => displayed.filter(c => c.source === 'gtm'), [displayed]);
   const adsChecks = useMemo(() => displayed.filter(c => c.source === 'ads' || c.source === 'report'), [displayed]);
   const crossChecks = useMemo(() => displayed.filter(c => c.source === 'cross'), [displayed]);
+  const metaChecks = useMemo(() => displayed.filter(c => c.source === 'meta'), [displayed]);
 
   // Tab counts for badges
   const gtmFailedCount = useMemo(() => gtmChecks.filter(c => !c.passed).length, [gtmChecks]);
   const adsFailedCount = useMemo(() => adsChecks.filter(c => !c.passed).length, [adsChecks]);
   const crossFailedCount = useMemo(() => crossChecks.filter(c => !c.passed).length, [crossChecks]);
+  const metaFailedCount = useMemo(() => metaChecks.filter(c => !c.passed).length, [metaChecks]);
 
   // Check if tabs have data
   const hasGTMData = gtmChecks.length > 0;
   const hasAdsData = adsChecks.length > 0;
+  const hasMetaData = metaChecks.length > 0;
 
   // ─── Sort handler ────────────────────────────────────────────────────────
 
@@ -1075,7 +1083,10 @@ export default function AuditPage() {
     if (results.gtm.length > 0) parts.push('GTM');
     if (results.ads.length > 0) parts.push('Ads');
     if (results.report.length > 0) parts.push('Report');
-    return parts.length === 3 ? 'Full Audit' : parts.length > 0 ? `${parts.join(' + ')} Audit` : 'Audit';
+    if (results.meta.length > 0) parts.push('Meta');
+    if (parts.length === 0) return 'Audit';
+    if (parts.length === 1) return `${parts[0]} Audit`;
+    return `${parts.join(' + ')} Audit`;
   }, [results]);
 
   // ─── Error state ─────────────────────────────────────────────────────────
@@ -1207,6 +1218,32 @@ export default function AuditPage() {
                 )}
               </button>
             )}
+            {hasMetaData && (
+              <button
+                onClick={() => setActiveTab('meta')}
+                className={`
+                  relative px-5 py-3 text-sm font-medium transition-colors
+                  ${activeTab === 'meta'
+                    ? 'text-blue-600'
+                    : 'text-gray-500 hover:text-gray-900'
+                  }
+                `}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Meta Pixel</span>
+                  {metaFailedCount > 0 && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                      activeTab === 'meta' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {metaFailedCount}
+                    </span>
+                  )}
+                </div>
+                {activeTab === 'meta' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+                )}
+              </button>
+            )}
             {crossChecks.length > 0 && (
               <div className="flex items-center px-5 py-3 text-sm text-orange-600">
                 <div className="flex items-center gap-2">
@@ -1252,6 +1289,24 @@ export default function AuditPage() {
             title="Google Ads"
             icon={<span className="text-sky-600">Ads</span>}
             color="sky"
+            search={search}
+            onSearchChange={setSearch}
+            severityFilters={severityFilters}
+            onToggleSeverity={toggleSeverityFilter}
+            sortColumn={sortColumn}
+            sortDir={sortDir}
+            onSort={handleSort}
+            selectedCheck={selectedCheck}
+            onSelectCheck={setSelectedCheck}
+          />
+        )}
+
+        {activeTab === 'meta' && hasMetaData && (
+          <TabSection
+            checks={metaChecks}
+            title="Meta Pixel"
+            icon={<span className="text-blue-600">Meta</span>}
+            color="blue"
             search={search}
             onSearchChange={setSearch}
             severityFilters={severityFilters}
