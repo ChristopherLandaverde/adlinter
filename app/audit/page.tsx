@@ -1325,6 +1325,30 @@ export default function AuditPage() {
           selectedCheck={selectedCheck}
           onSelectCheck={setSelectedCheck}
         />
+
+        <section className="mt-8 rounded-2xl border border-blue-200 bg-white/90 p-6 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
+                Need help fixing the root cause?
+              </p>
+              <h2 className="mt-2 text-2xl font-bold text-gray-900">
+                Still seeing audit issues after reviewing this report? That usually means the problem is upstream.
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                I debug these stacks daily across GTM, Google Ads, Meta CAPI, Enhanced Conversions, and CRM validation. If the report surfaced {gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount} live issue{gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount === 1 ? '' : 's'}, a short review will usually identify what to fix first.
+              </p>
+            </div>
+            <a
+              href="https://focosys.io/review"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+            >
+              Book a free 30-min measurement review
+            </a>
+          </div>
+        </section>
       </main>
 
       {/* Slide-over detail panel */}
