@@ -409,7 +409,7 @@ Shipped AdLint with a 70-check GTM + Google Ads audit engine.
 - Contextual audit support (business model, value strategy, sales cycle, consent)
 - Client-side only — all processing in-browser, no data leaves the user's machine
 ## v1.18 — LinkedIn Insight Tag Auditor
-**Commit:** `TBD`
+**Commit:** `7088373`
 
 Seventh tool. B2B / SaaS / agency overlap with the existing audience is the highest among the remaining platforms.
 
