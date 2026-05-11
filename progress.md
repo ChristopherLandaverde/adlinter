@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.17 — Audit-to-Audit Diff View
-**Commit:** `TBD`
+**Commit:** `a884144`
 
 The repeat-usage hook. Health score gave users a single number; this lets them compare two audits and see what changed. "You went from 67 to 81 since last week" is now an actual screen, not a vague promise.
 
