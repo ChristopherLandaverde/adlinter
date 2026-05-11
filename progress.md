@@ -1,5 +1,29 @@
 # AdLint — Progress Log
 
+## v1.15 — Per-Check Documentation Framework + 25 Explainers
+**Commit:** `TBD`
+
+Audit findings used to be opaque to new users ("Greedy Impression Index — WARNING" with one sentence of context). This ships a documentation framework where every check has a dedicated page explaining why it matters and how to fix it. PR #1 covers 25 of the most-searched / highest-impact checks; long-tail explainers will follow.
+
+### New
+- `lib/checks/explainers.ts` — single source of truth. Type, 25 entries, lookup helpers.
+- `app/checks/page.tsx` — index page grouped by source with severity chips.
+- `app/checks/[id]/page.tsx` — per-check page with Why / How to Fix / Example / Related sections + JSON-LD TechArticle structured data.
+- `components/CheckLearnMoreLink.tsx` — inline "Learn more →" link, only renders for checks that have an explainer.
+
+### Changed
+- `app/sitemap.ts` — includes every /checks/<id> URL
+- `app/audit/page.tsx` — wires the Learn-more link next to each finding
+- `app/page.tsx` — header now links to /checks
+
+### Explainers in this PR (25)
+GTM, Ads, Report, Cross, Meta, TikTok — see file for the full list. Each has why, how-to-fix, sometimes example and related-checks cross-links.
+
+### Why
+Two reasons. UX: users finally know what each finding means and what to do. SEO: each page is an indexable landing page for queries like "what is the greedy impression index" — long tail traffic that today goes to competitors.
+
+---
+
 ## v1.14 — "Try with Sample Data" Demo Mode
 **Commit:** `51097bf`
 

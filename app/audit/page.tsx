@@ -8,6 +8,7 @@ import { getEntry, saveEntry } from '@/lib/auditHistory';
 import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
 import { getToolBySlug } from '@/lib/tools';
 import { AuditHistoryLink } from '@/components/AuditHistoryLink';
+import { CheckLearnMoreLink } from '@/components/CheckLearnMoreLink';
 import { PDFExportButton } from '@/components/PDFExportButton';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
@@ -393,7 +394,10 @@ function SlideOverPanel({
 
           {/* Recommendation */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recommendation</h3>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recommendation</h3>
+              <CheckLearnMoreLink id={check.id} />
+            </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700 leading-relaxed">
               {check.recommendation}
             </div>
@@ -720,7 +724,10 @@ function IssuesTable({
                     </td>
                     <td className="py-3 px-4">
                       <div className="font-medium text-gray-900 leading-tight">{check.title}</div>
-                      <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">{check.description}</div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="text-xs text-gray-500 line-clamp-1">{check.description}</span>
+                        <CheckLearnMoreLink id={check.id} />
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${src.badge}`}>
@@ -970,7 +977,10 @@ function CrossCheckSection({
                         </span>
                       </div>
                       <h3 className="font-medium text-gray-900">{check.title}</h3>
-                      <p className="text-sm text-gray-500 mt-1">{check.description}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <p className="text-sm text-gray-500">{check.description}</p>
+                        <CheckLearnMoreLink id={check.id} />
+                      </div>
                     </div>
                     <IconChevronRight className={`w-4 h-4 shrink-0 transition-transform ${isSelected ? 'rotate-90 text-blue-600' : 'text-gray-400'}`} />
                   </div>
