@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.15 — Per-Check Documentation Framework + 25 Explainers
-**Commit:** `TBD`
+**Commit:** `2a11283`
 
 Audit findings used to be opaque to new users ("Greedy Impression Index — WARNING" with one sentence of context). This ships a documentation framework where every check has a dedicated page explaining why it matters and how to fix it. PR #1 covers 25 of the most-searched / highest-impact checks; long-tail explainers will follow.
 
