@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.19 — Visual Redesign: DESIGN.md Implementation
-**Commit:** `TBD`
+**Commit:** `6a3d0b9`
 
 Implements the design system defined in DESIGN.md end-to-end. The site
 goes from default-Tailwind-starter aesthetic to industrial-editorial:
