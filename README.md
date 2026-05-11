@@ -20,6 +20,7 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 - Tabbed audit dashboard with Overview, Checks, and Export views
 - PDF export with email capture
 - Source and severity filtering
+- Audit history saved in localStorage; revisit and compare past audits
 - Audit context picker: tune severity rules to your business model, value strategy, sales cycle, and consent requirements
 - Context-aware severity based on business model, sales cycle, value strategy, and consent requirements
 

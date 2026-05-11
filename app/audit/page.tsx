@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
 import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, Severity, AuditContext } from '@/lib/types';
+import { getEntry, saveEntry } from '@/lib/auditHistory';
 import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
+import { getToolBySlug } from '@/lib/tools';
+import { AuditHistoryLink } from '@/components/AuditHistoryLink';
 import { PDFExportButton } from '@/components/PDFExportButton';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
@@ -151,6 +154,14 @@ interface TaggedCheck extends AuditCheck {
   source: Source;
 }
 
+type AuditSourceData = {
+  gtmData: GTMContainer | null;
+  adsData: AdsData | null;
+  reportData: AdsReportData | null;
+  metaData: MetaPixelData | null;
+  tiktokData: TikTokPixelData | null;
+};
+
 function tagChecks(results: AuditResults): TaggedCheck[] {
   const tag = (checks: AuditCheck[], source: Source): TaggedCheck[] =>
     checks.map(c => ({ ...c, source }));
@@ -171,6 +182,53 @@ function countAffectedItems(check: AuditCheck): number {
     if (Array.isArray(value)) total += value.length;
   }
   return total;
+}
+
+function detectToolSlug(sourceData: AuditSourceData) {
+  const { gtmData, adsData, reportData, metaData, tiktokData } = sourceData;
+
+  if (metaData && !gtmData && !adsData && !reportData && !tiktokData) return 'meta-auditor';
+  if (tiktokData && !gtmData && !adsData && !reportData && !metaData) return 'tiktok-auditor';
+  if (gtmData && !adsData && !reportData && !metaData && !tiktokData) return 'gtm-auditor';
+  if (adsData && !gtmData && !reportData && !metaData && !tiktokData) return 'google-ads-linter';
+  if (reportData && !gtmData && !adsData && !metaData && !tiktokData) return 'performance-analyzer';
+  return 'full-audit';
+}
+
+function readStringPath(source: unknown, path: string[]) {
+  let current = source;
+  for (const key of path) {
+    if (!current || typeof current !== 'object' || !(key in current)) return null;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return typeof current === 'string' && current.trim() ? current.trim() : null;
+}
+
+function collectFileNames(sourceData: AuditSourceData) {
+  const names = [
+    readStringPath(sourceData.gtmData, ['containerName']) ??
+      readStringPath(sourceData.gtmData, ['containerVersion', 'container', 'name']) ??
+      readStringPath(sourceData.gtmData, ['containerVersion', 'name']),
+    sourceData.adsData ? `${sourceData.adsData.conversions.length} Google Ads conversions` : null,
+    sourceData.reportData ? `${sourceData.reportData.conversions.length} performance rows` : null,
+    sourceData.metaData?.pixelName ?? sourceData.metaData?.pixelId ?? null,
+    sourceData.tiktokData?.pixelName ?? sourceData.tiktokData?.pixelCode ?? null,
+  ];
+
+  return names.filter((name): name is string => !!name);
+}
+
+function restoreSourceData(sourceData: AuditSourceData) {
+  const keys = ['gtmData', 'adsData', 'reportData', 'metaData', 'tiktokData'] as const;
+
+  for (const key of keys) {
+    const value = sourceData[key];
+    if (value === undefined || value === null) {
+      sessionStorage.removeItem(key);
+    } else {
+      sessionStorage.setItem(key, JSON.stringify(value));
+    }
+  }
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -963,8 +1021,9 @@ function CrossCheckSection({
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
-export default function AuditPage() {
+function AuditPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [results, setResults] = useState<AuditResults | null>(null);
   const [loading, setLoading] = useState(true);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -986,8 +1045,32 @@ export default function AuditPage() {
 
   // Track if we've already counted this audit session
   const hasCountedAudit = useRef(false);
+  const hasSavedHistory = useRef(false);
+  const restoredFromHistory = useRef(false);
+  const sourceSnapshot = useRef<(AuditSourceData & { context?: AuditContext }) | null>(null);
 
   useEffect(() => {
+    const restoreId = searchParams.get('restore');
+    if (restoreId) {
+      const entry = getEntry(restoreId);
+      if (entry) {
+        restoredFromHistory.current = true;
+        restoreSourceData({
+          gtmData: (entry.sourceData.gtmData as GTMContainer | undefined) ?? null,
+          adsData: (entry.sourceData.adsData as AdsData | undefined) ?? null,
+          reportData: (entry.sourceData.reportData as AdsReportData | undefined) ?? null,
+          metaData: (entry.sourceData.metaData as MetaPixelData | undefined) ?? null,
+          tiktokData: (entry.sourceData.tiktokData as TikTokPixelData | undefined) ?? null,
+        });
+
+        if (entry.context) {
+          sessionStorage.setItem('auditContext', JSON.stringify(entry.context));
+        } else {
+          sessionStorage.removeItem('auditContext');
+        }
+      }
+    }
+
     const gtmDataStr = sessionStorage.getItem('gtmData');
     const adsDataStr = sessionStorage.getItem('adsData');
     const reportDataStr = sessionStorage.getItem('reportData');
@@ -1007,6 +1090,8 @@ export default function AuditPage() {
       const metaData: MetaPixelData | null = metaDataStr ? JSON.parse(metaDataStr) : null;
       const tiktokData: TikTokPixelData | null = tiktokDataStr ? JSON.parse(tiktokDataStr) : null;
       const context: AuditContext | undefined = contextStr ? JSON.parse(contextStr) : undefined;
+
+      sourceSnapshot.current = { gtmData, adsData, reportData, metaData, tiktokData, context };
 
       const auditResults = runAudit(gtmData, adsData, context, reportData, metaData, tiktokData);
       setResults(auditResults);
@@ -1031,7 +1116,34 @@ export default function AuditPage() {
       );
       setLoading(false);
     }
-  }, [router, incrementAuditCount]);
+  }, [router, incrementAuditCount, searchParams]);
+
+  useEffect(() => {
+    if (!results || restoredFromHistory.current || hasSavedHistory.current || !sourceSnapshot.current) {
+      return;
+    }
+
+    const { context, ...sourceData } = sourceSnapshot.current;
+    const toolSlug = detectToolSlug(sourceData);
+    const tool = getToolBySlug(toolSlug);
+
+    saveEntry({
+      toolSlug,
+      toolName: tool?.name ?? 'Audit',
+      fileNames: collectFileNames(sourceData),
+      context,
+      results,
+      sourceData: {
+        gtmData: sourceData.gtmData ?? undefined,
+        adsData: sourceData.adsData ?? undefined,
+        reportData: sourceData.reportData ?? undefined,
+        metaData: sourceData.metaData ?? undefined,
+        tiktokData: sourceData.tiktokData ?? undefined,
+      },
+    });
+
+    hasSavedHistory.current = true;
+  }, [results]);
 
   const handleClosePanel = useCallback(() => setSelectedCheck(null), []);
 
@@ -1152,6 +1264,7 @@ export default function AuditPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <AuditHistoryLink />
             <PDFExportButton
               results={results}
               auditType={auditType}
@@ -1409,5 +1522,20 @@ export default function AuditPage() {
       {/* Slide-over detail panel */}
       <SlideOverPanel check={selectedCheck} onClose={handleClosePanel} />
     </div>
+  );
+}
+
+export default function AuditPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white gap-3">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-600 text-lg">Loading audit...</p>
+        </div>
+      }
+    >
+      <AuditPageContent />
+    </Suspense>
   );
 }

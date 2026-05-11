@@ -1,5 +1,21 @@
 # AdLint — Progress Log
 
+## v1.11 — Audit History (localStorage)
+**Commit:** `TBD`
+
+Every completed audit now saves to localStorage so refresh doesn't lose results and you can compare runs over time. Stays 100% client-side; no backend, no data leaves the browser.
+
+### New
+- `lib/auditHistory.ts` — pure helper for get/save/delete entries (max 20, newest first)
+- `app/history/page.tsx` — list view with severity chips, relative timestamps, delete + clear actions
+- `components/AuditHistoryLink.tsx` — header link with count badge (hides when empty)
+
+### Changed
+- `app/audit/page.tsx` — saves the audit + source data on mount; restores from `?restore=<id>` query param
+- `app/page.tsx` — homepage header surfaces the AuditHistoryLink
+
+---
+
 ## v1.10 — Audit Context Picker
 **Commit:** `74cae1c`
 

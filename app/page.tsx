@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { AuditHistoryLink } from '@/components/AuditHistoryLink';
 import { tools, categories, type ToolConfig, type ToolCategory } from '@/lib/tools';
 
 const websiteSchema = {
@@ -100,11 +101,14 @@ export default function Home() {
 
       {/* Header */}
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4">
           <span className="text-2xl font-bold text-blue-600">AdLint</span>
-          <p className="text-sm text-gray-500 hidden sm:block">
-            Ad Tracking Audit Tools
-          </p>
+          <div className="flex items-center gap-4">
+            <AuditHistoryLink />
+            <p className="text-sm text-gray-500 hidden sm:block">
+              Ad Tracking Audit Tools
+            </p>
+          </div>
         </div>
       </header>
 

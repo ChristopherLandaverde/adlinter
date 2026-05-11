@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { AuditHistoryLink } from '@/components/AuditHistoryLink';
 import FileDropZone from '@/components/FileDropZone';
 import { AuditContextPicker } from '@/components/AuditContextPicker';
 import { parseAdsCSV } from '@/lib/parsers/adsParser';
@@ -120,7 +121,10 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
           >
             <span aria-hidden="true">&larr;</span> Back to Tools
           </Link>
-          <span className="text-xl font-bold text-blue-600">AdLint</span>
+          <div className="flex items-center gap-4">
+            <AuditHistoryLink />
+            <span className="text-xl font-bold text-blue-600">AdLint</span>
+          </div>
         </div>
       </header>
 
