@@ -64,7 +64,7 @@ export interface GTMTrigger {
   name: string;
   type: string;
   triggerId: string;
-  filter?: Array<{ type: string; parameter: Array<{ key: string; value: string }> }>;
+  filter?: Array<{ type: string; parameter: Array<{ key: string; value: string; type?: string }> }>;
   [key: string]: unknown;
 }
 

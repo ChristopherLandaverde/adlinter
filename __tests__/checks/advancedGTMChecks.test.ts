@@ -160,7 +160,7 @@ describe('checkEcommerceDataLayer', () => {
         variable: [],
       },
     };
-    const context: AuditContext = { businessModel: 'leadgen' };
+    const context: AuditContext = { businessModel: 'lead-generation' };
     const result = checkEcommerceDataLayer(container, context);
 
     expect(result.passed).toBe(true);
@@ -600,13 +600,13 @@ describe('checkOverlappingTriggers', () => {
             name: 'Pageview A',
             type: 'pageview',
             triggerId: '1',
-            filter: [{ type: 'contains', parameter: [{ key: 'arg0', value: '{{Page URL}}', type: 'template' }] }],
+            filter: [{ type: 'contains', parameter: [{ key: 'arg0', value: '{{Page URL}}' }] }],
           },
           {
             name: 'Pageview B',
             type: 'pageview',
             triggerId: '2',
-            filter: [{ type: 'contains', parameter: [{ key: 'arg0', value: '{{Page URL}}', type: 'template' }] }],
+            filter: [{ type: 'contains', parameter: [{ key: 'arg0', value: '{{Page URL}}' }] }],
           },
         ],
       },

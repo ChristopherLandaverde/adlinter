@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.13 — Round Two of Component Tests
-**Commit:** `TBD`
+**Commit:** `4fd933a`
 
 Extended component coverage to the pieces v1.12 missed: ToolWorkspace (upload + context flow) and the /history page. `UploadCard` was requested, but `components/UploadCard.tsx` is not present in this repo/HEAD, so it was noted as skipped rather than testing a nonexistent component.
 
