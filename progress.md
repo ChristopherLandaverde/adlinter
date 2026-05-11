@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.12 — Component & Hook Test Coverage
-**Commit:** `TBD`
+**Commit:** `f2788b9`
 
 Added the first component-level tests. Tests previously covered only parsers and checks; the React surface was untested.
 
