@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.14 — "Try with Sample Data" Demo Mode
-**Commit:** `TBD`
+**Commit:** `51097bf`
 
 Highest-impact conversion change in the roadmap: removes the upload friction wall for first-time visitors by letting them experience an audit in 5 seconds with pre-canned data.
 
