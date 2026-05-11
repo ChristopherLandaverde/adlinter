@@ -18,6 +18,7 @@ const sourceConfig: Record<Source, { label: string; badge: string }> = {
   report: { label: 'Report', badge: 'bg-teal-100 text-teal-700' },
   meta: { label: 'Meta', badge: 'bg-blue-100 text-blue-700' },
   tiktok: { label: 'TikTok', badge: 'bg-pink-100 text-pink-700' },
+  linkedin: { label: 'LinkedIn', badge: 'bg-cyan-100 text-cyan-700' },
 };
 
 const severityStyles: Record<Severity, string> = {

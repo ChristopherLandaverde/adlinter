@@ -1,6 +1,6 @@
 # AdLint
 
-**Free, privacy-first audit suite for ad-tech tracking — GTM, Google Ads, Meta Pixel, and performance reports.**
+**Free, privacy-first audit suite for ad-tech tracking — GTM, Google Ads, Meta Pixel, LinkedIn, and performance reports.**
 
 AdLint analyzes your ad-tech exports to surface tracking issues before they cost you money. All processing runs entirely in the browser — no data ever leaves your machine.
 
@@ -14,6 +14,7 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 - **Full-Stack Audit** — 82 checks across GTM, Ads, and performance reports
 - **Meta Pixel Auditor** — 10 checks
 - **TikTok Pixel Auditor** — 10 checks
+- **LinkedIn Insight Tag Auditor** — 10 checks
 
 ## Features
 
@@ -41,6 +42,7 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 | Cross Advanced | 10 | Dynamic value passing, conversion label matching, transaction ID deduplication, funnel coverage |
 | Meta Pixel | 10 | Missing PageView, missing conversion events, duplicate event names, similar event names, zero volume active events, custom events with standard alternatives, purchase value tracking, e-commerce funnel events, event volume concentration, disabled conversion events |
 | TikTok Pixel | 10 | Base pixel active events, missing conversion events, duplicate event names, similar event names, zero volume active events, custom events with standard alternatives, CompletePayment value tracking, e-commerce funnel events, event volume concentration, disabled conversion events |
+| LinkedIn Insight Tag | 10 | No active conversions, missing key conversions, duplicate conversion names, similar conversion names, zero volume active conversions, Other category overuse, purchase value tracking, short conversion windows, unattached conversions, disabled key conversions |
 
 ## Getting Started
 
@@ -69,13 +71,16 @@ Export from Meta Events Manager > Diagnostics or Test Events; supports CSV and J
 **TikTok Pixel Events:**
 Export from TikTok Events Manager > Web Events > Export; supports CSV and JSON.
 
+**LinkedIn Conversion Actions:**
+Export from LinkedIn Campaign Manager > Account Assets > Conversions > Export; supports CSV and JSON.
+
 ## Running Tests
 
 ```bash
 npm test
 ```
 
-508 tests covering checks, parsers, integration scenarios, edge cases, hooks, and components.
+Tests cover checks, parsers, integration scenarios, edge cases, hooks, and components.
 
 ## Tech Stack
 

@@ -29,6 +29,7 @@ const sourceIcon: Record<ExplainerSource, string> = {
   cross: 'X',
   meta: 'META',
   tiktok: 'TT',
+  linkedin: 'LI',
 };
 
 function getSourceLabel(source: ExplainerSource) {

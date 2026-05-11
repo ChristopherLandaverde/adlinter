@@ -408,3 +408,35 @@ Shipped AdLint with a 70-check GTM + Google Ads audit engine.
 - Advanced check suites for GTM, Ads, and cross-file analysis
 - Contextual audit support (business model, value strategy, sales cycle, consent)
 - Client-side only — all processing in-browser, no data leaves the user's machine
+## v1.18 — LinkedIn Insight Tag Auditor
+**Commit:** `TBD`
+
+Seventh tool. B2B / SaaS / agency overlap with the existing audience is the highest among the remaining platforms.
+
+### Parser (`lib/parsers/linkedinInsightParser.ts`)
+- CSV and JSON exports from LinkedIn Campaign Manager
+- Column aliases for the LinkedIn-specific shapes (Conversion Category, Click Window, Account ID, Campaign Attachments, etc.)
+- EU/US number formats; summary row skipping
+
+### Checks (`lib/checks/linkedinChecks.ts`) — 10 total
+- linkedin-no-active-conversions (critical)
+- linkedin-missing-key-conversions (critical / warning for agency)
+- linkedin-duplicate-conversions (warning)
+- linkedin-similar-conversion-names (info)
+- linkedin-zero-volume-conversions (warning)
+- linkedin-other-category-overuse (warning >2 Others)
+- linkedin-purchase-missing-value (critical / info no-values)
+- linkedin-conversion-window-too-short (warning <7 days; respects salesCycle)
+- linkedin-unattached-conversions (warning when active but no campaigns)
+- linkedin-disabled-key-conversions (warning for disabled Lead/Purchase/SignUp)
+
+### Tool registration
+- Enabled `linkedin-auditor` in `lib/tools.ts` (10 checks)
+- New `linkedin` parser case, new ExportInstructions, audit page tab routing, PDFExportButton source
+- New sample at `public/samples/linkedin-conversions-sample.json`
+- 3 explainers added (overuse / unattached / window-too-short)
+
+### Tests
+- `__tests__/checks/linkedinChecks.test.ts` + `__tests__/parsers/linkedinInsightParser.test.ts`
+
+---

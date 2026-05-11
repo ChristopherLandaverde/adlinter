@@ -1,5 +1,5 @@
 import { runAudit } from '@/lib/auditEngine';
-import { GTMContainer, AdsData, AuditContext, TikTokPixelData } from '@/lib/types';
+import { GTMContainer, AdsData, AuditContext, TikTokPixelData, LinkedInInsightData } from '@/lib/types';
 import { parseGTMJSON } from '@/lib/parsers/gtmParser';
 import { parseAdsCSV } from '@/lib/parsers/adsParser';
 import { readFileSync } from 'fs';
@@ -22,6 +22,7 @@ describe('Audit Engine', () => {
       expect(results).toHaveProperty('report');
       expect(results).toHaveProperty('meta');
       expect(results).toHaveProperty('tiktok');
+      expect(results).toHaveProperty('linkedin');
       expect(results).toHaveProperty('summary');
       expect(results.summary).toHaveProperty('critical');
       expect(results.summary).toHaveProperty('warning');
@@ -38,6 +39,7 @@ describe('Audit Engine', () => {
       expect(results.report).toEqual([]);
       expect(results.meta).toEqual([]);
       expect(results.tiktok).toEqual([]);
+      expect(results.linkedin).toEqual([]);
       expect(results.summary.critical).toBe(0);
       expect(results.summary.warning).toBe(0);
       expect(results.summary.info).toBe(0);
@@ -120,6 +122,33 @@ describe('Audit Engine', () => {
       expect(results.cross).toEqual([]);
       expect(results.report).toEqual([]);
       expect(results.meta).toEqual([]);
+    });
+  });
+
+  describe('LinkedIn-only audit', () => {
+    it('should run all 10 LinkedIn checks when LinkedIn data provided', () => {
+      const linkedinData: LinkedInInsightData = {
+        events: [
+          {
+            name: 'Lead Form Submit',
+            type: 'Lead',
+            status: 'active',
+            count: 100,
+            value: 0,
+            campaignAttachments: 2,
+          },
+        ],
+      };
+
+      const results = runAudit(null, null, undefined, null, null, null, linkedinData);
+
+      expect(results.linkedin.length).toBe(10);
+      expect(results.gtm).toEqual([]);
+      expect(results.ads).toEqual([]);
+      expect(results.cross).toEqual([]);
+      expect(results.report).toEqual([]);
+      expect(results.meta).toEqual([]);
+      expect(results.tiktok).toEqual([]);
     });
   });
 

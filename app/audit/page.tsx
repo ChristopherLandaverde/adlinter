@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
-import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, Severity, AuditContext } from '@/lib/types';
+import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, LinkedInInsightData, Severity, AuditContext } from '@/lib/types';
 import { getEntry, saveEntry } from '@/lib/auditHistory';
 import { computeHealthScore } from '@/lib/healthScore';
 import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
@@ -20,8 +20,8 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-type Source = 'gtm' | 'ads' | 'cross' | 'report' | 'meta' | 'tiktok';
-type Tab = 'gtm' | 'ads' | 'meta' | 'tiktok';
+type Source = 'gtm' | 'ads' | 'cross' | 'report' | 'meta' | 'tiktok' | 'linkedin';
+type Tab = 'gtm' | 'ads' | 'meta' | 'tiktok' | 'linkedin';
 
 const severityConfig: Record<Severity, { label: string; color: string; bg: string; border: string; text: string; badge: string; dot: string }> = {
   critical: {
@@ -60,6 +60,7 @@ const sourceConfig: Record<Source, { label: string; badge: string }> = {
   report: { label: 'Report', badge: 'bg-teal-100 text-teal-700' },
   meta: { label: 'Meta', badge: 'bg-blue-100 text-blue-700' },
   tiktok: { label: 'TikTok', badge: 'bg-pink-100 text-pink-700' },
+  linkedin: { label: 'LinkedIn', badge: 'bg-cyan-100 text-cyan-700' },
 };
 
 const severityOrder: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
@@ -164,6 +165,7 @@ type AuditSourceData = {
   reportData: AdsReportData | null;
   metaData: MetaPixelData | null;
   tiktokData: TikTokPixelData | null;
+  linkedinData: LinkedInInsightData | null;
 };
 
 function tagChecks(results: AuditResults): TaggedCheck[] {
@@ -176,6 +178,7 @@ function tagChecks(results: AuditResults): TaggedCheck[] {
     ...tag(results.report, 'report'),
     ...tag(results.meta, 'meta'),
     ...tag(results.tiktok, 'tiktok'),
+    ...tag(results.linkedin, 'linkedin'),
   ];
 }
 
@@ -189,13 +192,14 @@ function countAffectedItems(check: AuditCheck): number {
 }
 
 function detectToolSlug(sourceData: AuditSourceData) {
-  const { gtmData, adsData, reportData, metaData, tiktokData } = sourceData;
+  const { gtmData, adsData, reportData, metaData, tiktokData, linkedinData } = sourceData;
 
-  if (metaData && !gtmData && !adsData && !reportData && !tiktokData) return 'meta-auditor';
-  if (tiktokData && !gtmData && !adsData && !reportData && !metaData) return 'tiktok-auditor';
-  if (gtmData && !adsData && !reportData && !metaData && !tiktokData) return 'gtm-auditor';
-  if (adsData && !gtmData && !reportData && !metaData && !tiktokData) return 'google-ads-linter';
-  if (reportData && !gtmData && !adsData && !metaData && !tiktokData) return 'performance-analyzer';
+  if (metaData && !gtmData && !adsData && !reportData && !tiktokData && !linkedinData) return 'meta-auditor';
+  if (tiktokData && !gtmData && !adsData && !reportData && !metaData && !linkedinData) return 'tiktok-auditor';
+  if (linkedinData && !gtmData && !adsData && !reportData && !metaData && !tiktokData) return 'linkedin-auditor';
+  if (gtmData && !adsData && !reportData && !metaData && !tiktokData && !linkedinData) return 'gtm-auditor';
+  if (adsData && !gtmData && !reportData && !metaData && !tiktokData && !linkedinData) return 'google-ads-linter';
+  if (reportData && !gtmData && !adsData && !metaData && !tiktokData && !linkedinData) return 'performance-analyzer';
   return 'full-audit';
 }
 
@@ -217,13 +221,14 @@ function collectFileNames(sourceData: AuditSourceData) {
     sourceData.reportData ? `${sourceData.reportData.conversions.length} performance rows` : null,
     sourceData.metaData?.pixelName ?? sourceData.metaData?.pixelId ?? null,
     sourceData.tiktokData?.pixelName ?? sourceData.tiktokData?.pixelCode ?? null,
+    sourceData.linkedinData?.accountName ?? sourceData.linkedinData?.accountId ?? null,
   ];
 
   return names.filter((name): name is string => !!name);
 }
 
 function restoreSourceData(sourceData: AuditSourceData) {
-  const keys = ['gtmData', 'adsData', 'reportData', 'metaData', 'tiktokData'] as const;
+  const keys = ['gtmData', 'adsData', 'reportData', 'metaData', 'tiktokData', 'linkedinData'] as const;
 
   for (const key of keys) {
     const value = sourceData[key];
@@ -1026,6 +1031,7 @@ function AuditPageContent() {
           reportData: (entry.sourceData.reportData as AdsReportData | undefined) ?? null,
           metaData: (entry.sourceData.metaData as MetaPixelData | undefined) ?? null,
           tiktokData: (entry.sourceData.tiktokData as TikTokPixelData | undefined) ?? null,
+          linkedinData: (entry.sourceData.linkedinData as LinkedInInsightData | undefined) ?? null,
         });
 
         if (entry.context) {
@@ -1041,9 +1047,10 @@ function AuditPageContent() {
     const reportDataStr = sessionStorage.getItem('reportData');
     const metaDataStr = sessionStorage.getItem('metaData');
     const tiktokDataStr = sessionStorage.getItem('tiktokData');
+    const linkedinDataStr = sessionStorage.getItem('linkedinData');
     const contextStr = sessionStorage.getItem('auditContext');
 
-    if (!gtmDataStr && !adsDataStr && !reportDataStr && !metaDataStr && !tiktokDataStr) {
+    if (!gtmDataStr && !adsDataStr && !reportDataStr && !metaDataStr && !tiktokDataStr && !linkedinDataStr) {
       router.push('/');
       return;
     }
@@ -1054,17 +1061,19 @@ function AuditPageContent() {
       const reportData: AdsReportData | null = reportDataStr ? JSON.parse(reportDataStr) : null;
       const metaData: MetaPixelData | null = metaDataStr ? JSON.parse(metaDataStr) : null;
       const tiktokData: TikTokPixelData | null = tiktokDataStr ? JSON.parse(tiktokDataStr) : null;
+      const linkedinData: LinkedInInsightData | null = linkedinDataStr ? JSON.parse(linkedinDataStr) : null;
       const context: AuditContext | undefined = contextStr ? JSON.parse(contextStr) : undefined;
 
-      sourceSnapshot.current = { gtmData, adsData, reportData, metaData, tiktokData, context };
+      sourceSnapshot.current = { gtmData, adsData, reportData, metaData, tiktokData, linkedinData, context };
 
-      const auditResults = runAudit(gtmData, adsData, context, reportData, metaData, tiktokData);
+      const auditResults = runAudit(gtmData, adsData, context, reportData, metaData, tiktokData, linkedinData);
       setResults(auditResults);
       setLoading(false);
 
       // Set initial tab based on available data
-      if (tiktokData && !gtmData && !adsData && !metaData) setActiveTab('tiktok');
-      else if (metaData && !gtmData && !adsData) setActiveTab('meta');
+      if (linkedinData && !gtmData && !adsData && !metaData && !tiktokData) setActiveTab('linkedin');
+      else if (tiktokData && !gtmData && !adsData && !metaData && !linkedinData) setActiveTab('tiktok');
+      else if (metaData && !gtmData && !adsData && !linkedinData) setActiveTab('meta');
       else if (gtmData && !adsData) setActiveTab('gtm');
       else if (adsData && !gtmData) setActiveTab('ads');
 
@@ -1108,6 +1117,7 @@ function AuditPageContent() {
         reportData: sourceData.reportData ?? undefined,
         metaData: sourceData.metaData ?? undefined,
         tiktokData: sourceData.tiktokData ?? undefined,
+        linkedinData: sourceData.linkedinData ?? undefined,
       },
     });
 
@@ -1129,6 +1139,7 @@ function AuditPageContent() {
   const crossChecks = useMemo(() => displayed.filter(c => c.source === 'cross'), [displayed]);
   const metaChecks = useMemo(() => displayed.filter(c => c.source === 'meta'), [displayed]);
   const tiktokChecks = useMemo(() => displayed.filter(c => c.source === 'tiktok'), [displayed]);
+  const linkedinChecks = useMemo(() => displayed.filter(c => c.source === 'linkedin'), [displayed]);
 
   // Tab counts for badges
   const gtmFailedCount = useMemo(() => gtmChecks.filter(c => !c.passed).length, [gtmChecks]);
@@ -1136,12 +1147,14 @@ function AuditPageContent() {
   const crossFailedCount = useMemo(() => crossChecks.filter(c => !c.passed).length, [crossChecks]);
   const metaFailedCount = useMemo(() => metaChecks.filter(c => !c.passed).length, [metaChecks]);
   const tiktokFailedCount = useMemo(() => tiktokChecks.filter(c => !c.passed).length, [tiktokChecks]);
+  const linkedinFailedCount = useMemo(() => linkedinChecks.filter(c => !c.passed).length, [linkedinChecks]);
 
   // Check if tabs have data
   const hasGTMData = gtmChecks.length > 0;
   const hasAdsData = adsChecks.length > 0;
   const hasMetaData = metaChecks.length > 0;
   const hasTikTokData = tiktokChecks.length > 0;
+  const hasLinkedInData = linkedinChecks.length > 0;
 
   // ─── Sort handler ────────────────────────────────────────────────────────
 
@@ -1176,6 +1189,7 @@ function AuditPageContent() {
     if (results.report.length > 0) parts.push('Report');
     if (results.meta.length > 0) parts.push('Meta');
     if (results.tiktok.length > 0) parts.push('TikTok');
+    if (results.linkedin.length > 0) parts.push('LinkedIn');
     if (parts.length === 0) return 'Audit';
     if (parts.length === 1) return `${parts[0]} Audit`;
     return `${parts.join(' + ')} Audit`;
@@ -1363,6 +1377,32 @@ function AuditPageContent() {
                 )}
               </button>
             )}
+            {hasLinkedInData && (
+              <button
+                onClick={() => setActiveTab('linkedin')}
+                className={`
+                  relative px-5 py-3 text-sm font-medium transition-colors
+                  ${activeTab === 'linkedin'
+                    ? 'text-cyan-600'
+                    : 'text-gray-500 hover:text-gray-900'
+                  }
+                `}
+              >
+                <div className="flex items-center gap-2">
+                  <span>LinkedIn Insight Tag</span>
+                  {linkedinFailedCount > 0 && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                      activeTab === 'linkedin' ? 'bg-cyan-100 text-cyan-600' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {linkedinFailedCount}
+                    </span>
+                  )}
+                </div>
+                {activeTab === 'linkedin' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-600" />
+                )}
+              </button>
+            )}
             {crossChecks.length > 0 && (
               <div className="flex items-center px-5 py-3 text-sm text-orange-600">
                 <div className="flex items-center gap-2">
@@ -1465,6 +1505,24 @@ function AuditPageContent() {
           />
         )}
 
+        {activeTab === 'linkedin' && hasLinkedInData && (
+          <TabSection
+            checks={linkedinChecks}
+            title="LinkedIn Insight Tag"
+            icon={<span className="text-cyan-600">LinkedIn</span>}
+            color="cyan"
+            search={search}
+            onSearchChange={setSearch}
+            severityFilters={severityFilters}
+            onToggleSeverity={toggleSeverityFilter}
+            sortColumn={sortColumn}
+            sortDir={sortDir}
+            onSort={handleSort}
+            selectedCheck={selectedCheck}
+            onSelectCheck={setSelectedCheck}
+          />
+        )}
+
         {/* Cross-Check Section (Always Visible) */}
         <CrossCheckSection
           checks={crossChecks}
@@ -1482,7 +1540,7 @@ function AuditPageContent() {
                 Still seeing audit issues after reviewing this report? That usually means the problem is upstream.
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-gray-600">
-                I debug these stacks daily across GTM, Google Ads, Meta CAPI, Enhanced Conversions, and CRM validation. If the report surfaced {gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount} live issue{gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount === 1 ? '' : 's'}, a short review will usually identify what to fix first.
+                I debug these stacks daily across GTM, Google Ads, Meta CAPI, Enhanced Conversions, LinkedIn Insight Tag, and CRM validation. If the report surfaced {gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount + tiktokFailedCount + linkedinFailedCount} live issue{gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount + tiktokFailedCount + linkedinFailedCount === 1 ? '' : 's'}, a short review will usually identify what to fix first.
               </p>
             </div>
             <a

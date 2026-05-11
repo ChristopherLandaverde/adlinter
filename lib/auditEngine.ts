@@ -1,4 +1,4 @@
-import { GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, AuditResults, AuditContext } from './types';
+import { GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, LinkedInInsightData, AuditResults, AuditContext } from './types';
 import { allGTMChecks } from './checks/gtmChecks';
 import { allAdsChecks } from './checks/adsChecks';
 import { allCrossChecks } from './checks/crossChecks';
@@ -14,6 +14,7 @@ import { allSettingsReportCrossChecks } from './checks/settingsReportCrossChecks
 import { allEdgeCaseChecks } from './checks/edgeCaseChecks';
 import { allMetaChecks } from './checks/metaChecks';
 import { allTikTokChecks } from './checks/tiktokChecks';
+import { allLinkedInChecks } from './checks/linkedinChecks';
 
 export const runAudit = (
   gtmData: GTMContainer | null = null,
@@ -21,7 +22,8 @@ export const runAudit = (
   context?: AuditContext,
   reportData?: AdsReportData | null,
   metaData?: MetaPixelData | null,
-  tiktokData?: TikTokPixelData | null
+  tiktokData?: TikTokPixelData | null,
+  linkedinData?: LinkedInInsightData | null
 ): AuditResults => {
   const results: AuditResults = {
     gtm: [],
@@ -30,6 +32,7 @@ export const runAudit = (
     report: [],
     meta: [],
     tiktok: [],
+    linkedin: [],
     summary: {
       critical: 0,
       warning: 0,
@@ -113,8 +116,14 @@ export const runAudit = (
     results.tiktok = tiktokResults;
   }
 
+  // Run LinkedIn Insight Tag checks if LinkedIn data provided
+  if (linkedinData) {
+    const linkedinResults = allLinkedInChecks.map(check => check(linkedinData, context));
+    results.linkedin = linkedinResults;
+  }
+
   // Calculate summary
-  const allChecks = [...results.gtm, ...results.ads, ...results.cross, ...results.report, ...results.meta, ...results.tiktok];
+  const allChecks = [...results.gtm, ...results.ads, ...results.cross, ...results.report, ...results.meta, ...results.tiktok, ...results.linkedin];
   allChecks.forEach(check => {
     if (check.passed) {
       results.summary.passed++;

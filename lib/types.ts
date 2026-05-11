@@ -25,6 +25,7 @@ export interface AuditResults {
   report: AuditCheck[];
   meta: AuditCheck[];
   tiktok: AuditCheck[];
+  linkedin: AuditCheck[];
   summary: AuditSummary;
 }
 
@@ -135,6 +136,25 @@ export interface TikTokPixelData {
   pixelCode?: string;
   pixelName?: string;
   events: TikTokPixelEvent[];
+}
+
+// LinkedIn Insight Tag Data Structures
+export interface LinkedInInsightEvent {
+  name: string;
+  type: 'AddToCart' | 'Download' | 'Install' | 'KeyPageView' | 'Lead' | 'Purchase' | 'SignUp' | 'Other';
+  status: string;
+  conversionWindow?: string;
+  attributionModel?: string;
+  count: number;
+  value: number;
+  currency?: string;
+  campaignAttachments?: number;
+}
+
+export interface LinkedInInsightData {
+  accountId?: string;
+  accountName?: string;
+  events: LinkedInInsightEvent[];
 }
 
 // Contextual Audit Data

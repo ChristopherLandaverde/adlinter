@@ -1,4 +1,4 @@
-export type ExplainerSource = 'gtm' | 'ads' | 'report' | 'cross' | 'meta' | 'tiktok';
+export type ExplainerSource = 'gtm' | 'ads' | 'report' | 'cross' | 'meta' | 'tiktok' | 'linkedin';
 
 export interface CheckExplainer {
   id: string;
@@ -19,6 +19,7 @@ export const explainerSources: { key: ExplainerSource; label: string }[] = [
   { key: 'cross', label: 'Cross-Source' },
   { key: 'meta', label: 'Meta Pixel' },
   { key: 'tiktok', label: 'TikTok Pixel' },
+  { key: 'linkedin', label: 'LinkedIn Insight Tag' },
 ];
 
 export const explainers: CheckExplainer[] = [
@@ -296,6 +297,39 @@ export const explainers: CheckExplainer[] = [
     howToFix: 'Install TikTok standard events at each real funnel step and keep the event names exactly as TikTok expects. Include product IDs, quantities, value, and currency where available. Test product view, cart, checkout, and purchase in Events Manager before trusting campaign optimization.',
     example: 'Expected events: ViewContent -> AddToCart -> InitiateCheckout -> CompletePayment',
     relatedChecks: ['tiktok-base-events-active', 'tiktok-completepayment-missing-value'],
+  },
+  {
+    id: 'linkedin-other-category-overuse',
+    name: 'LinkedIn Other Category Overuse',
+    source: 'linkedin',
+    severity: 'warning',
+    summary: 'Too many LinkedIn conversion actions are categorized as Other.',
+    why: 'Other is valid in LinkedIn, but it is often used as a catch-all when the action is really Lead, SignUp, Download, KeyPageView, or Purchase. That makes conversion reporting harder to read and weakens the account structure for optimization reviews. Engineers lose the ability to tell which actions represent real funnel stages from the export alone.',
+    howToFix: 'Open each Other conversion action in LinkedIn Campaign Manager and map it to the closest standard category. Use Lead for form submits or qualified inquiries, SignUp for account creation, Download for gated assets, KeyPageView for intentionally valuable pages, and Purchase for revenue events. Keep Other only for actions that truly do not fit the standard set.',
+    example: 'Problem: Demo Request categorized as Other\nBetter: Demo Request categorized as Lead',
+    relatedChecks: ['linkedin-missing-key-conversions', 'linkedin-disabled-key-conversions'],
+  },
+  {
+    id: 'linkedin-unattached-conversions',
+    name: 'LinkedIn Unattached Conversions',
+    source: 'linkedin',
+    severity: 'warning',
+    summary: 'Active LinkedIn conversion actions are not attached to any campaign.',
+    why: 'A LinkedIn conversion can be active and still be dormant for campaign measurement if no campaigns use it. The tag may fire, the export may show the action, but campaign reporting and optimization will not benefit from it. This is a LinkedIn-specific failure mode because campaign attachment is part of making a conversion action operational.',
+    howToFix: 'For each active unattached conversion, decide whether it should be used for reporting or retired. Attach the active business outcomes to the relevant campaigns in Campaign Manager, especially Lead, SignUp, Purchase, and high-intent KeyPageView actions. Disable stale conversions that are kept only as historical artifacts.',
+    example: 'Active conversion: Book Demo\nCampaign attachments: 0\nFix: attach Book Demo to the demand-gen campaigns that should optimize for it',
+    relatedChecks: ['linkedin-no-active-conversions', 'linkedin-zero-volume-conversions'],
+  },
+  {
+    id: 'linkedin-conversion-window-too-short',
+    name: 'LinkedIn Conversion Window Too Short',
+    source: 'linkedin',
+    severity: 'warning',
+    summary: 'LinkedIn conversion windows are shorter than 7 days.',
+    why: 'LinkedIn traffic is often B2B or considered purchase traffic. A 3-day or 5-day window can cut off legitimate leads that convert after research, stakeholder review, or a follow-up visit. The tag can be technically correct while campaign reporting undercounts the channels that started the deal.',
+    howToFix: 'Compare each conversion action window to the real delay between click and conversion. For B2B lead generation or SaaS, use a wider window such as 30 days post-click unless the business truly converts immediately. Keep short windows only for immediate actions where delayed attribution would be misleading.',
+    example: 'Problem: Demo Request uses a 3-day post-click window\nBetter: 30 days post-click for a medium B2B sales cycle',
+    relatedChecks: ['linkedin-missing-key-conversions', 'linkedin-unattached-conversions'],
   },
 ];
 

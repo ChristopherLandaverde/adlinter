@@ -22,6 +22,7 @@ const websiteSchema = {
     'Full-Stack Audit',
     'Meta Pixel Auditor',
     'TikTok Pixel Auditor',
+    'LinkedIn Insight Tag Auditor',
   ],
   browserRequirements: 'Requires JavaScript. Modern browser.',
 };
@@ -32,6 +33,7 @@ const cardColorMap: Record<string, { bar: string; badge: string; badgeText: stri
   violet:  { bar: 'bg-violet-500',  badge: 'bg-violet-100',  badgeText: 'text-violet-700' },
   amber:   { bar: 'bg-amber-500',   badge: 'bg-amber-100',   badgeText: 'text-amber-700' },
   pink:    { bar: 'bg-pink-500',    badge: 'bg-pink-100',    badgeText: 'text-pink-700' },
+  cyan:    { bar: 'bg-cyan-500',    badge: 'bg-cyan-100',    badgeText: 'text-cyan-700' },
 };
 
 function ToolCard({ tool }: { tool: ToolConfig }) {
@@ -126,7 +128,7 @@ export default function Home() {
           <span className="text-blue-600">100% Free, 100% Private</span>
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-2">
-          Six free auditors for Google Tag Manager, Google Ads, Meta Pixel, TikTok Pixel, and performance reports. All processing happens in your browser &mdash; your data never leaves your machine.
+          Seven free auditors for Google Tag Manager, Google Ads, Meta Pixel, TikTok Pixel, LinkedIn Insight Tag, and performance reports. All processing happens in your browser &mdash; your data never leaves your machine.
         </p>
       </div>
 
@@ -167,7 +169,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-gray-100 py-6">
         <div className="container mx-auto px-4 text-center text-xs text-gray-400">
-          AdLint &mdash; Free auditors for GTM, Google Ads, Meta Pixel, and TikTok Pixel. All processing happens in your browser.
+          AdLint &mdash; Free auditors for GTM, Google Ads, Meta Pixel, TikTok Pixel, and LinkedIn. All processing happens in your browser.
         </div>
       </footer>
     </main>

@@ -11,6 +11,7 @@ import { parseAdsReportCSV } from '@/lib/parsers/adsReportParser';
 import { parseGTMJSON } from '@/lib/parsers/gtmParser';
 import { parseMetaPixelCSV } from '@/lib/parsers/metaPixelParser';
 import { parseTikTokPixelCSV } from '@/lib/parsers/tiktokPixelParser';
+import { parseLinkedInInsightCSV } from '@/lib/parsers/linkedinInsightParser';
 import type { AuditContext } from '@/lib/types';
 import type { ToolConfig, ToolFileSlot } from '@/lib/tools';
 
@@ -33,6 +34,8 @@ function parseFile(parser: ToolFileSlot['parser'], text: string) {
       return parseMetaPixelCSV(text);
     case 'tiktok':
       return parseTikTokPixelCSV(text);
+    case 'linkedin':
+      return parseLinkedInInsightCSV(text);
   }
 }
 
@@ -381,6 +384,16 @@ function ExportInstructions({ parser }: { parser: ToolFileSlot['parser'] }) {
           <li>Go to <strong>Web Events</strong></li>
           <li>Select your Pixel</li>
           <li>Click <strong>Export</strong> or download event data</li>
+          <li>Save as CSV or JSON</li>
+        </ol>
+      );
+    case 'linkedin':
+      return (
+        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
+          <li>Open LinkedIn Campaign Manager</li>
+          <li>Go to <strong>Account Assets</strong></li>
+          <li>Open <strong>Conversions</strong></li>
+          <li>Click <strong>Export</strong></li>
           <li>Save as CSV or JSON</li>
         </ol>
       );

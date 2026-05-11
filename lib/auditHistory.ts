@@ -21,6 +21,7 @@ export interface AuditHistoryEntry {
     reportData?: unknown;
     metaData?: unknown;
     tiktokData?: unknown;
+    linkedinData?: unknown;
   };
 }
 

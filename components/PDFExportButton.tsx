@@ -16,7 +16,7 @@ interface PDFExportButtonProps {
 }
 
 interface TaggedCheck extends AuditCheck {
-  source: 'gtm' | 'ads' | 'cross' | 'report' | 'meta' | 'tiktok';
+  source: 'gtm' | 'ads' | 'cross' | 'report' | 'meta' | 'tiktok' | 'linkedin';
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -34,6 +34,7 @@ const SOURCE_LABELS: Record<string, string> = {
   report: 'Report',
   meta: 'Meta',
   tiktok: 'TikTok',
+  linkedin: 'LinkedIn',
 };
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -100,6 +101,7 @@ function tagChecks(results: AuditResults): TaggedCheck[] {
     ...tag(results.report, 'report'),
     ...tag(results.meta, 'meta'),
     ...tag(results.tiktok, 'tiktok'),
+    ...tag(results.linkedin, 'linkedin'),
   ];
 }
 
@@ -237,7 +239,7 @@ async function generatePDF(results: AuditResults, auditType: string): Promise<vo
   doc.text('Issues by Category', margin, y);
   y += 8;
 
-  const categories = ['gtm', 'ads', 'cross', 'report'] as const;
+  const categories = ['gtm', 'ads', 'cross', 'report', 'meta', 'tiktok', 'linkedin'] as const;
   const categoryData = categories.map(cat => ({
     name: SOURCE_LABELS[cat],
     critical: failedChecks.filter(c => c.source === cat && c.severity === 'critical').length,

@@ -17,6 +17,7 @@ const emptyResults: AuditResults = {
   report: [],
   meta: [],
   tiktok: [],
+  linkedin: [],
   summary: { critical: 0, warning: 0, info: 0, passed: 0 },
 };
 

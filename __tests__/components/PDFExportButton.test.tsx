@@ -48,6 +48,7 @@ const results: AuditResults = {
   report: [],
   meta: [],
   tiktok: [],
+  linkedin: [],
   summary: { critical: 1, warning: 0, info: 0, passed: 0 },
 };
 

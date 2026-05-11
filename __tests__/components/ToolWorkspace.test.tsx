@@ -7,6 +7,7 @@ import { parseAdsReportCSV } from '@/lib/parsers/adsReportParser';
 import { parseGTMJSON } from '@/lib/parsers/gtmParser';
 import { parseMetaPixelCSV } from '@/lib/parsers/metaPixelParser';
 import { parseTikTokPixelCSV } from '@/lib/parsers/tiktokPixelParser';
+import { parseLinkedInInsightCSV } from '@/lib/parsers/linkedinInsightParser';
 
 const mockPush = jest.fn();
 
@@ -34,11 +35,16 @@ jest.mock('@/lib/parsers/tiktokPixelParser', () => ({
   parseTikTokPixelCSV: jest.fn(),
 }));
 
+jest.mock('@/lib/parsers/linkedinInsightParser', () => ({
+  parseLinkedInInsightCSV: jest.fn(),
+}));
+
 const mockParseGTMJSON = jest.mocked(parseGTMJSON);
 const mockParseAdsCSV = jest.mocked(parseAdsCSV);
 const mockParseAdsReportCSV = jest.mocked(parseAdsReportCSV);
 const mockParseMetaPixelCSV = jest.mocked(parseMetaPixelCSV);
 const mockParseTikTokPixelCSV = jest.mocked(parseTikTokPixelCSV);
+const mockParseLinkedInInsightCSV = jest.mocked(parseLinkedInInsightCSV);
 
 function fileWithText(name: string, text: string, type = 'text/plain') {
   const file = new File([text], name, { type });
@@ -64,6 +70,7 @@ describe('ToolWorkspace', () => {
     mockParseAdsReportCSV.mockReturnValue({ conversions: [] });
     mockParseMetaPixelCSV.mockReturnValue({ events: [] });
     mockParseTikTokPixelCSV.mockReturnValue({ events: [] });
+    mockParseLinkedInInsightCSV.mockReturnValue({ events: [] });
   });
 
   it('moves a single-file tool from upload UI to the context step after parsing a file', async () => {
@@ -266,6 +273,19 @@ describe('ToolWorkspace', () => {
     await screen.findByRole('heading', { name: 'Refine your audit' });
     expect(mockParseTikTokPixelCSV).toHaveBeenCalledWith('event,status');
     expect(JSON.parse(sessionStorage.getItem('tiktokData') ?? '{}')).toEqual(parsed);
+  });
+
+  it('uses the LinkedIn parser and storage key for the LinkedIn auditor', async () => {
+    const user = userEvent.setup();
+    const parsed = { accountName: 'LinkedIn Account', events: [] };
+    mockParseLinkedInInsightCSV.mockReturnValue(parsed);
+    const { container } = renderTool('linkedin-auditor');
+
+    await user.upload(container.querySelector('input[type="file"]') as HTMLInputElement, fileWithText('linkedin.csv', 'conversion,status'));
+
+    await screen.findByRole('heading', { name: 'Refine your audit' });
+    expect(mockParseLinkedInInsightCSV).toHaveBeenCalledWith('conversion,status');
+    expect(JSON.parse(sessionStorage.getItem('linkedinData') ?? '{}')).toEqual(parsed);
   });
 
   it('can recover from a parse error by uploading a valid replacement file', async () => {

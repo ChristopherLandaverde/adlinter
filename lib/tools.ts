@@ -1,11 +1,11 @@
-export type ToolCategory = 'gtm' | 'google-ads' | 'meta' | 'tiktok';
+export type ToolCategory = 'gtm' | 'google-ads' | 'meta' | 'tiktok' | 'linkedin';
 
 export interface ToolFileSlot {
   key: string;               // sessionStorage key
   label: string;
   accept: string;
   required: boolean;
-  parser: 'gtm' | 'ads' | 'report' | 'meta' | 'tiktok';
+  parser: 'gtm' | 'ads' | 'report' | 'meta' | 'tiktok' | 'linkedin';
 }
 
 export interface ToolSample {
@@ -128,6 +128,22 @@ export const tools: ToolConfig[] = [
       { slotKey: 'tiktokData', url: '/samples/tiktok-events-sample.json', filename: 'sample-tiktok-events.json' },
     ],
   },
+  {
+    slug: 'linkedin-auditor',
+    name: 'LinkedIn Insight Tag Auditor',
+    description: 'Audit your LinkedIn conversion actions for missing goals, dormant setup, and value issues.',
+    icon: '💼',
+    category: 'linkedin',
+    enabled: true,
+    checkCount: 10,
+    color: 'cyan',
+    fileSlots: [
+      { key: 'linkedinData', label: 'LinkedIn Conversions Export', accept: '.csv,.json', required: true, parser: 'linkedin' },
+    ],
+    samples: [
+      { slotKey: 'linkedinData', url: '/samples/linkedin-conversions-sample.json', filename: 'sample-linkedin-conversions.json' },
+    ],
+  },
 ];
 
 export function getToolBySlug(slug: string): ToolConfig | undefined {
@@ -140,4 +156,5 @@ export const categories = [
   { key: 'google-ads', label: 'Google Ads' },
   { key: 'meta', label: 'Meta' },
   { key: 'tiktok', label: 'TikTok' },
+  { key: 'linkedin', label: 'LinkedIn' },
 ] as const;
