@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.9 — Homepage Copy + JSON-LD Structured Data
-**Commit:** `TBD`
+**Commit:** `beeb152`
 
 Brought the homepage copy in line with the six-auditor product (footer and hero subtitle were stale from the GTM-only era) and added JSON-LD WebApplication schema for rich search results.
 
