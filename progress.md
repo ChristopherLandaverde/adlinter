@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.10 — Audit Context Picker
-**Commit:** `TBD`
+**Commit:** `74cae1c`
 
 The audit engine has had context-aware severity for ~15 checks since v1.2 (agency businesses don't get dinged for missing conversion events, no-values strategies don't get critical purchase-value flags, non-ecommerce businesses skip the e-commerce funnel check entirely). But there was no UI to set the context — every audit ran with `undefined`, falling back to defaults. This shipped the missing UX.
 
