@@ -9,7 +9,7 @@ export function CheckLearnMoreLink({ id }: { id: string }) {
   return (
     <Link
       href={`/checks/${id}`}
-      className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+      className="text-xs font-medium text-accent hover:text-accent-hover hover:underline"
       onClick={(event) => event.stopPropagation()}
     >
       Learn more &rarr;

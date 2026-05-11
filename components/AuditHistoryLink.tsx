@@ -18,10 +18,10 @@ export function AuditHistoryLink() {
   return (
     <Link
       href="/history"
-      className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+      className="inline-flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-ink"
     >
       <span>Recent audits</span>
-      <span className="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-blue-100 px-1.5 text-xs font-semibold text-blue-700">
+      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent/10 px-1.5 text-xs font-semibold text-accent">
         {count}
       </span>
     </Link>

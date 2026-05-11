@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { AuditHistoryLink } from '@/components/AuditHistoryLink';
+import { getToolIcon } from '@/components/icons';
 import { tools, categories, type ToolConfig, type ToolCategory } from '@/lib/tools';
 
 const websiteSchema = {
@@ -27,49 +28,37 @@ const websiteSchema = {
   browserRequirements: 'Requires JavaScript. Modern browser.',
 };
 
-const cardColorMap: Record<string, { bar: string; badge: string; badgeText: string }> = {
-  blue:    { bar: 'bg-blue-500',    badge: 'bg-blue-100',    badgeText: 'text-blue-700' },
-  emerald: { bar: 'bg-emerald-500', badge: 'bg-emerald-100', badgeText: 'text-emerald-700' },
-  violet:  { bar: 'bg-violet-500',  badge: 'bg-violet-100',  badgeText: 'text-violet-700' },
-  amber:   { bar: 'bg-amber-500',   badge: 'bg-amber-100',   badgeText: 'text-amber-700' },
-  pink:    { bar: 'bg-pink-500',    badge: 'bg-pink-100',    badgeText: 'text-pink-700' },
-  cyan:    { bar: 'bg-cyan-500',    badge: 'bg-cyan-100',    badgeText: 'text-cyan-700' },
-};
-
 function ToolCard({ tool }: { tool: ToolConfig }) {
-  const colors = cardColorMap[tool.color] ?? cardColorMap.blue;
+  const Icon = getToolIcon(tool.iconName);
 
   const card = (
     <div
-      className={`group relative bg-white rounded-xl border border-gray-200 overflow-hidden transition-all ${
+      className={`group relative rounded-md border border-border bg-surface p-6 transition-colors ${
         tool.enabled
-          ? 'hover:shadow-lg hover:border-gray-300 cursor-pointer'
+          ? 'cursor-pointer hover:border-ink/20'
           : 'opacity-60 cursor-default'
       }`}
     >
-      {/* Color bar */}
-      <div className={`h-1.5 ${colors.bar}`} />
-
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-3">
-          <span className="text-3xl">{tool.icon}</span>
+      <div className="flex h-full flex-col">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <Icon className="h-6 w-6 text-ink" />
           {!tool.enabled && (
-            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted">
               Coming Soon
             </span>
           )}
           {tool.enabled && tool.checkCount > 0 && (
-            <span className={`text-xs ${colors.badge} ${colors.badgeText} px-2 py-0.5 rounded-full font-medium`}>
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted">
               {tool.checkCount} checks
             </span>
           )}
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900 mb-1">{tool.name}</h3>
-        <p className="text-sm text-gray-500 mb-4 line-clamp-2">{tool.description}</p>
+        <h3 className="mb-2 font-display text-lg font-semibold text-ink">{tool.name}</h3>
+        <p className="mb-5 line-clamp-2 text-sm leading-6 text-muted">{tool.description}</p>
 
         {tool.enabled && (
-          <div className="flex items-center text-sm font-medium text-gray-400 group-hover:text-gray-900 transition-colors">
+          <div className="mt-auto flex items-center text-sm font-medium text-muted transition-colors group-hover:text-ink">
             Open tool
             <span className="ml-1 group-hover:translate-x-1 transition-transform" aria-hidden="true">
               &rarr;
@@ -95,25 +84,25 @@ export default function Home() {
   const filtered = filter === 'all' ? tools : tools.filter((t) => t.category === filter);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <main className="min-h-screen bg-bg">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
       />
 
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+      <header className="border-b border-border bg-surface/85 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <span className="text-2xl font-bold text-blue-600">AdLint</span>
+          <span className="font-display text-2xl font-semibold text-accent">AdLint</span>
           <div className="flex items-center gap-4">
             <AuditHistoryLink />
             <Link
               href="/checks"
-              className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              className="inline-flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-ink"
             >
               Check reference
             </Link>
-            <p className="text-sm text-gray-500 hidden sm:block">
+            <p className="hidden text-sm text-muted sm:block">
               Ad Tracking Audit Tools
             </p>
           </div>
@@ -121,28 +110,40 @@ export default function Home() {
       </header>
 
       {/* Hero */}
-      <div className="container mx-auto px-4 pt-16 pb-10 text-center">
-        <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-          Professional Ad Tracking Audits
-          <br />
-          <span className="text-blue-600">100% Free, 100% Private</span>
+      <section className="container mx-auto px-4 pt-20 pb-14 text-center">
+        <h1 className="mx-auto mb-5 max-w-4xl font-display text-4xl font-semibold leading-tight text-ink sm:text-5xl">
+          Find what&apos;s actually broken in your tracking.
         </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-2">
-          Seven free auditors for Google Tag Manager, Google Ads, Meta Pixel, TikTok Pixel, LinkedIn Insight Tag, and performance reports. All processing happens in your browser &mdash; your data never leaves your machine.
+        <p className="mx-auto mb-8 max-w-3xl text-lg leading-8 text-muted">
+          Audit GTM, Google Ads, Meta Pixel, TikTok Pixel, LinkedIn Insight Tag, and performance reports in 60 seconds. Everything runs in your browser &mdash; your data never leaves your machine.
         </p>
-      </div>
+        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link
+            href="/tools/full-audit"
+            className="inline-flex h-10 items-center justify-center rounded-sm bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+          >
+            Try with sample data &rarr;
+          </Link>
+          <a
+            href="#tools"
+            className="inline-flex h-10 items-center justify-center rounded-sm border border-border bg-surface px-5 text-sm font-medium text-ink transition-colors hover:border-ink/20"
+          >
+            Audit your own files
+          </a>
+        </div>
+      </section>
 
       {/* Filter Pills */}
-      <div className="container mx-auto px-4 max-w-4xl mb-8">
-        <div className="flex justify-center gap-2">
+      <div id="tools" className="container mx-auto mb-8 max-w-4xl px-4">
+        <div className="flex flex-wrap justify-center gap-2">
           {categories.map((cat) => (
             <button
               key={cat.key}
               onClick={() => setFilter(cat.key as 'all' | ToolCategory)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
+              className={`rounded-sm px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
                 filter === cat.key
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  ? 'bg-accent text-white'
+                  : 'border border-border bg-surface text-muted hover:text-ink'
               }`}
             >
               {cat.label}
@@ -152,7 +153,7 @@ export default function Home() {
       </div>
 
       {/* Tool Grid */}
-      <div className="container mx-auto px-4 max-w-4xl pb-16">
+      <div className="container mx-auto max-w-5xl px-4 pb-16">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((tool) => (
             <ToolCard key={tool.slug} tool={tool} />
@@ -167,8 +168,8 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 py-6">
-        <div className="container mx-auto px-4 text-center text-xs text-gray-400">
+      <footer className="border-t border-border py-6">
+        <div className="container mx-auto px-4 text-center text-xs text-muted">
           AdLint &mdash; Free auditors for GTM, Google Ads, Meta Pixel, TikTok Pixel, and LinkedIn. All processing happens in your browser.
         </div>
       </footer>

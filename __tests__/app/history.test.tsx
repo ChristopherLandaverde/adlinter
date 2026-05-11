@@ -106,7 +106,7 @@ describe('HistoryPage', () => {
     render(<HistoryPage />);
 
     expect(await screen.findByLabelText('Tracking Health Score: 81 out of 100, Good')).toBeInTheDocument();
-    expect(screen.getByText('Score: 81')).toBeInTheDocument();
+    expect(screen.getByText('81')).toBeInTheDocument();
   });
 
   it('adds restore links that include each audit id', async () => {

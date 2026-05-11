@@ -17,9 +17,9 @@ type PageProps = {
 const siteUrl = 'https://adlint.dev';
 
 const severityStyles: Record<CheckExplainer['severity'], string> = {
-  critical: 'bg-red-100 text-red-700',
-  warning: 'bg-amber-100 text-amber-700',
-  info: 'bg-blue-100 text-blue-700',
+  critical: 'bg-critical/10 text-critical',
+  warning: 'bg-warning/10 text-warning',
+  info: 'bg-info/10 text-info',
 };
 
 const sourceIcon: Record<ExplainerSource, string> = {
@@ -67,9 +67,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="border-t border-gray-200 pt-8">
-      <h2 className="mb-3 text-xl font-bold text-gray-900">{title}</h2>
-      <div className="text-base leading-7 text-gray-600">{children}</div>
+    <section className="border-t border-border pt-8">
+      <h2 className="mb-3 font-display text-xl font-semibold text-ink">{title}</h2>
+      <div className="text-base leading-7 text-muted">{children}</div>
     </section>
   );
 }
@@ -106,41 +106,41 @@ export default async function CheckDetailPage({ params }: PageProps) {
   };
 
   return (
-    <main className="flex min-h-screen flex-col bg-gradient-to-b from-gray-50 to-white">
+    <main className="flex min-h-screen flex-col bg-bg">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
       />
 
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+      <header className="border-b border-border bg-surface/85 backdrop-blur-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <Link
             href="/checks"
-            className="flex items-center gap-2 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
+            className="flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-ink"
           >
             <span aria-hidden="true">&larr;</span> Back to Check Reference
           </Link>
-          <span className="text-xl font-bold text-blue-600">AdLint</span>
+          <span className="font-display text-xl font-semibold text-accent">AdLint</span>
         </div>
       </header>
 
       <article className="container mx-auto max-w-3xl flex-1 px-4 py-12">
         <div className="mb-10">
           <div className="mb-5 flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-gray-900 px-2 py-1 text-xs font-bold text-white">
+            <span className="rounded-sm bg-ink px-2 py-1 text-xs font-bold text-white">
               {sourceIcon[explainer.source]}
             </span>
-            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+            <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-muted">
               {getSourceLabel(explainer.source)}
             </span>
             <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${severityStyles[explainer.severity]}`}>
               {explainer.severity}
             </span>
           </div>
-          <h1 className="mb-4 text-3xl font-bold leading-tight text-gray-900 sm:text-4xl">
+          <h1 className="mb-4 font-display text-3xl font-semibold leading-tight text-ink sm:text-4xl">
             {explainer.name}
           </h1>
-          <p className="text-lg leading-8 text-gray-600">{explainer.summary}</p>
+          <p className="text-lg leading-8 text-muted">{explainer.summary}</p>
         </div>
 
         <div className="space-y-8">
@@ -154,7 +154,7 @@ export default async function CheckDetailPage({ params }: PageProps) {
 
           {explainer.example && (
             <Section title="Example">
-              <pre className="overflow-x-auto rounded-lg border border-gray-200 bg-white p-4 text-sm leading-6 text-gray-800">
+              <pre className="overflow-x-auto rounded-md border border-border bg-surface-2 p-4 text-sm leading-6 text-ink">
                 <code>{explainer.example}</code>
               </pre>
             </Section>
@@ -167,7 +167,7 @@ export default async function CheckDetailPage({ params }: PageProps) {
                   <li key={relatedExplainer.id}>
                     <Link
                       href={`/checks/${relatedExplainer.id}`}
-                      className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                      className="font-medium text-accent hover:text-accent-hover hover:underline"
                     >
                       {relatedExplainer.name}
                     </Link>
@@ -179,8 +179,8 @@ export default async function CheckDetailPage({ params }: PageProps) {
         </div>
       </article>
 
-      <footer className="border-t border-gray-100 py-6">
-        <div className="container mx-auto px-4 text-center text-xs text-gray-400">
+      <footer className="border-t border-border py-6">
+        <div className="container mx-auto px-4 text-center text-xs text-muted">
           AdLint &mdash; 100% private. All processing happens in your browser.
         </div>
       </footer>

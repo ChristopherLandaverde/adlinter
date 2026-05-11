@@ -87,6 +87,8 @@ Tests cover checks, parsers, integration scenarios, edge cases, hooks, and compo
 - Next.js 16 / React 19
 - TypeScript
 - Tailwind CSS
+- General Sans + Instrument Sans + Geist Mono typography
+- lucide-react line icon style
 - Jest (testing)
 
 ## Privacy

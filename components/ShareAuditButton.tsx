@@ -44,7 +44,7 @@ export function ShareAuditButton({ score }: ShareAuditButtonProps) {
     <button
       type="button"
       onClick={handleShare}
-      className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+      className="inline-flex h-10 items-center justify-center rounded-sm border border-border bg-surface px-4 text-sm font-medium text-ink transition-colors hover:border-ink/20"
     >
       {copied ? 'Copied!' : 'Share results'}
     </button>

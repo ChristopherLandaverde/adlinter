@@ -3,21 +3,64 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #fafaf7;
+  --surface: #ffffff;
+  --surface-2: #f5f4ee;
+  --ink: #1c1917;
+  --muted: #57534e;
+  --border: #e7e5e0;
+  --accent: #1e3a8a;
+  --accent-hover: #1e40af;
+  --critical: #b91c1c;
+  --warning: #b45309;
+  --info: #475569;
+  --pass: #166534;
+  --font-geist-mono: "Geist Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --background: var(--bg);
+  --foreground: var(--ink);
 }
 
 @theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-critical: var(--critical);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-pass: var(--pass);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-space-grotesk);
+  --font-display: "General Sans", sans-serif;
+  --font-body: "Instrument Sans", sans-serif;
+  --font-sans: "Instrument Sans", sans-serif;
   --font-mono: var(--font-geist-mono);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
 }
 
 body {
-  background: #ffffff;
-  color: #171717;
-  font-family: var(--font-space-grotesk), Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Instrument Sans", Arial, Helvetica, sans-serif;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: "General Sans", "Instrument Sans", Arial, Helvetica, sans-serif;
+}
+
+.font-mono,
+code,
+pre {
+  font-feature-settings: "tnum";
 }
 
 @keyframes slideIn {

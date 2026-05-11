@@ -1,5 +1,33 @@
 # AdLint — Progress Log
 
+## v1.19 — Visual Redesign: DESIGN.md Implementation
+**Commit:** `TBD`
+
+Implements the design system defined in DESIGN.md end-to-end. The site
+goes from default-Tailwind-starter aesthetic to industrial-editorial:
+typography-driven, single-accent, no emoji icons, warm paper-white
+surfaces. The audit page becomes the brand surface with the score ring
+as the largest pixel.
+
+### Changed
+- Typography: Space Grotesk retired. Now General Sans (display) + Instrument Sans (body) + Geist Mono (numbers/data). Loaded via Fontshare CDN.
+- Iconography: all emoji icons replaced with lucide-react line icons (Tag, DollarSign, LineChart, Search, Facebook, Music2, Linkedin).
+- Color: single --accent (#1E3A8A) across all tools. Per-tool color stripes dropped. Warm paper-white background (#FAFAF7) replaces blue gradient. Severity colors harmonized.
+- Homepage hero: now sells the diagnostic ("Find what's actually broken in your tracking") instead of price ("100% Free"). Two co-primary CTAs: "Try with sample data" and "Audit your own files."
+- Tool workspace: single-color Upload buttons across all tools (was amber on some). Sample-data CTA promoted to co-primary.
+- Audit results page: health score is the largest pixel on the page (200px+). Count-up animation on first render. Three CTAs at top (View, Share, Compare-if-history-exists). Per-finding cards redesigned.
+- History: score-trend sparkline above entries when 3+ exist.
+- Compare: score delta is the headline.
+- /checks: editorial typography pass.
+
+### New deps
+- lucide-react
+
+### Why
+The site's previous look was the default-Tailwind-starter aesthetic — emoji icons, per-tool decorative color stripes, hero selling on price. None of that matches "the page is the diagnostic; the score is the brand." DESIGN.md captures the system; this commit implements it.
+
+---
+
 ## v1.17 — Audit-to-Audit Diff View
 **Commit:** `a884144`
 

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AuditHistoryLink } from '@/components/AuditHistoryLink';
 import FileDropZone from '@/components/FileDropZone';
 import { AuditContextPicker } from '@/components/AuditContextPicker';
+import { getToolIcon } from '@/components/icons';
 import { parseAdsCSV } from '@/lib/parsers/adsParser';
 import { parseAdsReportCSV } from '@/lib/parsers/adsReportParser';
 import { parseGTMJSON } from '@/lib/parsers/gtmParser';
@@ -41,6 +42,7 @@ function parseFile(parser: ToolFileSlot['parser'], text: string) {
 
 export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
   const router = useRouter();
+  const ToolIcon = getToolIcon(tool.iconName);
   const isMultiFile = tool.fileSlots.length > 1;
   const samples = useMemo(() => tool.samples ?? [], [tool.samples]);
   const hasSamples = samples.length > 0;
@@ -192,18 +194,18 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
   );
 
   const sampleDataPrompt = hasSamples ? (
-    <div className="text-center pt-4">
-      <p className="text-sm text-gray-500 mb-2">Don&apos;t have a file ready?</p>
+    <div className="pt-4 text-center">
+      <p className="mb-3 text-sm text-muted">Don&apos;t have a file ready?</p>
       <button
         type="button"
         onClick={handleSampleLoad}
         disabled={sampleLoading}
-        className="text-blue-600 hover:text-blue-800 underline-offset-4 hover:underline text-sm font-medium disabled:text-gray-400 disabled:no-underline disabled:cursor-wait"
+        className="inline-flex h-10 items-center justify-center rounded-sm bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-wait disabled:bg-muted/40"
       >
         {sampleLoading ? 'Loading sample…' : 'Try with sample data →'}
       </button>
       {sampleError && (
-        <p className="text-sm text-red-600 mt-3" role="alert">
+        <p className="mt-3 text-sm text-critical" role="alert">
           {sampleError}
         </p>
       )}
@@ -211,31 +213,31 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
   ) : null;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <main className="min-h-screen bg-bg">
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+      <header className="border-b border-border bg-surface/85 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-ink"
           >
             <span aria-hidden="true">&larr;</span> Back to Tools
           </Link>
           <div className="flex items-center gap-4">
             <AuditHistoryLink />
-            <span className="text-xl font-bold text-blue-600">AdLint</span>
+            <span className="font-display text-xl font-semibold text-accent">AdLint</span>
           </div>
         </div>
       </header>
 
       {/* Hero */}
       <div className="container mx-auto px-4 pt-12 pb-8 text-center max-w-2xl">
-        <div className="text-5xl mb-4">{tool.icon}</div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+        <ToolIcon className="mx-auto mb-5 h-8 w-8 text-ink" />
+        <h1 className="mb-3 font-display text-3xl font-semibold text-ink sm:text-4xl">
           {tool.name}
         </h1>
-        <p className="text-gray-600 mb-2">{tool.description}</p>
-        <p className="text-sm text-gray-400">
+        <p className="mb-2 text-muted">{tool.description}</p>
+        <p className="text-sm text-muted/80">
           {tool.checkCount} checks will be performed
         </p>
       </div>
@@ -249,24 +251,23 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
           />
         ) : isMultiFile ? (
           /* Multi-file workspace (full-audit) */
-          <div className="space-y-4">
+          <div className="rounded-md border border-border bg-surface p-4 sm:p-6">
             {tool.fileSlots.map((slot, i) => (
-              <div key={slot.key}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 text-xs font-bold text-gray-600">
+              <div key={slot.key} className={i > 0 ? 'border-t border-border pt-5 mt-5' : ''}>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-sm bg-surface-2 text-xs font-semibold text-muted">
                     {i + 1}
                   </span>
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-sm font-medium text-ink">
                     {slot.label}
                     {!slot.required && (
-                      <span className="ml-1 text-gray-400 font-normal">(optional)</span>
+                      <span className="ml-1 font-normal text-muted">(optional)</span>
                     )}
                   </span>
                 </div>
                 <FileDropZone
                   accept={slot.accept}
                   label={slot.label}
-                  color={tool.color}
                   onFile={(file) => handleFile(slot, file)}
                   uploaded={!!slots[slot.key]?.data}
                   fileName={slots[slot.key]?.fileName}
@@ -279,19 +280,19 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
 
             {sampleDataPrompt}
 
-            <div className="text-center pt-6">
+            <div className="pt-6 text-center">
               <button
                 onClick={handleRunAudit}
                 disabled={!requiredReady}
-                className={`px-10 py-3.5 rounded-xl text-lg font-semibold transition-all ${
+                className={`h-10 rounded-sm px-8 text-sm font-medium transition-colors ${
                   requiredReady
-                    ? 'bg-amber-600 text-white hover:bg-amber-700 shadow-lg shadow-amber-200 cursor-pointer'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    ? 'bg-accent text-white hover:bg-accent-hover cursor-pointer'
+                    : 'bg-surface-2 text-muted/60 cursor-not-allowed'
                 }`}
               >
                 Run Full Audit
               </button>
-              <p className="text-sm text-gray-400 mt-3">
+              <p className="mt-3 text-sm text-muted">
                 {requiredReady
                   ? `${uploadedCount} of ${tool.fileSlots.length} files uploaded — ready to audit`
                   : 'Upload required files to continue'}
@@ -304,7 +305,6 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
             <FileDropZone
               accept={tool.fileSlots[0].accept}
               label={tool.fileSlots[0].label}
-              color={tool.color}
               onFile={(file) => handleFile(tool.fileSlots[0], file)}
               uploaded={!!slots[tool.fileSlots[0].key]?.data}
               fileName={slots[tool.fileSlots[0].key]?.fileName}
@@ -315,8 +315,8 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
             {sampleDataPrompt}
 
             {/* How to export instructions */}
-            <div className="mt-10 bg-gray-50 rounded-xl p-6 border border-gray-100">
-              <h3 className="font-semibold text-gray-900 mb-3 text-sm">
+            <div className="mt-10 rounded-md border border-border bg-surface-2 p-6">
+              <h3 className="mb-3 font-display text-sm font-semibold text-ink">
                 How to export your file
               </h3>
               <ExportInstructions parser={tool.fileSlots[0].parser} />
@@ -326,8 +326,8 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 py-6">
-        <div className="container mx-auto px-4 text-center text-xs text-gray-400">
+      <footer className="border-t border-border py-6">
+        <div className="container mx-auto px-4 text-center text-xs text-muted">
           AdLint &mdash; 100% private. All processing happens in your browser.
         </div>
       </footer>
@@ -339,7 +339,7 @@ function ExportInstructions({ parser }: { parser: ToolFileSlot['parser'] }) {
   switch (parser) {
     case 'gtm':
       return (
-        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
+        <ol className="list-decimal list-inside space-y-1 text-sm text-muted">
           <li>Open Google Tag Manager</li>
           <li>Go to <strong>Admin</strong></li>
           <li>Click <strong>Export Container</strong></li>
@@ -349,7 +349,7 @@ function ExportInstructions({ parser }: { parser: ToolFileSlot['parser'] }) {
       );
     case 'ads':
       return (
-        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
+        <ol className="list-decimal list-inside space-y-1 text-sm text-muted">
           <li>Open Google Ads</li>
           <li>Go to <strong>Tools &rarr; Conversions</strong></li>
           <li>Click the <strong>Download</strong> button</li>
@@ -359,7 +359,7 @@ function ExportInstructions({ parser }: { parser: ToolFileSlot['parser'] }) {
       );
     case 'report':
       return (
-        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
+        <ol className="list-decimal list-inside space-y-1 text-sm text-muted">
           <li>Open Google Ads</li>
           <li>Go to <strong>Reports</strong></li>
           <li>Create a Conversion action report</li>
@@ -369,7 +369,7 @@ function ExportInstructions({ parser }: { parser: ToolFileSlot['parser'] }) {
       );
     case 'meta':
       return (
-        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
+        <ol className="list-decimal list-inside space-y-1 text-sm text-muted">
           <li>Open Meta Events Manager</li>
           <li>Select your Pixel</li>
           <li>Go to <strong>Events</strong> tab</li>
@@ -379,7 +379,7 @@ function ExportInstructions({ parser }: { parser: ToolFileSlot['parser'] }) {
       );
     case 'tiktok':
       return (
-        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
+        <ol className="list-decimal list-inside space-y-1 text-sm text-muted">
           <li>Open TikTok Events Manager</li>
           <li>Go to <strong>Web Events</strong></li>
           <li>Select your Pixel</li>
@@ -389,7 +389,7 @@ function ExportInstructions({ parser }: { parser: ToolFileSlot['parser'] }) {
       );
     case 'linkedin':
       return (
-        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
+        <ol className="list-decimal list-inside space-y-1 text-sm text-muted">
           <li>Open LinkedIn Campaign Manager</li>
           <li>Go to <strong>Account Assets</strong></li>
           <li>Open <strong>Conversions</strong></li>

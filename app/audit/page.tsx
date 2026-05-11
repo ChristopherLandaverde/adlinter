@@ -1,10 +1,11 @@
 'use client';
 
 import { Suspense, useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
 import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, LinkedInInsightData, Severity, AuditContext } from '@/lib/types';
-import { getEntry, saveEntry } from '@/lib/auditHistory';
+import { getEntry, getHistory, saveEntry } from '@/lib/auditHistory';
 import { computeHealthScore } from '@/lib/healthScore';
 import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
 import { getToolBySlug } from '@/lib/tools';
@@ -26,46 +27,46 @@ type Tab = 'gtm' | 'ads' | 'meta' | 'tiktok' | 'linkedin';
 const severityConfig: Record<Severity, { label: string; color: string; bg: string; border: string; text: string; badge: string; dot: string }> = {
   critical: {
     label: 'Critical',
-    color: '#dc2626',
-    bg: 'bg-red-50',
-    border: 'border-red-400',
-    text: 'text-red-700',
-    badge: 'bg-red-100 text-red-700',
-    dot: 'bg-red-500',
+    color: '#B91C1C',
+    bg: 'bg-critical/5',
+    border: 'border-critical/30',
+    text: 'text-critical',
+    badge: 'bg-critical/10 text-critical',
+    dot: 'bg-critical',
   },
   warning: {
     label: 'Warning',
-    color: '#d97706',
-    bg: 'bg-amber-50',
-    border: 'border-amber-400',
-    text: 'text-amber-700',
-    badge: 'bg-amber-100 text-amber-700',
-    dot: 'bg-amber-500',
+    color: '#B45309',
+    bg: 'bg-warning/5',
+    border: 'border-warning/30',
+    text: 'text-warning',
+    badge: 'bg-warning/10 text-warning',
+    dot: 'bg-warning',
   },
   info: {
     label: 'Info',
-    color: '#2563eb',
-    bg: 'bg-blue-50',
-    border: 'border-blue-400',
-    text: 'text-blue-700',
-    badge: 'bg-blue-100 text-blue-700',
-    dot: 'bg-blue-500',
+    color: '#475569',
+    bg: 'bg-info/5',
+    border: 'border-info/30',
+    text: 'text-info',
+    badge: 'bg-info/10 text-info',
+    dot: 'bg-info',
   },
 };
 
 const sourceConfig: Record<Source, { label: string; badge: string }> = {
-  gtm: { label: 'GTM', badge: 'bg-purple-100 text-purple-700' },
-  ads: { label: 'Ads', badge: 'bg-sky-100 text-sky-700' },
-  cross: { label: 'Cross-Check', badge: 'bg-orange-100 text-orange-700' },
-  report: { label: 'Report', badge: 'bg-teal-100 text-teal-700' },
-  meta: { label: 'Meta', badge: 'bg-blue-100 text-blue-700' },
-  tiktok: { label: 'TikTok', badge: 'bg-pink-100 text-pink-700' },
-  linkedin: { label: 'LinkedIn', badge: 'bg-cyan-100 text-cyan-700' },
+  gtm: { label: 'GTM', badge: 'bg-surface-2 text-muted' },
+  ads: { label: 'Ads', badge: 'bg-surface-2 text-muted' },
+  cross: { label: 'Cross-Check', badge: 'bg-surface-2 text-muted' },
+  report: { label: 'Report', badge: 'bg-surface-2 text-muted' },
+  meta: { label: 'Meta', badge: 'bg-surface-2 text-muted' },
+  tiktok: { label: 'TikTok', badge: 'bg-surface-2 text-muted' },
+  linkedin: { label: 'LinkedIn', badge: 'bg-surface-2 text-muted' },
 };
 
 const severityOrder: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
 
-const DONUT_COLORS = ['#dc2626', '#d97706', '#2563eb', '#16a34a'];
+const DONUT_COLORS = ['#B91C1C', '#B45309', '#475569', '#166534'];
 
 // ─── Icons (inline SVG for zero-dependency) ──────────────────────────────────
 
@@ -136,7 +137,7 @@ function IconSort({ active, direction }: { active: boolean; direction: 'asc' | '
     );
   }
   return (
-    <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className="w-3.5 h-3.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       {direction === 'asc'
         ? <path strokeLinecap="round" d="M7 14l5-5 5 5" />
         : <path strokeLinecap="round" d="M7 10l5 5 5-5" />
@@ -406,7 +407,7 @@ function SlideOverPanel({
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recommendation</h3>
               <CheckLearnMoreLink id={check.id} />
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700 leading-relaxed">
+            <div className="rounded-md border border-border bg-surface-2 p-4 text-sm leading-relaxed text-ink">
               {check.recommendation}
             </div>
           </div>
@@ -579,10 +580,10 @@ function IssuesTable({
 
   if (failedChecks.length === 0) {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-        <div className="text-3xl mb-2">{'\u2705'}</div>
-        <h3 className="text-lg font-bold text-green-700 mb-1">All {title} checks passed!</h3>
-        <p className="text-green-600 text-sm">No issues detected in this category.</p>
+      <div className="rounded-md border border-pass/20 bg-pass/5 p-6 text-center">
+        <div className="mb-2 text-3xl text-pass">{'\u2713'}</div>
+        <h3 className="mb-1 font-display text-lg font-semibold text-pass">All {title} checks passed!</h3>
+        <p className="text-sm text-pass">No issues detected in this category.</p>
       </div>
     );
   }
@@ -599,7 +600,7 @@ function IssuesTable({
             value={search}
             onChange={e => onSearchChange(e.target.value)}
             placeholder="Search issues..."
-            className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full rounded-sm border border-border bg-surface py-2 pl-9 pr-3 text-sm text-ink placeholder-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
           />
         </div>
         {/* Severity toggles */}
@@ -615,7 +616,7 @@ function IssuesTable({
                   flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors
                   ${active
                     ? `${cfg.badge} border-transparent`
-                    : 'bg-gray-50 text-gray-500 border-gray-200'
+                    : 'bg-surface-2 text-muted border-border'
                   }
                 `}
               >
@@ -680,7 +681,7 @@ function IssuesTable({
                     className={`
                       border-b border-gray-100 cursor-pointer transition-colors
                       ${isSelected
-                        ? 'bg-blue-50 border-l-2 border-l-blue-500'
+                        ? 'bg-accent/5 border-l-2 border-l-accent'
                         : 'hover:bg-gray-50 border-l-2 border-l-transparent'
                       }
                     `}
@@ -707,7 +708,7 @@ function IssuesTable({
                       {affected > 0 ? affected : '\u2014'}
                     </td>
                     <td className="py-3 px-2">
-                      <IconChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'rotate-90 text-blue-600' : 'text-gray-400'}`} />
+                      <IconChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'rotate-90 text-accent' : 'text-gray-400'}`} />
                     </td>
                   </tr>
                 );
@@ -782,32 +783,32 @@ function TabSection({
       <div className="flex flex-col lg:flex-row gap-4">
         {/* KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-red-50 text-red-600 shrink-0"><IconShield /></div>
+          <div className="rounded-md border border-border bg-surface p-4 flex items-start gap-3">
+            <div className="p-2 rounded-sm bg-critical/10 text-critical shrink-0"><IconShield /></div>
             <div>
-              <div className="text-2xl font-bold text-red-600">{summary.critical}</div>
-              <div className="text-xs text-red-600/80 font-medium">Critical</div>
+              <div className="font-display text-2xl font-semibold text-critical">{summary.critical}</div>
+              <div className="text-xs text-critical font-medium">Critical</div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-amber-50 text-amber-600 shrink-0"><IconAlertTriangle /></div>
+          <div className="rounded-md border border-border bg-surface p-4 flex items-start gap-3">
+            <div className="p-2 rounded-sm bg-warning/10 text-warning shrink-0"><IconAlertTriangle /></div>
             <div>
-              <div className="text-2xl font-bold text-amber-600">{summary.warning}</div>
-              <div className="text-xs text-amber-600/80 font-medium">Warnings</div>
+              <div className="font-display text-2xl font-semibold text-warning">{summary.warning}</div>
+              <div className="text-xs text-warning font-medium">Warnings</div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-blue-50 text-blue-600 shrink-0"><IconInfoCircle /></div>
+          <div className="rounded-md border border-border bg-surface p-4 flex items-start gap-3">
+            <div className="p-2 rounded-sm bg-info/10 text-info shrink-0"><IconInfoCircle /></div>
             <div>
-              <div className="text-2xl font-bold text-blue-600">{summary.info}</div>
-              <div className="text-xs text-blue-600/80 font-medium">Info</div>
+              <div className="font-display text-2xl font-semibold text-info">{summary.info}</div>
+              <div className="text-xs text-info font-medium">Info</div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-green-50 text-green-600 shrink-0"><IconCheckCircle /></div>
+          <div className="rounded-md border border-border bg-surface p-4 flex items-start gap-3">
+            <div className="p-2 rounded-sm bg-pass/10 text-pass shrink-0"><IconCheckCircle /></div>
             <div>
-              <div className="text-2xl font-bold text-green-600">{summary.passed}</div>
-              <div className="text-xs text-green-600/80 font-medium">Passed</div>
+              <div className="font-display text-2xl font-semibold text-pass">{summary.passed}</div>
+              <div className="text-xs text-pass font-medium">Passed</div>
             </div>
           </div>
         </div>
@@ -888,23 +889,23 @@ function CrossCheckSection({
   if (checks.length === 0) return null;
 
   return (
-    <div className="mt-8 pt-8 border-t-2 border-orange-200">
+    <div className="mt-8 border-t border-border pt-8">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 rounded-lg bg-orange-100 text-orange-600">
+        <div className="rounded-sm bg-accent/10 p-2 text-accent">
           <IconCross />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Cross-Platform Checks</h2>
+          <h2 className="font-display text-lg font-semibold text-ink">Cross-Platform Checks</h2>
           <p className="text-sm text-gray-500">Validation across GTM and Google Ads configurations</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           {failed.length > 0 && (
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-700">
+            <span className="rounded-full bg-critical/10 px-2.5 py-1 text-xs font-medium text-critical">
               {failed.length} issue{failed.length !== 1 ? 's' : ''}
             </span>
           )}
           {passed.length > 0 && (
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700">
+            <span className="rounded-full bg-pass/10 px-2.5 py-1 text-xs font-medium text-pass">
               {passed.length} passed
             </span>
           )}
@@ -925,7 +926,7 @@ function CrossCheckSection({
                   onClick={() => onSelectCheck(isSelected ? null : check)}
                   className={`
                     p-4 cursor-pointer transition-colors
-                    ${isSelected ? 'bg-blue-50 border-l-2 border-l-blue-500' : 'hover:bg-gray-50 border-l-2 border-l-transparent'}
+                    ${isSelected ? 'bg-accent/5 border-l-2 border-l-accent' : 'hover:bg-surface-2 border-l-2 border-l-transparent'}
                   `}
                 >
                   <div className="flex items-start gap-3">
@@ -942,7 +943,7 @@ function CrossCheckSection({
                         <CheckLearnMoreLink id={check.id} />
                       </div>
                     </div>
-                    <IconChevronRight className={`w-4 h-4 shrink-0 transition-transform ${isSelected ? 'rotate-90 text-blue-600' : 'text-gray-400'}`} />
+                    <IconChevronRight className={`w-4 h-4 shrink-0 transition-transform ${isSelected ? 'rotate-90 text-accent' : 'text-gray-400'}`} />
                   </div>
                 </div>
               );
@@ -950,10 +951,10 @@ function CrossCheckSection({
           </div>
         </div>
       ) : (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center mb-4">
-          <div className="text-3xl mb-2">{'\u2705'}</div>
-          <h3 className="text-lg font-bold text-green-700 mb-1">All cross-checks passed!</h3>
-          <p className="text-green-600 text-sm">GTM and Google Ads configurations are properly aligned.</p>
+        <div className="mb-4 rounded-md border border-pass/20 bg-pass/5 p-6 text-center">
+          <div className="mb-2 text-3xl text-pass">{'\u2713'}</div>
+          <h3 className="mb-1 font-display text-lg font-semibold text-pass">All cross-checks passed!</h3>
+          <p className="text-sm text-pass">GTM and Google Ads configurations are properly aligned.</p>
         </div>
       )}
 
@@ -965,7 +966,7 @@ function CrossCheckSection({
             className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <span className="text-green-600"><IconCheckCircle /></span>
+              <span className="text-pass"><IconCheckCircle /></span>
               <span>Passed Cross-Checks ({passed.length})</span>
             </div>
             <IconChevronRight className={`w-4 h-4 transition-transform ${showPassed ? 'rotate-90' : ''}`} />
@@ -977,7 +978,7 @@ function CrossCheckSection({
                   key={check.id}
                   className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 last:border-0 text-sm"
                 >
-                  <span className="text-green-600 shrink-0">{'\u2713'}</span>
+                  <span className="text-pass shrink-0">{'\u2713'}</span>
                   <span className="text-gray-700 flex-1">{check.title}</span>
                 </div>
               ))}
@@ -986,6 +987,69 @@ function CrossCheckSection({
         </div>
       )}
     </div>
+  );
+}
+
+function TopFindings({
+  checks,
+  onSelectCheck,
+}: {
+  checks: TaggedCheck[];
+  onSelectCheck: (check: TaggedCheck | null) => void;
+}) {
+  const topFindings = checks
+    .filter((check) => !check.passed)
+    .sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity])
+    .slice(0, 3);
+
+  if (topFindings.length === 0) return null;
+
+  return (
+    <section id="results" className="mb-8">
+      <div className="mb-4">
+        <p className="text-xs font-semibold uppercase text-muted">Start here</p>
+        <h2 className="font-display text-2xl font-semibold text-ink">Most critical findings</h2>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-3">
+        {topFindings.map((check) => {
+          const cfg = severityConfig[check.severity];
+          const src = sourceConfig[check.source];
+
+          return (
+            <article
+              key={`${check.source}-${check.id}`}
+              className={`rounded-md border bg-surface p-5 transition-colors hover:border-ink/20 ${cfg.border}`}
+            >
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cfg.badge}`}>
+                  {cfg.label}
+                </span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${src.badge}`}>
+                  {src.label}
+                </span>
+              </div>
+              <h3 className="font-display text-xl font-semibold leading-tight text-ink">{check.title}</h3>
+              <p className="mt-3 text-sm leading-6 text-muted">{check.description}</p>
+              {check.recommendation && (
+                <div className="mt-4 rounded-md border border-border bg-surface-2 p-3 text-sm leading-6 text-ink">
+                  {check.recommendation}
+                </div>
+              )}
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <CheckLearnMoreLink id={check.id} />
+                <button
+                  type="button"
+                  onClick={() => onSelectCheck(check)}
+                  className="text-xs font-medium text-muted transition-colors hover:text-ink"
+                >
+                  View details
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -1003,6 +1067,7 @@ function AuditPageContent() {
   const [severityFilters, setSeverityFilters] = useState<Set<Severity>>(new Set(['critical', 'warning', 'info']));
   const [sortColumn, setSortColumn] = useState<'severity' | 'title' | 'source' | 'affected'>('severity');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [canCompare, setCanCompare] = useState(false);
 
   // Audit counter for PDF unlock feature
   const {
@@ -1020,6 +1085,7 @@ function AuditPageContent() {
   const sourceSnapshot = useRef<(AuditSourceData & { context?: AuditContext }) | null>(null);
 
   useEffect(() => {
+    setCanCompare(getHistory().length >= 2);
     const restoreId = searchParams.get('restore');
     if (restoreId) {
       const entry = getEntry(restoreId);
@@ -1122,6 +1188,7 @@ function AuditPageContent() {
     });
 
     hasSavedHistory.current = true;
+    setCanCompare(getHistory().length >= 2);
   }, [results, healthScore]);
 
   const handleClosePanel = useCallback(() => setSelectedCheck(null), []);
@@ -1199,20 +1266,20 @@ function AuditPageContent() {
 
   if (parseError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-red-50 to-white gap-4 px-4">
-        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
-          <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg px-4">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-critical/10">
+          <svg className="h-8 w-8 text-critical" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
           </svg>
         </div>
-        <h2 className="text-xl font-semibold text-gray-900">Unable to Load Audit</h2>
-        <p className="text-gray-600 text-center max-w-md">{parseError}</p>
+        <h2 className="font-display text-xl font-semibold text-ink">Unable to Load Audit</h2>
+        <p className="max-w-md text-center text-muted">{parseError}</p>
         <button
           onClick={() => {
             sessionStorage.clear();
             router.push('/');
           }}
-          className="mt-4 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          className="mt-4 rounded-sm bg-accent px-6 py-2.5 font-medium text-white transition-colors hover:bg-accent-hover"
         >
           Start Over
         </button>
@@ -1224,9 +1291,9 @@ function AuditPageContent() {
 
   if (loading || !results) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white gap-3">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-gray-600 text-lg">Analyzing your setup...</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-bg">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent" />
+        <p className="text-lg text-muted">Analyzing your setup...</p>
       </div>
     );
   }
@@ -1234,16 +1301,16 @@ function AuditPageContent() {
   // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-bg">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 px-4 lg:px-6 py-4 sticky top-0 z-20">
+      <header className="sticky top-0 z-20 border-b border-border bg-surface/85 px-4 py-4 backdrop-blur-sm lg:px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="text-xl font-bold text-blue-600">AdLint</span>
-            <div className="h-6 w-px bg-gray-200" />
+            <span className="font-display text-xl font-semibold text-accent">AdLint</span>
+            <div className="h-6 w-px bg-border" />
             <div>
-              <h1 className="text-lg font-bold text-gray-900">Audit Results</h1>
-              <span className="text-xs text-gray-500">{auditType}</span>
+              <h1 className="font-display text-lg font-semibold text-ink">Audit Results</h1>
+              <span className="text-xs text-muted">{auditType}</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -1270,7 +1337,7 @@ function AuditPageContent() {
       </header>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 sticky top-[73px] z-10">
+      <div className="sticky top-[73px] z-10 border-b border-border bg-surface">
         <div className="max-w-7xl mx-auto px-4 lg:px-6">
           <nav className="flex gap-1">
             {hasGTMData && (
@@ -1279,7 +1346,7 @@ function AuditPageContent() {
                 className={`
                   relative px-5 py-3 text-sm font-medium transition-colors
                   ${activeTab === 'gtm'
-                    ? 'text-purple-600'
+                    ? 'text-accent'
                     : 'text-gray-500 hover:text-gray-900'
                   }
                 `}
@@ -1288,14 +1355,14 @@ function AuditPageContent() {
                   <span>Google Tag Manager</span>
                   {gtmFailedCount > 0 && (
                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      activeTab === 'gtm' ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-500'
+                      activeTab === 'gtm' ? 'bg-accent/10 text-accent' : 'bg-surface-2 text-muted'
                     }`}>
                       {gtmFailedCount}
                     </span>
                   )}
                 </div>
                 {activeTab === 'gtm' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
                 )}
               </button>
             )}
@@ -1305,7 +1372,7 @@ function AuditPageContent() {
                 className={`
                   relative px-5 py-3 text-sm font-medium transition-colors
                   ${activeTab === 'ads'
-                    ? 'text-sky-600'
+                    ? 'text-accent'
                     : 'text-gray-500 hover:text-gray-900'
                   }
                 `}
@@ -1314,14 +1381,14 @@ function AuditPageContent() {
                   <span>Google Ads</span>
                   {adsFailedCount > 0 && (
                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      activeTab === 'ads' ? 'bg-sky-100 text-sky-600' : 'bg-gray-100 text-gray-500'
+                      activeTab === 'ads' ? 'bg-accent/10 text-accent' : 'bg-surface-2 text-muted'
                     }`}>
                       {adsFailedCount}
                     </span>
                   )}
                 </div>
                 {activeTab === 'ads' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-600" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
                 )}
               </button>
             )}
@@ -1331,7 +1398,7 @@ function AuditPageContent() {
                 className={`
                   relative px-5 py-3 text-sm font-medium transition-colors
                   ${activeTab === 'meta'
-                    ? 'text-blue-600'
+                    ? 'text-accent'
                     : 'text-gray-500 hover:text-gray-900'
                   }
                 `}
@@ -1340,14 +1407,14 @@ function AuditPageContent() {
                   <span>Meta Pixel</span>
                   {metaFailedCount > 0 && (
                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      activeTab === 'meta' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+                      activeTab === 'meta' ? 'bg-accent/10 text-accent' : 'bg-surface-2 text-muted'
                     }`}>
                       {metaFailedCount}
                     </span>
                   )}
                 </div>
                 {activeTab === 'meta' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
                 )}
               </button>
             )}
@@ -1357,7 +1424,7 @@ function AuditPageContent() {
                 className={`
                   relative px-5 py-3 text-sm font-medium transition-colors
                   ${activeTab === 'tiktok'
-                    ? 'text-pink-600'
+                    ? 'text-accent'
                     : 'text-gray-500 hover:text-gray-900'
                   }
                 `}
@@ -1366,14 +1433,14 @@ function AuditPageContent() {
                   <span>TikTok Pixel</span>
                   {tiktokFailedCount > 0 && (
                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      activeTab === 'tiktok' ? 'bg-pink-100 text-pink-600' : 'bg-gray-100 text-gray-500'
+                      activeTab === 'tiktok' ? 'bg-accent/10 text-accent' : 'bg-surface-2 text-muted'
                     }`}>
                       {tiktokFailedCount}
                     </span>
                   )}
                 </div>
                 {activeTab === 'tiktok' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-600" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
                 )}
               </button>
             )}
@@ -1383,7 +1450,7 @@ function AuditPageContent() {
                 className={`
                   relative px-5 py-3 text-sm font-medium transition-colors
                   ${activeTab === 'linkedin'
-                    ? 'text-cyan-600'
+                    ? 'text-accent'
                     : 'text-gray-500 hover:text-gray-900'
                   }
                 `}
@@ -1392,24 +1459,24 @@ function AuditPageContent() {
                   <span>LinkedIn Insight Tag</span>
                   {linkedinFailedCount > 0 && (
                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      activeTab === 'linkedin' ? 'bg-cyan-100 text-cyan-600' : 'bg-gray-100 text-gray-500'
+                      activeTab === 'linkedin' ? 'bg-accent/10 text-accent' : 'bg-surface-2 text-muted'
                     }`}>
                       {linkedinFailedCount}
                     </span>
                   )}
                 </div>
                 {activeTab === 'linkedin' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-600" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
                 )}
               </button>
             )}
             {crossChecks.length > 0 && (
-              <div className="flex items-center px-5 py-3 text-sm text-orange-600">
+              <div className="flex items-center px-5 py-3 text-sm text-accent">
                 <div className="flex items-center gap-2">
                   <IconCross />
                   <span className="font-medium">Cross-Check</span>
                   {crossFailedCount > 0 && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600">
+                    <span className="rounded-full bg-accent/10 px-1.5 py-0.5 text-xs text-accent">
                       {crossFailedCount}
                     </span>
                   )}
@@ -1424,21 +1491,37 @@ function AuditPageContent() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
         {healthScore && (
-          <section className="mb-6 flex flex-col items-center gap-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <section className="mb-8 flex flex-col items-center gap-5 rounded-lg border border-border bg-surface p-8">
             <HealthScoreBadge score={healthScore} size="large" />
             <div className="flex flex-wrap items-center justify-center gap-3">
+              <a
+                href="#results"
+                className="inline-flex h-10 items-center justify-center rounded-sm bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+              >
+                View results
+              </a>
               <ShareAuditButton score={healthScore} />
+              {canCompare && (
+                <Link
+                  href="/history"
+                  className="inline-flex h-10 items-center justify-center rounded-sm px-3 text-sm font-medium text-muted transition-colors hover:text-ink"
+                >
+                  Compare to last audit
+                </Link>
+              )}
             </div>
           </section>
         )}
+
+        <TopFindings checks={displayed} onSelectCheck={setSelectedCheck} />
 
         {/* Tab Content */}
         {activeTab === 'gtm' && hasGTMData && (
           <TabSection
             checks={gtmChecks}
             title="Google Tag Manager"
-            icon={<span className="text-purple-600">GTM</span>}
-            color="purple"
+            icon={<span className="text-accent">GTM</span>}
+            color="accent"
             search={search}
             onSearchChange={setSearch}
             severityFilters={severityFilters}
@@ -1455,8 +1538,8 @@ function AuditPageContent() {
           <TabSection
             checks={adsChecks}
             title="Google Ads"
-            icon={<span className="text-sky-600">Ads</span>}
-            color="sky"
+            icon={<span className="text-accent">Ads</span>}
+            color="accent"
             search={search}
             onSearchChange={setSearch}
             severityFilters={severityFilters}
@@ -1473,8 +1556,8 @@ function AuditPageContent() {
           <TabSection
             checks={metaChecks}
             title="Meta Pixel"
-            icon={<span className="text-blue-600">Meta</span>}
-            color="blue"
+            icon={<span className="text-accent">Meta</span>}
+            color="accent"
             search={search}
             onSearchChange={setSearch}
             severityFilters={severityFilters}
@@ -1491,8 +1574,8 @@ function AuditPageContent() {
           <TabSection
             checks={tiktokChecks}
             title="TikTok Pixel"
-            icon={<span className="text-pink-600">TikTok</span>}
-            color="pink"
+            icon={<span className="text-accent">TikTok</span>}
+            color="accent"
             search={search}
             onSearchChange={setSearch}
             severityFilters={severityFilters}
@@ -1509,8 +1592,8 @@ function AuditPageContent() {
           <TabSection
             checks={linkedinChecks}
             title="LinkedIn Insight Tag"
-            icon={<span className="text-cyan-600">LinkedIn</span>}
-            color="cyan"
+            icon={<span className="text-accent">LinkedIn</span>}
+            color="accent"
             search={search}
             onSearchChange={setSearch}
             severityFilters={severityFilters}
@@ -1530,16 +1613,16 @@ function AuditPageContent() {
           onSelectCheck={setSelectedCheck}
         />
 
-        <section className="mt-8 rounded-2xl border border-blue-200 bg-white/90 p-6 shadow-sm">
+        <section className="mt-8 rounded-lg border border-border bg-surface p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
+              <p className="text-xs font-semibold uppercase text-accent">
                 Need help fixing the root cause?
               </p>
-              <h2 className="mt-2 text-2xl font-bold text-gray-900">
+              <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
                 Still seeing audit issues after reviewing this report? That usually means the problem is upstream.
               </h2>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">
+              <p className="mt-3 text-sm leading-relaxed text-muted">
                 I debug these stacks daily across GTM, Google Ads, Meta CAPI, Enhanced Conversions, LinkedIn Insight Tag, and CRM validation. If the report surfaced {gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount + tiktokFailedCount + linkedinFailedCount} live issue{gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount + tiktokFailedCount + linkedinFailedCount === 1 ? '' : 's'}, a short review will usually identify what to fix first.
               </p>
             </div>
@@ -1547,7 +1630,7 @@ function AuditPageContent() {
               href="https://focosys.io/review"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+              className="inline-flex items-center justify-center rounded-sm bg-accent px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
             >
               Book a free 30-min measurement review
             </a>
@@ -1565,9 +1648,9 @@ export default function AuditPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white gap-3">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600 text-lg">Loading audit...</p>
+        <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-bg">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent" />
+          <p className="text-lg text-muted">Loading audit...</p>
         </div>
       }
     >

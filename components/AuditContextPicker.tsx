@@ -102,10 +102,10 @@ export function AuditContextPicker({
   };
 
   return (
-    <section className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8">
+    <section className="rounded-lg border border-border bg-surface p-6 sm:p-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Refine your audit</h2>
-        <p className="text-sm text-gray-600">
+        <h2 className="mb-2 font-display text-2xl font-semibold text-ink">Refine your audit</h2>
+        <p className="text-sm text-muted">
           These answers tune the audit&apos;s severity rules to your situation. Leave any
           field blank if you&apos;re not sure.
         </p>
@@ -153,14 +153,14 @@ export function AuditContextPicker({
         <button
           type="button"
           onClick={handleSubmit}
-          className="inline-flex justify-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-100 transition-colors hover:bg-blue-700"
+          className="inline-flex h-10 items-center justify-center rounded-sm bg-accent px-6 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
         >
           Continue to results
         </button>
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
+          className="text-sm font-medium text-muted transition-colors hover:text-ink"
         >
           Skip — use defaults
         </button>
@@ -184,12 +184,12 @@ function ContextSelect<T extends string>({
 }) {
   return (
     <label htmlFor={id} className="block">
-      <span className="block text-sm font-medium text-gray-700 mb-2">{label}</span>
+      <span className="mb-2 block text-sm font-medium text-ink">{label}</span>
       <select
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value || undefined)}
-        className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        className="w-full rounded-sm border border-border bg-surface px-4 py-3 text-sm text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/10"
       >
         <option value="">— Skip this question —</option>
         {options.map((option) => (

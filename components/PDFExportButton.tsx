@@ -136,7 +136,7 @@ async function generatePDF(results: AuditResults, auditType: string): Promise<vo
   };
 
   // ─── Header ─────────────────────────────────────────────────────────────────
-  doc.setFillColor(37, 99, 235); // blue-600
+  doc.setFillColor(30, 58, 138);
   doc.rect(0, 0, pageWidth, 35, 'F');
 
   doc.setFont('helvetica', 'bold');
@@ -207,10 +207,10 @@ async function generatePDF(results: AuditResults, auditType: string): Promise<vo
   const statWidth = (contentWidth - scoreBoxWidth - 10) / 4;
 
   const stats = [
-    { label: 'Critical', value: summary.critical, color: '#dc2626' },
-    { label: 'Warnings', value: summary.warning, color: '#d97706' },
-    { label: 'Info', value: summary.info, color: '#2563eb' },
-    { label: 'Passed', value: summary.passed, color: '#16a34a' },
+    { label: 'Critical', value: summary.critical, color: '#B91C1C' },
+    { label: 'Warnings', value: summary.warning, color: '#B45309' },
+    { label: 'Info', value: summary.info, color: '#475569' },
+    { label: 'Passed', value: summary.passed, color: '#166534' },
   ];
 
   stats.forEach((stat, i) => {
@@ -549,7 +549,7 @@ function UnlockModal({
           <>
             {/* Icon */}
             <div className="text-center mb-4">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto text-blue-600">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent/10 text-accent">
                 <IconGift />
               </div>
             </div>
@@ -593,7 +593,7 @@ function UnlockModal({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full rounded-sm border border-border px-4 py-3 text-ink placeholder-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
                   required
                   disabled={isSubmitting}
                 />
@@ -605,7 +605,7 @@ function UnlockModal({
               <button
                 type="submit"
                 disabled={isSubmitting || !email}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                className="flex w-full items-center justify-center gap-2 rounded-sm bg-accent px-4 py-3 font-medium text-white transition-colors hover:bg-accent-hover disabled:bg-muted/40"
               >
                 {isSubmitting ? (
                   <>
@@ -669,10 +669,10 @@ export function PDFExportButton({
           onClick={handleExport}
           disabled={isGenerating}
           className={`
-            flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
+            flex h-10 items-center gap-2 rounded-sm px-4 text-sm font-medium transition-colors
             ${canExportPDF
-              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-              : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+              ? 'border border-border bg-surface text-ink hover:border-ink/20'
+              : 'bg-surface-2 text-muted hover:text-ink'
             }
             disabled:opacity-50 disabled:cursor-not-allowed
           `}

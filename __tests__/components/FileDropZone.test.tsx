@@ -7,7 +7,6 @@ function renderDropZone(props: Partial<React.ComponentProps<typeof FileDropZone>
     <FileDropZone
       accept=".csv"
       label="CSV"
-      color="blue"
       onFile={jest.fn()}
       {...props}
     />,
@@ -40,11 +39,10 @@ describe('FileDropZone', () => {
     const dropZone = container.firstElementChild as HTMLElement;
 
     fireEvent.dragOver(dropZone);
-    expect(dropZone.className).toContain('bg-blue-50');
+    expect(dropZone.className).toContain('bg-surface-2');
     expect(dropZone.className).toContain('ring-4');
 
     fireEvent.dragLeave(dropZone);
-    expect(dropZone.className).not.toContain('bg-blue-50');
     expect(dropZone.className).not.toContain('ring-4');
   });
 

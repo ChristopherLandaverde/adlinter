@@ -18,10 +18,10 @@ export default function ComparePage() {
 
 function CompareFallback() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <main className="min-h-screen bg-bg">
       <div className="container mx-auto max-w-5xl px-4 py-10">
-        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm font-medium text-gray-600">Loading comparison...</p>
+        <div className="rounded-md border border-border bg-surface p-8 text-center">
+          <p className="text-sm font-medium text-muted">Loading comparison...</p>
         </div>
       </div>
     </main>

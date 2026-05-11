@@ -7,12 +7,13 @@ import { getHealthScoreBand, type HealthScore } from '@/lib/healthScore';
 import { getToolBySlug } from '@/lib/tools';
 import type { AuditSummary } from '@/lib/types';
 import { HealthScoreBadge } from '@/components/HealthScoreBadge';
+import { getToolIcon } from '@/components/icons';
 
 const chipStyles: Record<keyof AuditSummary, string> = {
-  critical: 'bg-red-100 text-red-700 border-red-200',
-  warning: 'bg-amber-100 text-amber-700 border-amber-200',
-  info: 'bg-blue-100 text-blue-700 border-blue-200',
-  passed: 'bg-green-100 text-green-700 border-green-200',
+  critical: 'bg-critical/10 text-critical border-critical/20',
+  warning: 'bg-warning/10 text-warning border-warning/20',
+  info: 'bg-info/10 text-info border-info/20',
+  passed: 'bg-pass/10 text-pass border-pass/20',
 };
 
 function relativeTime(timestamp: number) {
@@ -90,9 +91,10 @@ function HistoryCard({
 }) {
   const tool = getToolBySlug(entry.toolSlug);
   const healthScore = scoreFromHistory(entry);
+  const ToolIcon = getToolIcon(tool?.iconName ?? 'Search');
 
   return (
-    <article className={`rounded-lg border bg-white p-5 shadow-sm ${selected ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200'}`}>
+    <article className={`rounded-md border bg-surface p-5 ${selected ? 'border-accent ring-2 ring-accent/10' : 'border-border'}`}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
@@ -102,17 +104,17 @@ function HistoryCard({
                 checked={selected}
                 onChange={() => onToggleCompare(entry)}
                 aria-label={`Select ${entry.toolName} for comparison`}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
               />
             )}
-            <span className="text-2xl" aria-hidden="true">{tool?.icon ?? '🔍'}</span>
+            <ToolIcon className="h-6 w-6 text-ink" />
             <div className="min-w-0">
-              <h2 className="font-bold text-gray-900">{entry.toolName}</h2>
-              <p className="text-sm text-gray-500">{relativeTime(entry.timestamp)}</p>
+              <h2 className="font-display font-semibold text-ink">{entry.toolName}</h2>
+              <p className="text-sm text-muted">{relativeTime(entry.timestamp)}</p>
             </div>
           </div>
 
-          <p className="mt-3 text-sm text-gray-600">
+          <p className="mt-3 text-sm text-muted">
             {entry.fileNames.length > 0 ? entry.fileNames.join(' • ') : '—'}
           </p>
 
@@ -125,19 +127,57 @@ function HistoryCard({
         <div className="flex shrink-0 items-center gap-3">
           <Link
             href={`/audit?restore=${encodeURIComponent(entry.id)}`}
-            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-blue-100 hover:bg-blue-700 transition-colors"
+            className="inline-flex h-10 items-center justify-center rounded-sm bg-accent px-4 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
           >
             Open
           </Link>
           <button
             onClick={() => onDelete(entry.id)}
-            className="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors"
+            className="text-sm font-medium text-muted transition-colors hover:text-critical"
           >
             Delete
           </button>
         </div>
       </div>
     </article>
+  );
+}
+
+function ScoreTrend({ entries }: { entries: AuditHistoryEntry[] }) {
+  const scored = entries
+    .filter((entry) => typeof entry.score === 'number')
+    .slice(0, 8)
+    .reverse();
+
+  if (scored.length < 3) return null;
+
+  const width = 520;
+  const height = 120;
+  const points = scored.map((entry, index) => {
+    const x = scored.length === 1 ? 0 : (index / (scored.length - 1)) * width;
+    const y = height - ((entry.score ?? 0) / 100) * height;
+    return { x, y, score: entry.score ?? 0 };
+  });
+  const path = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+
+  return (
+    <section className="mb-6 rounded-md border border-border bg-surface p-5">
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase text-muted">Score trend</p>
+          <h2 className="font-display text-xl font-semibold text-ink">
+            {points[0].score} &rarr; {points[points.length - 1].score}
+          </h2>
+        </div>
+        <span className="text-sm text-muted">Recent audits</span>
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-24 w-full overflow-visible" role="img" aria-label="Recent score trend">
+        <path d={path} fill="none" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((point, index) => (
+          <circle key={index} cx={point.x} cy={point.y} r="4" fill="var(--surface)" stroke="var(--accent)" strokeWidth="2" />
+        ))}
+      </svg>
+    </section>
   );
 }
 
@@ -189,12 +229,12 @@ export default function HistoryPage() {
   })();
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+    <main className="flex min-h-screen flex-col bg-bg">
+      <header className="border-b border-border bg-surface/85 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4">
           <Link
             href="/"
-            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-ink"
           >
             <span aria-hidden="true">&larr;</span> Back to Tools
           </Link>
@@ -202,12 +242,12 @@ export default function HistoryPage() {
             {entries.length > 0 && (
               <button
                 onClick={handleClear}
-                className="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors"
+                className="text-sm font-medium text-muted transition-colors hover:text-critical"
               >
                 Clear history
               </button>
             )}
-            <span className="text-xl font-bold text-blue-600">AdLint</span>
+            <span className="font-display text-xl font-semibold text-accent">AdLint</span>
           </div>
         </div>
       </header>
@@ -215,16 +255,16 @@ export default function HistoryPage() {
       <div className="container mx-auto px-4 py-10 max-w-4xl flex-1">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Audit History</h1>
-            <p className="mt-1 text-sm text-gray-500">Saved locally in this browser.</p>
+            <h1 className="font-display text-3xl font-semibold text-ink">Audit History</h1>
+            <p className="mt-1 text-sm text-muted">Saved locally in this browser.</p>
           </div>
           {entries.length > 1 && (
             <button
               onClick={handleToggleCompareMode}
               className={`inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
                 compareMode
-                  ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
-                  : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'border-accent/20 bg-accent/10 text-accent hover:bg-accent/15'
+                  : 'border-border bg-surface text-ink hover:border-ink/20'
               }`}
             >
               Compare mode
@@ -233,41 +273,44 @@ export default function HistoryPage() {
         </div>
 
         {entries.length === 0 ? (
-          <div className="rounded-lg border border-gray-200 bg-white p-10 text-center shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">No audits yet.</h2>
-            <p className="mt-2 text-gray-600">Pick a tool to get started.</p>
+          <div className="rounded-md border border-border bg-surface p-10 text-center">
+            <h2 className="font-display text-xl font-semibold text-ink">No audits yet.</h2>
+            <p className="mt-2 text-muted">Pick a tool to get started.</p>
             <Link
               href="/"
-              className="mt-6 inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-100 hover:bg-blue-700 transition-colors"
+              className="mt-6 inline-flex h-10 items-center justify-center rounded-sm bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
             >
               Browse tools
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
-            {entries.map((entry) => (
-              <HistoryCard
-                key={entry.id}
-                entry={entry}
-                onDelete={handleDelete}
-                compareMode={compareMode}
-                selected={selectedEntries.some((item) => item.id === entry.id)}
-                onToggleCompare={handleToggleCompareEntry}
-              />
-            ))}
-          </div>
+          <>
+            <ScoreTrend entries={entries} />
+            <div className="space-y-4">
+              {entries.map((entry) => (
+                <HistoryCard
+                  key={entry.id}
+                  entry={entry}
+                  onDelete={handleDelete}
+                  compareMode={compareMode}
+                  selected={selectedEntries.some((item) => item.id === entry.id)}
+                  onToggleCompare={handleToggleCompareEntry}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 
       {compareMode && selectedEntries.length === 2 && (
-        <div className="sticky bottom-0 z-10 border-t border-gray-200 bg-white/95 px-4 py-4 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-sm">
+        <div className="sticky bottom-0 z-10 border-t border-border bg-surface/95 px-4 py-4 backdrop-blur-sm">
           <div className="container mx-auto flex max-w-4xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-medium text-gray-700">
               2 audits selected for comparison
             </p>
             <Link
               href={compareHref}
-              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-100 transition-colors hover:bg-blue-700"
+              className="inline-flex h-10 items-center justify-center rounded-sm bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
             >
               Compare these two
             </Link>
@@ -275,8 +318,8 @@ export default function HistoryPage() {
         </div>
       )}
 
-      <footer className="border-t border-gray-100 py-6">
-        <div className="container mx-auto px-4 text-center text-xs text-gray-400">
+      <footer className="border-t border-border py-6">
+        <div className="container mx-auto px-4 text-center text-xs text-muted">
           AdLint &mdash; 100% private. All processing happens in your browser.
         </div>
       </footer>
