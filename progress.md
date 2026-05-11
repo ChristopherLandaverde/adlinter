@@ -1,5 +1,25 @@
 # AdLint — Progress Log
 
+## v1.9 — Homepage Copy + JSON-LD Structured Data
+**Commit:** `TBD`
+
+Brought the homepage copy in line with the six-auditor product (footer and hero subtitle were stale from the GTM-only era) and added JSON-LD WebApplication schema for rich search results.
+
+### Copy fixes (`app/page.tsx`)
+- Hero subtitle now names all four platforms (GTM, Google Ads, Meta, TikTok) plus performance reports
+- Footer text updated to match
+
+### Structured data (`app/page.tsx`)
+- Added JSON-LD WebApplication schema with featureList of all six tools
+- Declares free offer, browser requirements, application category
+
+### Dependencies
+- handlebars: 4.7.8 → 4.7.9
+- flatted: 3.3.3 → 3.4.2
+- jspdf: 4.1.0 → 4.2.1
+
+---
+
 ## v1.8 — SEO Polish, 404 / Error Boundaries, Dependency Bumps
 **Commit:** `777a022`
 

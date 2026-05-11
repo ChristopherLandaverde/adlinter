@@ -4,6 +4,27 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { tools, categories, type ToolConfig, type ToolCategory } from '@/lib/tools';
 
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'AdLint',
+  url: 'https://adlint.dev',
+  applicationCategory: 'DeveloperApplication',
+  operatingSystem: 'Web',
+  description:
+    'Free, privacy-first audit suite for ad-tech tracking. Analyze GTM, Google Ads, Meta Pixel, and TikTok Pixel in 60 seconds.',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  featureList: [
+    'Google Tag Manager Container Auditor',
+    'Google Ads Linter',
+    'Performance Report Analyzer',
+    'Full-Stack Audit',
+    'Meta Pixel Auditor',
+    'TikTok Pixel Auditor',
+  ],
+  browserRequirements: 'Requires JavaScript. Modern browser.',
+};
+
 const cardColorMap: Record<string, { bar: string; badge: string; badgeText: string }> = {
   blue:    { bar: 'bg-blue-500',    badge: 'bg-blue-100',    badgeText: 'text-blue-700' },
   emerald: { bar: 'bg-emerald-500', badge: 'bg-emerald-100', badgeText: 'text-emerald-700' },
@@ -72,6 +93,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+
       {/* Header */}
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -90,8 +116,7 @@ export default function Home() {
           <span className="text-blue-600">100% Free, 100% Private</span>
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-2">
-          Pick a tool below to audit your tracking setup. All processing happens
-          in your browser &mdash; your data never leaves your machine.
+          Six free auditors for Google Tag Manager, Google Ads, Meta Pixel, TikTok Pixel, and performance reports. All processing happens in your browser &mdash; your data never leaves your machine.
         </p>
       </div>
 
@@ -132,7 +157,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-gray-100 py-6">
         <div className="container mx-auto px-4 text-center text-xs text-gray-400">
-          AdLint &mdash; Free Google Ads + GTM Auditor. All processing happens in your browser.
+          AdLint &mdash; Free auditors for GTM, Google Ads, Meta Pixel, and TikTok Pixel. All processing happens in your browser.
         </div>
       </footer>
     </main>
