@@ -105,6 +105,12 @@ export default function Home() {
           <span className="text-2xl font-bold text-blue-600">AdLint</span>
           <div className="flex items-center gap-4">
             <AuditHistoryLink />
+            <Link
+              href="/checks"
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            >
+              Check reference
+            </Link>
             <p className="text-sm text-gray-500 hidden sm:block">
               Ad Tracking Audit Tools
             </p>

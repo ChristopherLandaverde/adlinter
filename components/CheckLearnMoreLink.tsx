@@ -1,0 +1,18 @@
+'use client';
+
+import Link from 'next/link';
+import { getExplainer } from '@/lib/checks/explainers';
+
+export function CheckLearnMoreLink({ id }: { id: string }) {
+  if (!getExplainer(id)) return null;
+
+  return (
+    <Link
+      href={`/checks/${id}`}
+      className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+      onClick={(event) => event.stopPropagation()}
+    >
+      Learn more &rarr;
+    </Link>
+  );
+}

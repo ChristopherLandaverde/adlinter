@@ -24,6 +24,7 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 - Try-with-sample-data button on every tool: see the audit in 5 seconds without exporting anything
 - Audit context picker: tune severity rules to your business model, value strategy, sales cycle, and consent requirements
 - Context-aware severity based on business model, sales cycle, value strategy, and consent requirements
+- /checks reference: per-check documentation with why-it-matters and how-to-fix for every audit finding
 
 ### Check Coverage
 
