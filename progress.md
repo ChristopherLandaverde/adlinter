@@ -1,5 +1,43 @@
 # AdLint — Progress Log
 
+## v1.6 — Audit Results CTA
+**Commit:** `a41c651`
+
+Added call-to-action component to the audit results page.
+
+---
+
+## v1.5 — Meta Pixel Auditor
+**Commit:** `8f958c9`
+
+New tool that audits Meta Pixel event exports from Meta Events Manager.
+
+### Parser (`lib/parsers/metaPixelParser.ts`)
+- Parses CSV and JSON exports from Meta Events Manager
+- Handles column aliases for flexible input formats
+- Detects standard vs custom events automatically
+- Supports EU/US number formats
+
+### Checks (`lib/checks/metaChecks.ts`)
+- 10 checks total:
+  - Missing PageView Event — critical
+  - Missing Conversion Events — critical, or warning for agency/other business models
+  - Duplicate Event Names — warning
+  - Similar Event Names — info
+  - Zero Volume Events — warning
+  - Custom Events May Have Standard Alternatives — info
+  - Purchase Event Value Tracking — critical, or info when value strategy is no-values; info/pass when no Purchase events are configured
+  - E-commerce Funnel Events — warning when more than two funnel events are missing, otherwise info
+  - Event Volume Concentration — info
+  - Disabled Conversion Events — warning when disabled conversion events are found, otherwise info
+
+### Tool registration
+- Added `meta-auditor` slug to `lib/tools.ts` with Meta category
+- Split Google category into GTM and Google Ads in category filters
+- Removed 'Free' badge from tool cards
+
+---
+
 ## v1.4 — Multi-Tool System + Tabbed Dashboard
 **Commit:** `b89a9f2`
 

@@ -1,17 +1,26 @@
 # AdLint
 
-**Free, privacy-first audit tool for Google Tag Manager + Google Ads.**
+**Free, privacy-first audit suite for ad-tech tracking — GTM, Google Ads, Meta Pixel, and performance reports.**
 
-AdLint analyzes your GTM container export and Google Ads conversion CSV to surface tracking issues before they cost you money. All processing runs entirely in the browser — no data ever leaves your machine.
+AdLint analyzes your ad-tech exports to surface tracking issues before they cost you money. All processing runs entirely in the browser — no data ever leaves your machine.
 
 ## What It Does
 
-Upload your files, get a full diagnostic report in seconds:
+Upload your files, choose the right audit, and get a diagnostic report in seconds:
 
-- **70 automated checks** across GTM configuration, Google Ads conversions, and cross-platform alignment
-- **Context-aware severity** — checks adapt based on your business model, sales cycle, and consent requirements
-- **Smart skipping** — passed informational checks are hidden automatically so you only see what matters
-- **Rich inline diagnostics** — every finding includes structured details (affected tags, missing variables, mismatched values) right in the report
+- **GTM Container Auditor** — 30 checks
+- **Google Ads Linter** — 27 checks
+- **Performance Report Analyzer** — 11 checks
+- **Full-Stack Audit** — 82 checks across GTM, Ads, and performance reports
+- **Meta Pixel Auditor** — 10 checks
+- **TikTok Pixel Auditor** — coming soon
+
+## Features
+
+- Tabbed audit dashboard with Overview, Checks, and Export views
+- PDF export with email capture
+- Source and severity filtering
+- Context-aware severity based on business model, sales cycle, value strategy, and consent requirements
 
 ### Check Coverage
 
@@ -19,10 +28,12 @@ Upload your files, get a full diagnostic report in seconds:
 |----------|--------|---------|
 | GTM Core | 12 | Conversion Linker, consent violations, duplicate tags, enhanced conversions, naming conventions |
 | GTM Advanced | 18 | DataLayer analysis, tag sequencing, circular dependencies, trigger overlap, container complexity |
-| Ads Core | 11 | Duplicate conversions, zero-value purchases, counting methods, attribution windows, disabled conversions |
+| Ads Core | 12 | Duplicate conversions, zero-value purchases, counting methods, attribution windows, disabled conversions |
 | Ads Advanced | 15 | Value outliers, ROAS feasibility, Smart Bidding readiness, primary conversion designation |
+| Performance Report | 11 | ROAS sanity, ghost conversions, attribution drift, signal pollution, whale conversions |
 | Cross-Platform | 4 | Tag-to-conversion matching, value mismatches, tag count parity |
 | Cross Advanced | 10 | Dynamic value passing, conversion label matching, transaction ID deduplication, funnel coverage |
+| Meta Pixel | 10 | Missing PageView, missing conversion events, duplicate event names, similar event names, zero volume active events, custom events with standard alternatives, purchase value tracking, e-commerce funnel events, event volume concentration, disabled conversion events |
 
 ## Getting Started
 
@@ -45,13 +56,16 @@ Open [http://localhost:3000](http://localhost:3000) and upload your files.
 2. Go to **Tools** > **Conversions**
 3. Click **Download** and select CSV format
 
+**Meta Pixel Events:**
+Export from Meta Events Manager > Diagnostics or Test Events; supports CSV and JSON.
+
 ## Running Tests
 
 ```bash
 npm test
 ```
 
-244 tests covering all checks, parsers, integration scenarios, and edge cases.
+400 tests covering all checks, parsers, integration scenarios, and edge cases.
 
 ## Tech Stack
 
