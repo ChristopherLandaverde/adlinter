@@ -75,15 +75,36 @@ function scoreFromHistory(entry: AuditHistoryEntry): HealthScore | null {
   };
 }
 
-function HistoryCard({ entry, onDelete }: { entry: AuditHistoryEntry; onDelete: (id: string) => void }) {
+function HistoryCard({
+  entry,
+  onDelete,
+  compareMode,
+  selected,
+  onToggleCompare,
+}: {
+  entry: AuditHistoryEntry;
+  onDelete: (id: string) => void;
+  compareMode: boolean;
+  selected: boolean;
+  onToggleCompare: (entry: AuditHistoryEntry) => void;
+}) {
   const tool = getToolBySlug(entry.toolSlug);
   const healthScore = scoreFromHistory(entry);
 
   return (
-    <article className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+    <article className={`rounded-lg border bg-white p-5 shadow-sm ${selected ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200'}`}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
+            {compareMode && (
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={() => onToggleCompare(entry)}
+                aria-label={`Select ${entry.toolName} for comparison`}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+            )}
             <span className="text-2xl" aria-hidden="true">{tool?.icon ?? '🔍'}</span>
             <div className="min-w-0">
               <h2 className="font-bold text-gray-900">{entry.toolName}</h2>
@@ -122,6 +143,8 @@ function HistoryCard({ entry, onDelete }: { entry: AuditHistoryEntry; onDelete: 
 
 export default function HistoryPage() {
   const [entries, setEntries] = useState<AuditHistoryEntry[]>([]);
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedEntries, setSelectedEntries] = useState<AuditHistoryEntry[]>([]);
 
   const refresh = () => setEntries(getHistory());
 
@@ -131,14 +154,39 @@ export default function HistoryPage() {
 
   const handleDelete = (id: string) => {
     deleteEntry(id);
+    setSelectedEntries((selected) => selected.filter((entry) => entry.id !== id));
     refresh();
   };
 
   const handleClear = () => {
     if (!window.confirm('Clear all saved audit history?')) return;
     clearHistory();
+    setSelectedEntries([]);
     refresh();
   };
+
+  const handleToggleCompareMode = () => {
+    setCompareMode((enabled) => {
+      if (enabled) setSelectedEntries([]);
+      return !enabled;
+    });
+  };
+
+  const handleToggleCompareEntry = (entry: AuditHistoryEntry) => {
+    setSelectedEntries((selected) => {
+      if (selected.some((item) => item.id === entry.id)) {
+        return selected.filter((item) => item.id !== entry.id);
+      }
+
+      return [...selected, entry].slice(-2);
+    });
+  };
+
+  const compareHref = (() => {
+    if (selectedEntries.length !== 2) return '#';
+    const [a, b] = [...selectedEntries].sort((left, right) => left.timestamp - right.timestamp);
+    return `/compare?a=${encodeURIComponent(a.id)}&b=${encodeURIComponent(b.id)}`;
+  })();
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
@@ -165,9 +213,23 @@ export default function HistoryPage() {
       </header>
 
       <div className="container mx-auto px-4 py-10 max-w-4xl flex-1">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Audit History</h1>
-          <p className="mt-1 text-sm text-gray-500">Saved locally in this browser.</p>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Audit History</h1>
+            <p className="mt-1 text-sm text-gray-500">Saved locally in this browser.</p>
+          </div>
+          {entries.length > 1 && (
+            <button
+              onClick={handleToggleCompareMode}
+              className={`inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
+                compareMode
+                  ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                  : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Compare mode
+            </button>
+          )}
         </div>
 
         {entries.length === 0 ? (
@@ -184,11 +246,34 @@ export default function HistoryPage() {
         ) : (
           <div className="space-y-4">
             {entries.map((entry) => (
-              <HistoryCard key={entry.id} entry={entry} onDelete={handleDelete} />
+              <HistoryCard
+                key={entry.id}
+                entry={entry}
+                onDelete={handleDelete}
+                compareMode={compareMode}
+                selected={selectedEntries.some((item) => item.id === entry.id)}
+                onToggleCompare={handleToggleCompareEntry}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {compareMode && selectedEntries.length === 2 && (
+        <div className="sticky bottom-0 z-10 border-t border-gray-200 bg-white/95 px-4 py-4 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-sm">
+          <div className="container mx-auto flex max-w-4xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-medium text-gray-700">
+              2 audits selected for comparison
+            </p>
+            <Link
+              href={compareHref}
+              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-100 transition-colors hover:bg-blue-700"
+            >
+              Compare these two
+            </Link>
+          </div>
+        </div>
+      )}
 
       <footer className="border-t border-gray-100 py-6">
         <div className="container mx-auto px-4 text-center text-xs text-gray-400">

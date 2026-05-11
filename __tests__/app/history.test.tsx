@@ -188,4 +188,29 @@ describe('HistoryPage', () => {
     expect(await screen.findByRole('heading', { name: 'No audits yet.' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Clear history' })).not.toBeInTheDocument();
   });
+
+  it('builds a compare link for two selected audits in timestamp order', async () => {
+    const user = userEvent.setup();
+    const older = saveAudit({
+      toolName: 'Older Audit',
+      summary: { critical: 0, warning: 0, info: 0, passed: 1 },
+      now: 1000,
+    });
+    const newer = saveAudit({
+      toolName: 'Newer Audit',
+      summary: { critical: 0, warning: 1, info: 0, passed: 1 },
+      now: 3000,
+    });
+
+    render(<HistoryPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'Compare mode' }));
+    await user.click(screen.getByLabelText('Select Newer Audit for comparison'));
+    await user.click(screen.getByLabelText('Select Older Audit for comparison'));
+
+    expect(screen.getByRole('link', { name: 'Compare these two' })).toHaveAttribute(
+      'href',
+      `/compare?a=${older.id}&b=${newer.id}`,
+    );
+  });
 });

@@ -1,5 +1,23 @@
 # AdLint — Progress Log
 
+## v1.17 — Audit-to-Audit Diff View
+**Commit:** `TBD`
+
+The repeat-usage hook. Health score gave users a single number; this lets them compare two audits and see what changed. "You went from 67 to 81 since last week" is now an actual screen, not a vague promise.
+
+### New
+- `lib/auditDiff.ts` — pure diff helper. Classifies each check as fixed / regressed / severity-up / severity-down / added / removed. Sorts regressions first.
+- `app/compare/page.tsx` + `app/compare/CompareClient.tsx` — side-by-side audit comparison via /compare?a=<id>&b=<id>. Score badges on each side with a big delta arrow, totals row, grouped change list.
+- `__tests__/lib/auditDiff.test.ts` — covers identical audits, single regression, single fix, severity escalation, score delta math.
+
+### Changed
+- `app/history/page.tsx` — Compare-mode toggle. Select 2 entries, "Compare these two" button appears, links to /compare.
+
+### Why
+Without diff, users have no reason to come back. Saving an audit was just storage. Now it's a comparison baseline — and the metric to brag about in the share button.
+
+---
+
 ## v1.16 — Tracking Health Score
 **Commit:** `c44f1aa`
 

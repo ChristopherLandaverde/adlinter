@@ -20,6 +20,7 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 - Tabbed audit dashboard with Overview, Checks, and Export views
 - PDF export with email capture
 - Tracking Health Score: a single 0-100 anchor with a shareable badge, computed from weighted severity
+- Audit diff: compare any two audits side-by-side with a score delta and a categorized change list (regressions, fixes, severity shifts, new checks, removed checks)
 - Source and severity filtering
 - Audit history saved in localStorage; revisit and compare past audits
 - Try-with-sample-data button on every tool: see the audit in 5 seconds without exporting anything
