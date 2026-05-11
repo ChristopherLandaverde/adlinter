@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.20 — Post-Redesign Fix Pass (F1–F4)
-**Commit:** `TBD`
+**Commit:** `f36c72d`
 
 Fixes from /design-review of the v1.19 redesign.
 
