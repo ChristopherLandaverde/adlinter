@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.7 — TikTok Pixel Auditor
-**Commit:** `069c74b`
+**Commit:** `0a13dd2`
 
 Added a TikTok Pixel Auditor that mirrors the Meta Pixel Auditor pattern with TikTok-specific standard events and funnel semantics.
 
