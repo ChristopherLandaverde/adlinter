@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.21 — Post-Redesign Polish (F5–F9)
-**Commit:** `TBD`
+**Commit:** `4f0b0fd`
 
 Closes the remaining /design-review findings from the v1.19 audit.
 
