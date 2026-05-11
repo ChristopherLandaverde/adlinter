@@ -7,7 +7,7 @@ Every visual decision serves one north star: **"It just told me what was actuall
 ## Product Context
 
 - **What this is:** A client-side audit suite for ad-tech tracking. Seven auditors covering GTM, Google Ads, Performance Reports, Meta Pixel, TikTok Pixel, LinkedIn Insight Tag, and a Full-Stack mode.
-- **Who it's for:** In-house marketers and growth leads at $1M–$50M companies. Owns paid ad budget, suspects tracking is broken, doesn't have engineers on tap.
+- **Who it's for:** Agencies and freelancers auditing client work (primary); in-house marketers and growth leads at $1M–$50M companies (secondary). See `PRODUCT.md` for full positioning.
 - **Memorable thing:** "It just told me what was actually broken."
 - **Project type:** Hybrid — editorial single-page landing, app surfaces (upload, audit results, history, compare, /checks reference).
 
