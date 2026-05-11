@@ -1,4 +1,5 @@
 import type { AuditContext, AuditResults } from './types';
+import type { HealthScore } from './healthScore';
 
 const STORAGE_KEY = 'adlint:auditHistory';
 const MAX_ENTRIES = 20;
@@ -11,6 +12,8 @@ export interface AuditHistoryEntry {
   toolName: string;
   fileNames: string[];
   context?: AuditContext;
+  score?: number;
+  scoreBand?: HealthScore['band'];
   results: AuditResults;
   sourceData: {
     gtmData?: unknown;

@@ -5,11 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
 import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, Severity, AuditContext } from '@/lib/types';
 import { getEntry, saveEntry } from '@/lib/auditHistory';
+import { computeHealthScore } from '@/lib/healthScore';
 import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
 import { getToolBySlug } from '@/lib/tools';
 import { AuditHistoryLink } from '@/components/AuditHistoryLink';
 import { CheckLearnMoreLink } from '@/components/CheckLearnMoreLink';
+import { HealthScoreBadge } from '@/components/HealthScoreBadge';
 import { PDFExportButton } from '@/components/PDFExportButton';
+import { ShareAuditButton } from '@/components/ShareAuditButton';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
@@ -418,45 +421,6 @@ function SlideOverPanel({
   );
 }
 
-// ─── Health Score Ring ────────────────────────────────────────────────────────
-
-function HealthRing({ score, passed, total }: { score: number; passed: number; total: number }) {
-  const ringColor = score < 40 ? '#dc2626' : score < 70 ? '#d97706' : '#16a34a';
-  const data = [
-    { value: score },
-    { value: 100 - score },
-  ];
-
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-24 h-24">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={32}
-              outerRadius={42}
-              startAngle={90}
-              endAngle={-270}
-              dataKey="value"
-              stroke="none"
-            >
-              <Cell fill={ringColor} />
-              <Cell fill="#e5e7eb" />
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-bold text-gray-900">{score}%</span>
-        </div>
-      </div>
-      <span className="text-xs text-gray-500 mt-1">{passed}/{total} passed</span>
-    </div>
-  );
-}
-
 // ─── Donut Chart ─────────────────────────────────────────────────────────────
 
 function SeverityDonut({ data }: { data: { name: string; value: number; color: string }[] }) {
@@ -800,10 +764,6 @@ function TabSection({
     return s;
   }, [checks]);
 
-  const healthScore = checks.length > 0
-    ? Math.round((passed.length / checks.length) * 100)
-    : 100;
-
   const donutData = [
     { name: 'Critical', value: summary.critical, color: DONUT_COLORS[0] },
     { name: 'Warning', value: summary.warning, color: DONUT_COLORS[1] },
@@ -845,11 +805,6 @@ function TabSection({
               <div className="text-xs text-green-600/80 font-medium">Passed</div>
             </div>
           </div>
-        </div>
-
-        {/* Health ring */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex items-center justify-center lg:w-40 shrink-0">
-          <HealthRing score={healthScore} passed={passed.length} total={checks.length} />
         </div>
       </div>
 
@@ -1128,6 +1083,8 @@ function AuditPageContent() {
     }
   }, [router, incrementAuditCount, searchParams]);
 
+  const healthScore = useMemo(() => results ? computeHealthScore(results) : null, [results]);
+
   useEffect(() => {
     if (!results || restoredFromHistory.current || hasSavedHistory.current || !sourceSnapshot.current) {
       return;
@@ -1142,6 +1099,8 @@ function AuditPageContent() {
       toolName: tool?.name ?? 'Audit',
       fileNames: collectFileNames(sourceData),
       context,
+      score: healthScore?.score,
+      scoreBand: healthScore?.band,
       results,
       sourceData: {
         gtmData: sourceData.gtmData ?? undefined,
@@ -1153,7 +1112,7 @@ function AuditPageContent() {
     });
 
     hasSavedHistory.current = true;
-  }, [results]);
+  }, [results, healthScore]);
 
   const handleClosePanel = useCallback(() => setSelectedCheck(null), []);
 
@@ -1424,6 +1383,15 @@ function AuditPageContent() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
+        {healthScore && (
+          <section className="mb-6 flex flex-col items-center gap-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <HealthScoreBadge score={healthScore} size="large" />
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <ShareAuditButton score={healthScore} />
+            </div>
+          </section>
+        )}
+
         {/* Tab Content */}
         {activeTab === 'gtm' && hasGTMData && (
           <TabSection

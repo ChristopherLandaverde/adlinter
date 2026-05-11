@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { clearHistory, deleteEntry, getHistory, type AuditHistoryEntry } from '@/lib/auditHistory';
+import { getHealthScoreBand, type HealthScore } from '@/lib/healthScore';
 import { getToolBySlug } from '@/lib/tools';
 import type { AuditSummary } from '@/lib/types';
+import { HealthScoreBadge } from '@/components/HealthScoreBadge';
 
 const chipStyles: Record<keyof AuditSummary, string> = {
   critical: 'bg-red-100 text-red-700 border-red-200',
@@ -57,8 +59,25 @@ function SeverityChips({ summary }: { summary: AuditSummary }) {
   );
 }
 
+function scoreFromHistory(entry: AuditHistoryEntry): HealthScore | null {
+  if (typeof entry.score !== 'number') return null;
+
+  const summary = entry.results.summary;
+  const totalChecks = summary.critical + summary.warning + summary.info + summary.passed;
+
+  return {
+    score: entry.score,
+    ...getHealthScoreBand(entry.score),
+    totalChecks,
+    passedChecks: summary.passed,
+    weightedPoints: 0,
+    maxWeightedPoints: 0,
+  };
+}
+
 function HistoryCard({ entry, onDelete }: { entry: AuditHistoryEntry; onDelete: (id: string) => void }) {
   const tool = getToolBySlug(entry.toolSlug);
+  const healthScore = scoreFromHistory(entry);
 
   return (
     <article className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
@@ -76,7 +95,8 @@ function HistoryCard({ entry, onDelete }: { entry: AuditHistoryEntry; onDelete: 
             {entry.fileNames.length > 0 ? entry.fileNames.join(' • ') : '—'}
           </p>
 
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {healthScore && <HealthScoreBadge score={healthScore} size="small" />}
             <SeverityChips summary={entry.results.summary} />
           </div>
         </div>

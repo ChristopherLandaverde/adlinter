@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { computeHealthScore } from '@/lib/healthScore';
 import { AuditResults, AuditCheck, Severity } from '@/lib/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -167,9 +168,8 @@ async function generatePDF(results: AuditResults, auditType: string): Promise<vo
     total: allChecks.length,
   };
 
-  const healthScore = summary.total > 0
-    ? Math.round((summary.passed / summary.total) * 100)
-    : 100;
+  const healthScore = computeHealthScore(results);
+  const scoreValue = healthScore?.score ?? 0;
 
   // Summary title
   doc.setFont('helvetica', 'bold');
@@ -181,7 +181,13 @@ async function generatePDF(results: AuditResults, auditType: string): Promise<vo
   // Health score box
   const scoreBoxWidth = 50;
   const scoreBoxHeight = 30;
-  const scoreColor = healthScore < 40 ? '#dc2626' : healthScore < 70 ? '#d97706' : '#16a34a';
+  const scoreColor = healthScore?.bandColor === 'red'
+    ? '#dc2626'
+    : healthScore?.bandColor === 'amber'
+      ? '#d97706'
+      : healthScore?.bandColor === 'blue'
+        ? '#2563eb'
+        : '#16a34a';
 
   doc.setFillColor(...hexToRgb(scoreColor));
   doc.roundedRect(margin, y, scoreBoxWidth, scoreBoxHeight, 3, 3, 'F');
@@ -189,7 +195,7 @@ async function generatePDF(results: AuditResults, auditType: string): Promise<vo
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
   doc.setTextColor(255, 255, 255);
-  doc.text(`${healthScore}%`, margin + scoreBoxWidth / 2, y + 15, { align: 'center' });
+  doc.text(`${scoreValue}%`, margin + scoreBoxWidth / 2, y + 15, { align: 'center' });
 
   doc.setFontSize(8);
   doc.text('Health Score', margin + scoreBoxWidth / 2, y + 23, { align: 'center' });

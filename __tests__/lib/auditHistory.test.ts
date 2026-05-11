@@ -81,12 +81,14 @@ describe('auditHistory', () => {
   it('should prepend an entry with a generated id and current timestamp', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify([entry({ id: 'existing', timestamp: 1 })]));
 
-    const saved = saveEntry(newEntry({ toolName: 'Saved Audit' }));
+    const saved = saveEntry(newEntry({ toolName: 'Saved Audit', score: 81, scoreBand: 'good' }));
 
     expect(saved).toMatchObject({
       id: 'generated-id',
       timestamp: 1700000000000,
       toolName: 'Saved Audit',
+      score: 81,
+      scoreBand: 'good',
     });
     expect(getHistory().map((item) => item.id)).toEqual(['generated-id', 'existing']);
   });

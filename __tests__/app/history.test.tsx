@@ -20,18 +20,21 @@ function saveAudit({
   fileNames = ['audit.csv'],
   summary,
   now,
+  score,
 }: {
   toolName: string;
   toolSlug?: string;
   fileNames?: string[];
   summary: AuditResults['summary'];
   now: number;
+  score?: number;
 }) {
   jest.spyOn(Date, 'now').mockReturnValueOnce(now);
   return saveEntry({
     toolSlug,
     toolName,
     fileNames,
+    score,
     results: { ...emptyResults, summary },
     sourceData: {},
   });
@@ -89,6 +92,20 @@ describe('HistoryPage', () => {
     expect(within(card).getByText('4')).toBeInTheDocument();
     expect(within(card).getByText('passed')).toBeInTheDocument();
     expect(within(card).getByText('5')).toBeInTheDocument();
+  });
+
+  it('renders a saved tracking health score when present', async () => {
+    saveAudit({
+      toolName: 'Scored Audit',
+      summary: { critical: 1, warning: 2, info: 0, passed: 8 },
+      now: 1000,
+      score: 81,
+    });
+
+    render(<HistoryPage />);
+
+    expect(await screen.findByLabelText('Tracking Health Score: 81 out of 100, Good')).toBeInTheDocument();
+    expect(screen.getByText('Score: 81')).toBeInTheDocument();
   });
 
   it('adds restore links that include each audit id', async () => {

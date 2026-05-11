@@ -1,5 +1,25 @@
 # AdLint — Progress Log
 
+## v1.16 — Tracking Health Score
+**Commit:** `TBD`
+
+Replaces the "8 critical / 12 warning / 17 info" wall with a single 0-100 anchor — the screenshot-worthy number users can compare and share.
+
+### New
+- `lib/healthScore.ts` — pure scoring module. Weighted ratio: critical=10, warning=4, info=1. Passing all checks = 100. Bands: emerald 90+, blue 75-89, amber 50-74, red <50.
+- `components/HealthScoreBadge.tsx` — circular SVG progress ring (large variant for audit hero) plus a chip variant (small, for history cards).
+- `components/ShareAuditButton.tsx` — Web Share API with clipboard fallback. Copies "AdLint Tracking Health Score: 81/100 — Good — audit yours at https://adlint.dev".
+
+### Changed
+- `app/audit/page.tsx` — large badge in the hero, share button next to PDF export
+- `app/history/page.tsx` — small badge on each history card
+- `lib/auditHistory.ts` — entries now persist score + band so history rendering is fast
+
+### Why
+Builds the natural viral loop: users see their score, want to brag (or fix) it, share the link, friend lands on adlint.dev, friend audits theirs. Also gives repeat users a single metric to track over time alongside the diff view (coming).
+
+---
+
 ## v1.15 — Per-Check Documentation Framework + 25 Explainers
 **Commit:** `f909743`
 
