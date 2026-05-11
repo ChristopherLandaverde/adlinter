@@ -1,5 +1,29 @@
 # AdLint — Progress Log
 
+## v1.10 — Audit Context Picker
+**Commit:** `TBD`
+
+The audit engine has had context-aware severity for ~15 checks since v1.2 (agency businesses don't get dinged for missing conversion events, no-values strategies don't get critical purchase-value flags, non-ecommerce businesses skip the e-commerce funnel check entirely). But there was no UI to set the context — every audit ran with `undefined`, falling back to defaults. This shipped the missing UX.
+
+### New component (`components/AuditContextPicker.tsx`)
+- 5 optional dropdowns: business model, value strategy, conversion counting, sales cycle, consent needs
+- "Skip — use defaults" escape hatch
+- Pre-fills from `localStorage['adlint:auditContext']` for returning users
+
+### Flow change (`components/ToolWorkspace.tsx`)
+- After files upload, show the context picker as an inline step (replacing the upload UI)
+- Both single-file tools (which used to auto-navigate) and multi-file tools (Run Full Audit) now go through the context step
+- Submit persists to sessionStorage for the current audit + localStorage for future audits
+
+### Audit wiring (`app/audit/page.tsx`)
+- Reads `auditContext` from sessionStorage and passes it to `runAudit` as the third argument
+- Removes the `undefined` that was wasting 15 conditional-severity branches
+
+### Deleted
+- `backend/` — Python scaffold that was never integrated; product stays 100% client-side
+
+---
+
 ## v1.9 — Homepage Copy + JSON-LD Structured Data
 **Commit:** `beeb152`
 

@@ -4,11 +4,13 @@ import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import FileDropZone from '@/components/FileDropZone';
+import { AuditContextPicker } from '@/components/AuditContextPicker';
 import { parseAdsCSV } from '@/lib/parsers/adsParser';
 import { parseAdsReportCSV } from '@/lib/parsers/adsReportParser';
 import { parseGTMJSON } from '@/lib/parsers/gtmParser';
 import { parseMetaPixelCSV } from '@/lib/parsers/metaPixelParser';
 import { parseTikTokPixelCSV } from '@/lib/parsers/tiktokPixelParser';
+import type { AuditContext } from '@/lib/types';
 import type { ToolConfig, ToolFileSlot } from '@/lib/tools';
 
 type SlotState = {
@@ -36,6 +38,7 @@ function parseFile(parser: ToolFileSlot['parser'], text: string) {
 export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
   const router = useRouter();
   const isMultiFile = tool.fileSlots.length > 1;
+  const [showContextStep, setShowContextStep] = useState(false);
 
   const [slots, setSlots] = useState<Record<string, SlotState>>(() => {
     const init: Record<string, SlotState> = {};
@@ -65,7 +68,7 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
 
         // Single-file tools: auto-navigate after successful parse
         if (!isMultiFile) {
-          router.push('/audit');
+          setShowContextStep(true);
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to parse file.';
@@ -75,7 +78,7 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
         }));
       }
     },
-    [isMultiFile, router],
+    [isMultiFile],
   );
 
   const requiredReady = useMemo(
@@ -88,6 +91,16 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
 
   const handleRunAudit = () => {
     if (!requiredReady) return;
+    setShowContextStep(true);
+  };
+
+  const handleContextSubmit = (context: AuditContext) => {
+    sessionStorage.setItem('auditContext', JSON.stringify(context));
+    router.push('/audit');
+  };
+
+  const handleContextSkip = () => {
+    sessionStorage.removeItem('auditContext');
     router.push('/audit');
   };
 
@@ -125,7 +138,12 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
 
       {/* Workspace */}
       <div className="container mx-auto px-4 max-w-2xl pb-16">
-        {isMultiFile ? (
+        {showContextStep ? (
+          <AuditContextPicker
+            onSubmit={handleContextSubmit}
+            onSkip={handleContextSkip}
+          />
+        ) : isMultiFile ? (
           /* Multi-file workspace (full-audit) */
           <div className="space-y-4">
             {tool.fileSlots.map((slot, i) => (

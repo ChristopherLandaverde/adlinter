@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
-import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, Severity } from '@/lib/types';
+import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, Severity, AuditContext } from '@/lib/types';
 import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
 import { PDFExportButton } from '@/components/PDFExportButton';
 import {
@@ -993,6 +993,7 @@ export default function AuditPage() {
     const reportDataStr = sessionStorage.getItem('reportData');
     const metaDataStr = sessionStorage.getItem('metaData');
     const tiktokDataStr = sessionStorage.getItem('tiktokData');
+    const contextStr = sessionStorage.getItem('auditContext');
 
     if (!gtmDataStr && !adsDataStr && !reportDataStr && !metaDataStr && !tiktokDataStr) {
       router.push('/');
@@ -1005,8 +1006,9 @@ export default function AuditPage() {
       const reportData: AdsReportData | null = reportDataStr ? JSON.parse(reportDataStr) : null;
       const metaData: MetaPixelData | null = metaDataStr ? JSON.parse(metaDataStr) : null;
       const tiktokData: TikTokPixelData | null = tiktokDataStr ? JSON.parse(tiktokDataStr) : null;
+      const context: AuditContext | undefined = contextStr ? JSON.parse(contextStr) : undefined;
 
-      const auditResults = runAudit(gtmData, adsData, undefined, reportData, metaData, tiktokData);
+      const auditResults = runAudit(gtmData, adsData, context, reportData, metaData, tiktokData);
       setResults(auditResults);
       setLoading(false);
 
