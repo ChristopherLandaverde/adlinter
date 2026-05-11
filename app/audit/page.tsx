@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useMemo, useCallback, useRef } from 'rea
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
-import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, LinkedInInsightData, Severity, AuditContext } from '@/lib/types';
+import { AuditResults, AuditCheck, AuditSummary, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, LinkedInInsightData, Severity, AuditContext } from '@/lib/types';
 import { getEntry, getHistory, saveEntry } from '@/lib/auditHistory';
 import { computeHealthScore } from '@/lib/healthScore';
 import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
@@ -181,6 +181,20 @@ function tagChecks(results: AuditResults): TaggedCheck[] {
     ...tag(results.tiktok, 'tiktok'),
     ...tag(results.linkedin, 'linkedin'),
   ];
+}
+
+function summarizeChecks(checks: AuditCheck[]): AuditSummary {
+  const summary = { critical: 0, warning: 0, info: 0, passed: 0 };
+
+  for (const check of checks) {
+    if (check.passed) {
+      summary.passed++;
+    } else {
+      summary[check.severity]++;
+    }
+  }
+
+  return summary;
 }
 
 function countAffectedItems(check: AuditCheck): number {
@@ -730,6 +744,7 @@ function IssuesTable({
 
 function TabSection({
   checks,
+  summary,
   title,
   icon,
   color,
@@ -744,6 +759,7 @@ function TabSection({
   onSelectCheck,
 }: {
   checks: TaggedCheck[];
+  summary: AuditSummary;
   title: string;
   icon: React.ReactNode;
   color: string;
@@ -761,15 +777,6 @@ function TabSection({
   const passed = checks.filter(c => c.passed);
   const [showPassed, setShowPassed] = useState(false);
 
-  const summary = useMemo(() => {
-    const s = { critical: 0, warning: 0, info: 0, passed: 0 };
-    for (const c of checks) {
-      if (c.passed) s.passed++;
-      else s[c.severity]++;
-    }
-    return s;
-  }, [checks]);
-
   const donutData = [
     { name: 'Critical', value: summary.critical, color: DONUT_COLORS[0] },
     { name: 'Warning', value: summary.warning, color: DONUT_COLORS[1] },
@@ -779,7 +786,7 @@ function TabSection({
 
   return (
     <div className="space-y-6">
-      {/* Section Header with KPIs */}
+      {/* Total audit KPIs */}
       <div className="flex flex-col lg:flex-row gap-4">
         {/* KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
@@ -1199,6 +1206,7 @@ function AuditPageContent() {
 
   // Filter out passed info checks
   const displayed = useMemo(() => allTagged.filter(c => !(c.severity === 'info' && c.passed)), [allTagged]);
+  const totalSummary = useMemo(() => summarizeChecks(allTagged), [allTagged]);
 
   // Separate checks by category
   const gtmChecks = useMemo(() => displayed.filter(c => c.source === 'gtm'), [displayed]);
@@ -1306,7 +1314,9 @@ function AuditPageContent() {
       <header className="sticky top-0 z-20 border-b border-border bg-surface/85 px-4 py-4 backdrop-blur-sm lg:px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="font-display text-xl font-semibold text-accent">AdLint</span>
+            <Link href="/" className="font-display text-xl font-semibold text-accent transition-colors hover:text-accent-hover">
+              AdLint
+            </Link>
             <div className="h-6 w-px bg-border" />
             <div>
               <h1 className="font-display text-lg font-semibold text-ink">Audit Results</h1>
@@ -1519,6 +1529,7 @@ function AuditPageContent() {
         {activeTab === 'gtm' && hasGTMData && (
           <TabSection
             checks={gtmChecks}
+            summary={totalSummary}
             title="Google Tag Manager"
             icon={<span className="text-accent">GTM</span>}
             color="accent"
@@ -1537,6 +1548,7 @@ function AuditPageContent() {
         {activeTab === 'ads' && hasAdsData && (
           <TabSection
             checks={adsChecks}
+            summary={totalSummary}
             title="Google Ads"
             icon={<span className="text-accent">Ads</span>}
             color="accent"
@@ -1555,6 +1567,7 @@ function AuditPageContent() {
         {activeTab === 'meta' && hasMetaData && (
           <TabSection
             checks={metaChecks}
+            summary={totalSummary}
             title="Meta Pixel"
             icon={<span className="text-accent">Meta</span>}
             color="accent"
@@ -1573,6 +1586,7 @@ function AuditPageContent() {
         {activeTab === 'tiktok' && hasTikTokData && (
           <TabSection
             checks={tiktokChecks}
+            summary={totalSummary}
             title="TikTok Pixel"
             icon={<span className="text-accent">TikTok</span>}
             color="accent"
@@ -1591,6 +1605,7 @@ function AuditPageContent() {
         {activeTab === 'linkedin' && hasLinkedInData && (
           <TabSection
             checks={linkedinChecks}
+            summary={totalSummary}
             title="LinkedIn Insight Tag"
             icon={<span className="text-accent">LinkedIn</span>}
             color="accent"

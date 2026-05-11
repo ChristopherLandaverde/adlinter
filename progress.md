@@ -1,5 +1,17 @@
 # AdLint — Progress Log
 
+## v1.20 — Post-Redesign Fix Pass (F1–F4)
+**Commit:** `TBD`
+
+Fixes from /design-review of the v1.19 redesign.
+
+- F1: /audit header summary counts now reflect TOTAL across all sources, not the active tab. Fixes the case where the page showed "0 Critical" while displaying 3 critical findings.
+- F2: same fix resolves the divergence between /audit header totals and /history saved totals.
+- F3: tool workspace hides the tool hero when transitioning to the context picker step. AuditContextPicker now owns the page header during that step instead of being demoted under a duplicated tool heading.
+- F4: standardized logo position. AdLint top-LEFT on every page (was top-RIGHT on /tools/[slug], /audit, /history, /compare, /checks/[id], /not-found, /error). Secondary navigation (back-link, history link) now consistently on the right.
+
+---
+
 ## v1.19 — Visual Redesign: DESIGN.md Implementation
 **Commit:** `6a3d0b9`
 

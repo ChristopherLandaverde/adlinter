@@ -117,10 +117,17 @@ function ScorePanel({ label, entry, score }: { label: string; entry: AuditHistor
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
     <main className="min-h-screen bg-bg">
+      <header className="border-b border-border bg-surface/85 backdrop-blur-sm">
+        <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-4">
+          <Link href="/" className="font-display text-xl font-semibold text-accent transition-colors hover:text-accent-hover">
+            AdLint
+          </Link>
+          <Link href="/history" className="text-sm font-medium text-muted transition-colors hover:text-ink">
+            &larr; Back to history
+          </Link>
+        </div>
+      </header>
       <div className="container mx-auto max-w-4xl px-4 py-10">
-        <Link href="/history" className="text-sm font-medium text-muted hover:text-ink">
-          &larr; Back to history
-        </Link>
         <div className="mt-8 rounded-md border border-border bg-surface p-10 text-center">
           <h1 className="font-display text-2xl font-semibold text-ink">{title}</h1>
           <p className="mt-2 text-muted">{body}</p>
@@ -223,10 +230,12 @@ export function CompareClient() {
     <main className="min-h-screen bg-bg">
       <header className="border-b border-border bg-surface/85 backdrop-blur-sm">
         <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-4">
+          <Link href="/" className="font-display text-xl font-semibold text-accent transition-colors hover:text-accent-hover">
+            AdLint
+          </Link>
           <Link href="/history" className="text-sm font-medium text-muted transition-colors hover:text-ink">
             &larr; Back to history
           </Link>
-          <span className="font-display text-xl font-semibold text-accent">AdLint</span>
         </div>
       </header>
 

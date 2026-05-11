@@ -85,13 +85,15 @@ export default function ChecksPage() {
     <main className="flex min-h-screen flex-col bg-bg">
       <header className="border-b border-border bg-surface/85 backdrop-blur-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
+          <Link href="/" className="font-display text-xl font-semibold text-accent transition-colors hover:text-accent-hover">
+            AdLint
+          </Link>
           <Link
             href="/"
             className="flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-ink"
           >
             <span aria-hidden="true">&larr;</span> Back to Tools
           </Link>
-          <span className="font-display text-xl font-semibold text-accent">AdLint</span>
         </div>
       </header>
 

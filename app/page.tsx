@@ -93,7 +93,9 @@ export default function Home() {
       {/* Header */}
       <header className="border-b border-border bg-surface/85 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <span className="font-display text-2xl font-semibold text-accent">AdLint</span>
+          <Link href="/" className="font-display text-2xl font-semibold text-accent transition-colors hover:text-accent-hover">
+            AdLint
+          </Link>
           <div className="flex items-center gap-4">
             <AuditHistoryLink />
             <Link

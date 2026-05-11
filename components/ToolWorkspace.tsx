@@ -217,30 +217,34 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
       {/* Header */}
       <header className="border-b border-border bg-surface/85 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-ink"
-          >
-            <span aria-hidden="true">&larr;</span> Back to Tools
+          <Link href="/" className="font-display text-xl font-semibold text-accent transition-colors hover:text-accent-hover">
+            AdLint
           </Link>
           <div className="flex items-center gap-4">
             <AuditHistoryLink />
-            <span className="font-display text-xl font-semibold text-accent">AdLint</span>
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-ink"
+            >
+              <span aria-hidden="true">&larr;</span> Back to Tools
+            </Link>
           </div>
         </div>
       </header>
 
       {/* Hero */}
-      <div className="container mx-auto px-4 pt-12 pb-8 text-center max-w-2xl">
-        <ToolIcon className="mx-auto mb-5 h-8 w-8 text-ink" />
-        <h1 className="mb-3 font-display text-3xl font-semibold text-ink sm:text-4xl">
-          {tool.name}
-        </h1>
-        <p className="mb-2 text-muted">{tool.description}</p>
-        <p className="text-sm text-muted/80">
-          {tool.checkCount} checks will be performed
-        </p>
-      </div>
+      {!showContextStep && (
+        <div className="container mx-auto px-4 pt-12 pb-8 text-center max-w-2xl">
+          <ToolIcon className="mx-auto mb-5 h-8 w-8 text-ink" />
+          <h1 className="mb-3 font-display text-3xl font-semibold text-ink sm:text-4xl">
+            {tool.name}
+          </h1>
+          <p className="mb-2 text-muted">{tool.description}</p>
+          <p className="text-sm text-muted/80">
+            {tool.checkCount} checks will be performed
+          </p>
+        </div>
+      )}
 
       {/* Workspace */}
       <div className="container mx-auto px-4 max-w-2xl pb-16">
