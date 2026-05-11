@@ -1,5 +1,29 @@
 # AdLint — Progress Log
 
+## v1.8 — SEO Polish, 404 / Error Boundaries, Dependency Bumps
+**Commit:** `TBD`
+
+Three small ship-quality items: link previews now work everywhere, broken routes render branded pages, and Next.js + dompurify got patch/minor bumps.
+
+### Metadata (app/layout.tsx)
+- Added metadataBase, title template, OG, Twitter card, robots, keywords
+- Description now reflects all six auditors (GTM, Ads, Performance, Meta, TikTok)
+
+### Pages
+- `app/not-found.tsx` — branded 404 with Back to Tools CTA
+- `app/error.tsx` — error boundary with reset() and digest reference
+
+### SEO
+- `app/robots.ts` — explicit robots.txt allowing crawl of /
+- `app/sitemap.ts` — sitemap listing root and all enabled tool slugs
+- `app/tools/[slug]/page.tsx` — `generateMetadata` for per-tool titles, descriptions, and OG tags
+
+### Dependencies
+- next: 16.1.6 → 16.2.5
+- dompurify: 3.3.1 → 3.4.2
+
+---
+
 ## v1.7 — TikTok Pixel Auditor
 **Commit:** `0a13dd2`
 
@@ -107,7 +131,7 @@ Major architecture overhaul: split the single audit tool into specialized tools 
 - Added `PDFExportButton` component with jspdf integration
 - Implemented usage-based gating: 2 free exports, then email required
 - Added `useAuditCounter` hook for localStorage-based usage tracking
-- Added `/api/subscribe` route for email capture (file-based storage)
+- Added `/api/subscribe` route for email capture (initially file-based; later switched to MailerLite integration via `MAILERLITE_API_KEY` env)
 
 ### Test Coverage
 - Added comprehensive test suites for new check modules:
