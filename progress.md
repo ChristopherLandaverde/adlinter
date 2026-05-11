@@ -1,5 +1,31 @@
 # AdLint — Progress Log
 
+## v1.23 — 10 New /checks Explainers (28 → 38)
+**Commit:** `uncommitted - git index is read-only in this workspace`
+
+Adds the next batch of editorial check reference pages so more audit findings resolve to substantive `/checks/<id>` guidance.
+
+### New explainers
+- `conversion-linker-sequencing`
+- `attribution-window-mismatch`
+- `cross-domain-tracking`
+- `currency-consistency`
+- `debug-tags-in-production`
+- `duplicate-datalayer-paths`
+- `data-driven-eligibility`
+- `conversion-naming-alignment`
+- `datalayer-version-conflicts`
+- `conversion-funnel-coverage`
+
+### Modified
+- `lib/checks/explainers.ts`
+- `package.json`
+- `package-lock.json`
+- `README.md`
+- `progress.md`
+
+---
+
 ## v1.22 — Mobile Audit Results Polish
 **Commit:** `uncommitted - git index is read-only in this workspace`
 
