@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.8 — SEO Polish, 404 / Error Boundaries, Dependency Bumps
-**Commit:** `TBD`
+**Commit:** `777a022`
 
 Three small ship-quality items: link previews now work everywhere, broken routes render branded pages, and Next.js + dompurify got patch/minor bumps.
 
