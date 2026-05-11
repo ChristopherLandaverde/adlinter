@@ -18,6 +18,9 @@ const STANDARD_EVENTS = [
   'SubmitForm',
   'Subscribe',
 ];
+const CUSTOM_STANDARD_ALTERNATIVES: Record<string, string[]> = {
+  CompletePayment: ['bought', 'buy', 'purchase', 'paid'],
+};
 
 // ── A. Base Pixel Active Events ───────────────────────────────
 export const checkBaseEventsActive = (
@@ -168,7 +171,12 @@ export const checkCustomEventUsage = (
     const customLower = customEvent.name.toLowerCase().replace(/[_\-\s]/g, '');
     return STANDARD_EVENTS.some(se => {
       const standardLower = se.toLowerCase();
-      return customLower.includes(standardLower) || standardLower.includes(customLower);
+      const alternatives = CUSTOM_STANDARD_ALTERNATIVES[se] || [];
+      return (
+        customLower.includes(standardLower) ||
+        standardLower.includes(customLower) ||
+        alternatives.some(alt => customLower.includes(alt))
+      );
     });
   });
 

@@ -1,5 +1,20 @@
 # AdLint — Progress Log
 
+## v1.14 — "Try with Sample Data" Demo Mode
+**Commit:** `TBD`
+
+Highest-impact conversion change in the roadmap: removes the upload friction wall for first-time visitors by letting them experience an audit in 5 seconds with pre-canned data.
+
+### New
+- `public/samples/` — 5 sample files (GTM, Ads, Performance, Meta, TikTok). Meta and TikTok samples crafted to trigger specific checks (duplicates, zero-volume, custom-event-overlap, disabled conversion) so first-time users see the linter's value immediately.
+- `lib/tools.ts` — `ToolSample` type and a `samples` field on each enabled tool's config.
+- `components/ToolWorkspace.tsx` — "Try with sample data" link below the upload zones. Fetches → parses → writes sessionStorage → transitions to context step.
+
+### Why
+- Users had to export and upload their own GTM JSON / Ads CSV / Meta export to see any audit at all. The drop-off from landing → "first audit visible" was the biggest growth blocker.
+
+---
+
 ## v1.13 — Round Two of Component Tests
 **Commit:** `4fd933a`
 

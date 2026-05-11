@@ -1,0 +1,82 @@
+[
+  {
+    "name": "PageView",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 12850,
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "name": "ViewContent",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 4310,
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "name": "AddToCart",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 620,
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "name": "AddToCart",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 590,
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "name": "InitiateCheckout",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 210,
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "name": "Purchase",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 84,
+    "value": 12640,
+    "currency": "USD"
+  },
+  {
+    "name": "Lead",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 0,
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "name": "BuyNow",
+    "eventType": "custom",
+    "status": "active",
+    "eventCount": 76,
+    "value": 11400,
+    "currency": "USD"
+  },
+  {
+    "name": "CompleteRegistration",
+    "eventType": "standard",
+    "status": "disabled",
+    "eventCount": 32,
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "name": "Search",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 940,
+    "value": 0,
+    "currency": "USD"
+  }
+]

@@ -14,6 +14,7 @@ const COLUMN_ALIASES: Record<string, string[]> = {
     'event type',
     'type',
     'event_type',
+    'eventtype',
     'standard/custom',
   ],
   status: [
@@ -29,6 +30,7 @@ const COLUMN_ALIASES: Record<string, string[]> = {
     'total events',
     'conversions',
     'event_count',
+    'eventcount',
   ],
   value: [
     'value',
@@ -46,16 +48,20 @@ const COLUMN_ALIASES: Record<string, string[]> = {
     'attribution',
     'click window',
     'view window',
+    'attributionwindow',
   ],
   pixelCode: [
     'pixel code',
     'pixel_code',
+    'pixelcode',
     'tiktok pixel id',
     'pixel id',
+    'pixelid',
   ],
   pixelName: [
     'pixel name',
     'pixel_name',
+    'pixelname',
   ],
 };
 

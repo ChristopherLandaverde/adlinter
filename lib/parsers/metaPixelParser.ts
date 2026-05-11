@@ -14,6 +14,7 @@ const COLUMN_ALIASES: Record<string, string[]> = {
     'event type',
     'type',
     'event_type',
+    'eventtype',
     'standard/custom',
   ],
   status: [
@@ -29,6 +30,7 @@ const COLUMN_ALIASES: Record<string, string[]> = {
     'total events',
     'conversions',
     'event_count',
+    'eventcount',
   ],
   value: [
     'value',
@@ -46,23 +48,29 @@ const COLUMN_ALIASES: Record<string, string[]> = {
     'attribution',
     'click window',
     'view window',
+    'attributionwindow',
   ],
   optimizationGoal: [
     'optimization goal',
     'optimization',
     'goal',
+    'optimizationgoal',
   ],
   pixelId: [
     'pixel id',
     'pixel_id',
+    'pixelid',
     'dataset id',
     'dataset_id',
+    'datasetid',
   ],
   pixelName: [
     'pixel name',
     'pixel_name',
+    'pixelname',
     'dataset name',
     'dataset_name',
+    'datasetname',
   ],
 };
 

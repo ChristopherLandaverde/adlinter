@@ -39,7 +39,11 @@ function parseFile(parser: ToolFileSlot['parser'], text: string) {
 export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
   const router = useRouter();
   const isMultiFile = tool.fileSlots.length > 1;
+  const samples = useMemo(() => tool.samples ?? [], [tool.samples]);
+  const hasSamples = samples.length > 0;
   const [showContextStep, setShowContextStep] = useState(false);
+  const [sampleLoading, setSampleLoading] = useState(false);
+  const [sampleError, setSampleError] = useState('');
 
   const [slots, setSlots] = useState<Record<string, SlotState>>(() => {
     const init: Record<string, SlotState> = {};
@@ -82,6 +86,80 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
     [isMultiFile],
   );
 
+  const handleSampleLoad = useCallback(async () => {
+    if (!hasSamples || sampleLoading) return;
+
+    setSampleLoading(true);
+    setSampleError('');
+
+    const sampleSlotKeys = samples.map((sample) => sample.slotKey);
+    setSlots((prev) => {
+      const next = { ...prev };
+      for (const key of sampleSlotKeys) {
+        if (next[key]) {
+          next[key] = { ...next[key], processing: true, error: '' };
+        }
+      }
+      return next;
+    });
+
+    try {
+      const loadedSamples: Array<{
+        sample: (typeof samples)[number];
+        parsed: unknown;
+      }> = [];
+
+      for (const sample of samples) {
+        const slot = tool.fileSlots.find((fileSlot) => fileSlot.key === sample.slotKey);
+        if (!slot) {
+          throw new Error(`Sample is configured for an unknown slot: ${sample.slotKey}`);
+        }
+
+        const response = await fetch(sample.url);
+        if (!response.ok) {
+          throw new Error(`Failed to load ${sample.filename}.`);
+        }
+
+        const text = await response.text();
+        const parsed = parseFile(slot.parser, text);
+        loadedSamples.push({ sample, parsed });
+      }
+
+      for (const { sample, parsed } of loadedSamples) {
+        sessionStorage.setItem(sample.slotKey, JSON.stringify(parsed));
+      }
+
+      setSlots((prev) => {
+        const next = { ...prev };
+        for (const { sample, parsed } of loadedSamples) {
+          next[sample.slotKey] = {
+            data: parsed,
+            fileName: sample.filename,
+            error: '',
+            processing: false,
+          };
+        }
+        return next;
+      });
+
+      setShowContextStep(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load sample data.';
+      setSampleError(message);
+      setSlots((prev) => {
+        const next = { ...prev };
+        for (const key of sampleSlotKeys) {
+          if (next[key]) {
+            next[key] = { ...next[key], processing: false };
+          }
+        }
+        return next;
+      });
+    } finally {
+      setSampleLoading(false);
+    }
+  }, [hasSamples, sampleLoading, samples, tool.fileSlots]);
+
   const requiredReady = useMemo(
     () =>
       tool.fileSlots
@@ -109,6 +187,25 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
     () => tool.fileSlots.filter((s) => slots[s.key]?.data).length,
     [tool.fileSlots, slots],
   );
+
+  const sampleDataPrompt = hasSamples ? (
+    <div className="text-center pt-4">
+      <p className="text-sm text-gray-500 mb-2">Don&apos;t have a file ready?</p>
+      <button
+        type="button"
+        onClick={handleSampleLoad}
+        disabled={sampleLoading}
+        className="text-blue-600 hover:text-blue-800 underline-offset-4 hover:underline text-sm font-medium disabled:text-gray-400 disabled:no-underline disabled:cursor-wait"
+      >
+        {sampleLoading ? 'Loading sample…' : 'Try with sample data →'}
+      </button>
+      {sampleError && (
+        <p className="text-sm text-red-600 mt-3" role="alert">
+          {sampleError}
+        </p>
+      )}
+    </div>
+  ) : null;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -177,6 +274,8 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
               </div>
             ))}
 
+            {sampleDataPrompt}
+
             <div className="text-center pt-6">
               <button
                 onClick={handleRunAudit}
@@ -209,6 +308,8 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
               processing={slots[tool.fileSlots[0].key]?.processing}
               error={slots[tool.fileSlots[0].key]?.error}
             />
+
+            {sampleDataPrompt}
 
             {/* How to export instructions */}
             <div className="mt-10 bg-gray-50 rounded-xl p-6 border border-gray-100">

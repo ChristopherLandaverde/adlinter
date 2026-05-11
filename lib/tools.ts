@@ -8,6 +8,12 @@ export interface ToolFileSlot {
   parser: 'gtm' | 'ads' | 'report' | 'meta' | 'tiktok';
 }
 
+export interface ToolSample {
+  slotKey: string;            // matches a fileSlot key
+  url: string;                // static URL served from public/
+  filename: string;           // display name shown when loaded
+}
+
 export interface ToolConfig {
   slug: string;
   name: string;
@@ -18,6 +24,7 @@ export interface ToolConfig {
   checkCount: number;
   color: string;             // Tailwind color prefix (e.g. "blue", "emerald")
   fileSlots: ToolFileSlot[];
+  samples?: ToolSample[];
 }
 
 export const tools: ToolConfig[] = [
@@ -33,6 +40,9 @@ export const tools: ToolConfig[] = [
     fileSlots: [
       { key: 'gtmData', label: 'GTM Container JSON', accept: '.json', required: true, parser: 'gtm' },
     ],
+    samples: [
+      { slotKey: 'gtmData', url: '/samples/gtm-container-sample.json', filename: 'sample-container.json' },
+    ],
   },
   {
     slug: 'google-ads-linter',
@@ -46,6 +56,9 @@ export const tools: ToolConfig[] = [
     fileSlots: [
       { key: 'adsData', label: 'Google Ads Conversions CSV', accept: '.csv', required: true, parser: 'ads' },
     ],
+    samples: [
+      { slotKey: 'adsData', url: '/samples/ads-conversions-sample.csv', filename: 'sample-conversions.csv' },
+    ],
   },
   {
     slug: 'performance-analyzer',
@@ -58,6 +71,9 @@ export const tools: ToolConfig[] = [
     color: 'violet',
     fileSlots: [
       { key: 'reportData', label: 'Performance Report (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'report' },
+    ],
+    samples: [
+      { slotKey: 'reportData', url: '/samples/performance-report-sample.json', filename: 'sample-report.json' },
     ],
   },
   {
@@ -74,6 +90,11 @@ export const tools: ToolConfig[] = [
       { key: 'adsData', label: 'Google Ads Conversions CSV', accept: '.csv', required: true, parser: 'ads' },
       { key: 'reportData', label: 'Performance Report (CSV or JSON)', accept: '.csv,.json', required: false, parser: 'report' },
     ],
+    samples: [
+      { slotKey: 'gtmData', url: '/samples/gtm-container-sample.json', filename: 'sample-container.json' },
+      { slotKey: 'adsData', url: '/samples/ads-conversions-sample.csv', filename: 'sample-conversions.csv' },
+      { slotKey: 'reportData', url: '/samples/performance-report-sample.json', filename: 'sample-report.json' },
+    ],
   },
   {
     slug: 'meta-auditor',
@@ -87,6 +108,9 @@ export const tools: ToolConfig[] = [
     fileSlots: [
       { key: 'metaData', label: 'Meta Events Export (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'meta' },
     ],
+    samples: [
+      { slotKey: 'metaData', url: '/samples/meta-events-sample.json', filename: 'sample-meta-events.json' },
+    ],
   },
   {
     slug: 'tiktok-auditor',
@@ -99,6 +123,9 @@ export const tools: ToolConfig[] = [
     color: 'pink',
     fileSlots: [
       { key: 'tiktokData', label: 'TikTok Events Export (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'tiktok' },
+    ],
+    samples: [
+      { slotKey: 'tiktokData', url: '/samples/tiktok-events-sample.json', filename: 'sample-tiktok-events.json' },
     ],
   },
 ];

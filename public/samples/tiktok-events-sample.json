@@ -1,0 +1,82 @@
+[
+  {
+    "name": "ViewContent",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 9350,
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "name": "AddToCart",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 840,
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "name": "InitiateCheckout",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 315,
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "name": "CompletePayment",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 118,
+    "value": 15420,
+    "currency": "USD"
+  },
+  {
+    "name": "Complete Payment",
+    "eventType": "custom",
+    "status": "active",
+    "eventCount": 112,
+    "value": 14610,
+    "currency": "USD"
+  },
+  {
+    "name": "AddToWishlist",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 420,
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "name": "CompleteRegistration",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 0,
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "name": "PlaceAnOrder",
+    "eventType": "standard",
+    "status": "disabled",
+    "eventCount": 36,
+    "value": 4680,
+    "currency": "USD"
+  },
+  {
+    "name": "ProductBought",
+    "eventType": "custom",
+    "status": "active",
+    "eventCount": 98,
+    "value": 12890,
+    "currency": "USD"
+  },
+  {
+    "name": "Search",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 1260,
+    "value": 0,
+    "currency": "USD"
+  }
+]

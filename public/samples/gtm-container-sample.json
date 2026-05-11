@@ -1,0 +1,36 @@
+{
+  "containerVersion": {
+    "tag": [
+      {
+        "name": "Google Ads Conversion Linker",
+        "type": "gclidw",
+        "firingTriggerId": ["1"]
+      },
+      {
+        "name": "GA4 - Configuration",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "key": "measurementId",
+            "value": "G-XXXXXXXXXX",
+            "type": "template"
+          }
+        ],
+        "firingTriggerId": ["2"]
+      }
+    ],
+    "trigger": [
+      {
+        "name": "All Pages",
+        "type": "pageview",
+        "triggerId": "1"
+      },
+      {
+        "name": "Initialization - All Pages",
+        "type": "init",
+        "triggerId": "2"
+      }
+    ],
+    "variable": []
+  }
+}

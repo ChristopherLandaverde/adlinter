@@ -21,6 +21,7 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 - PDF export with email capture
 - Source and severity filtering
 - Audit history saved in localStorage; revisit and compare past audits
+- Try-with-sample-data button on every tool: see the audit in 5 seconds without exporting anything
 - Audit context picker: tune severity rules to your business model, value strategy, sales cycle, and consent requirements
 - Context-aware severity based on business model, sales cycle, value strategy, and consent requirements
 

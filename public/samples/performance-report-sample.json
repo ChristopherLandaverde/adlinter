@@ -1,0 +1,54 @@
+[
+  {
+    "Conversion action": "Purchase",
+    "Conversions": "20",
+    "All conv.": "50",
+    "View-through conv.": "18",
+    "Conv. value": "50000",
+    "All conv. value": "125000",
+    "Value / conv.": "2500",
+    "Value / all conv.": "2500",
+    "Conv. value / cost": "75.0",
+    "Current model conv.": "5",
+    "Category": "Purchase"
+  },
+  {
+    "Conversion action": "Micro Page View Event",
+    "Conversions": "500000",
+    "All conv.": "600000",
+    "View-through conv.": "5000",
+    "Conv. value": "100",
+    "All conv. value": "120",
+    "Value / conv.": "0.0002",
+    "Value / all conv.": "0.0002",
+    "Conv. value / cost": "0.001",
+    "Current model conv.": "490000",
+    "Category": "Page view"
+  },
+  {
+    "Conversion action": "Lead Form Submit",
+    "Conversions": "10",
+    "All conv.": "10",
+    "View-through conv.": "1",
+    "Conv. value": "500",
+    "All conv. value": "500",
+    "Value / conv.": "50",
+    "Value / all conv.": "50",
+    "Conv. value / cost": "2.5",
+    "Current model conv.": "9",
+    "Category": "Lead"
+  },
+  {
+    "Conversion action": "Sale Transaction",
+    "Conversions": "5000",
+    "All conv.": "5500",
+    "View-through conv.": "200",
+    "Conv. value": "250",
+    "All conv. value": "275",
+    "Value / conv.": "0.05",
+    "Value / all conv.": "0.05",
+    "Conv. value / cost": "0.3",
+    "Current model conv.": "4900",
+    "Category": "Transaction"
+  }
+]
