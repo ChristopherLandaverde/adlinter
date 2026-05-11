@@ -70,8 +70,8 @@ export function useAuditCounter(): UseAuditCounterReturn {
     setShouldShowUnlockModal(false);
   }, []);
 
-  // PDF export is available if user is subscribed
-  const canExportPDF = isSubscribed;
+  // PDF export is available before the unlock threshold, or after subscribing.
+  const canExportPDF = auditCount < UNLOCK_THRESHOLD || isSubscribed;
 
   return {
     auditCount,

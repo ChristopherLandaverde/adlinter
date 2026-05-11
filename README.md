@@ -71,7 +71,7 @@ Export from TikTok Events Manager > Web Events > Export; supports CSV and JSON.
 npm test
 ```
 
-445 tests covering all checks, parsers, integration scenarios, and edge cases.
+482 tests covering checks, parsers, integration scenarios, edge cases, hooks, and components.
 
 ## Tech Stack
 

@@ -1,5 +1,23 @@
 # AdLint — Progress Log
 
+## v1.12 — Component & Hook Test Coverage
+**Commit:** `TBD`
+
+Added the first component-level tests. Tests previously covered only parsers and checks; the React surface was untested.
+
+### New test files
+- `__tests__/hooks/useAuditCounter.test.ts`
+- `__tests__/lib/auditHistory.test.ts`
+- `__tests__/components/AuditContextPicker.test.tsx`
+- `__tests__/components/AuditHistoryLink.test.tsx`
+- `__tests__/components/FileDropZone.test.tsx`
+- `__tests__/components/PDFExportButton.test.tsx`
+
+### Total tests
+- Was 445. Now 482.
+
+---
+
 ## v1.11 — Audit History (localStorage)
 **Commit:** `a0d3cb8`
 
