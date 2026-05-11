@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.11 — Audit History (localStorage)
-**Commit:** `TBD`
+**Commit:** `a0d3cb8`
 
 Every completed audit now saves to localStorage so refresh doesn't lose results and you can compare runs over time. Stays 100% client-side; no backend, no data leaves the browser.
 
