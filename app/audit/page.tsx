@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { RotateCcw } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
 import { AuditResults, AuditCheck, AuditSummary, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, LinkedInInsightData, Severity, AuditContext } from '@/lib/types';
@@ -474,7 +475,7 @@ function SeverityDonut({ data }: { data: { name: string; value: number; color: s
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
       <h3 className="text-sm font-semibold text-gray-900 mb-4">Issue Distribution</h3>
-      <div className="flex items-center gap-6">
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
         <div className="w-36 h-36 shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -502,7 +503,7 @@ function SeverityDonut({ data }: { data: { name: string; value: number; color: s
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="space-y-2 flex-1">
+        <div className="w-full space-y-2 sm:flex-1">
           {data.map(d => (
             <div key={d.name} className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
@@ -669,7 +670,7 @@ function IssuesTable({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead>
+          <thead className="hidden sm:table-header-group">
             <tr className="bg-gray-50 border-b border-gray-200">
               <th className="text-left py-3 px-4 font-semibold text-gray-400 text-xs uppercase tracking-wide w-28">
                 <button className="flex items-center gap-1 hover:text-gray-900" onClick={() => onSort('severity')}>
@@ -1099,6 +1100,13 @@ function AuditPageContent() {
   const [sortColumn, setSortColumn] = useState<'severity' | 'title' | 'source' | 'affected'>('severity');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [canCompare, setCanCompare] = useState(false);
+  const tabButtonRefs = useRef<Record<Tab, HTMLButtonElement | null>>({
+    gtm: null,
+    ads: null,
+    meta: null,
+    tiktok: null,
+    linkedin: null,
+  });
 
   // Audit counter for PDF unlock feature
   const {
@@ -1222,6 +1230,14 @@ function AuditPageContent() {
     setCanCompare(getHistory().length >= 2);
   }, [results, healthScore]);
 
+  useEffect(() => {
+    tabButtonRefs.current[activeTab]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'nearest',
+    });
+  }, [activeTab]);
+
   const handleClosePanel = useCallback(() => setSelectedCheck(null), []);
 
   // ─── Derived data ────────────────────────────────────────────────────────
@@ -1336,18 +1352,18 @@ function AuditPageContent() {
     <div className="min-h-screen bg-bg">
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-border bg-surface/85 px-4 py-4 backdrop-blur-sm lg:px-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Link href="/" className="font-display text-xl font-semibold text-accent transition-colors hover:text-accent-hover">
               AdLint
             </Link>
-            <div className="h-6 w-px bg-border" />
-            <div>
-              <h1 className="font-display text-lg font-semibold text-ink">Audit Results</h1>
-              <span className="text-xs text-muted">{auditType}</span>
+            <div className="hidden h-6 w-px bg-border sm:block" />
+            <div className="min-w-0">
+              <h1 className="truncate font-display text-lg font-semibold text-ink">Audit Results</h1>
+              <span className="hidden text-xs text-muted sm:inline">{auditType}</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
             <AuditHistoryLink />
             <PDFExportButton
               results={results}
@@ -1362,23 +1378,26 @@ function AuditPageContent() {
                 sessionStorage.clear();
                 router.push('/');
               }}
-              className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+              aria-label="New audit"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-sm text-sm text-gray-500 transition-colors hover:bg-surface-2 hover:text-gray-900 sm:h-auto sm:w-auto sm:px-0"
             >
-              New Audit
+              <RotateCcw className="h-4 w-4 sm:hidden" aria-hidden="true" />
+              <span className="hidden sm:inline">New Audit</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Tabs */}
-      <div className="sticky top-[73px] z-10 border-b border-border bg-surface">
+      <div className="sticky top-[65px] z-10 border-b border-border bg-surface sm:top-[73px]">
         <div className="max-w-7xl mx-auto px-4 lg:px-6">
-          <nav className="flex gap-1">
+          <nav className="flex gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:overflow-visible">
             {hasGTMData && (
               <button
+                ref={(node) => { tabButtonRefs.current.gtm = node; }}
                 onClick={() => setActiveTab('gtm')}
                 className={`
-                  relative px-5 py-3 text-sm font-medium transition-colors
+                  relative flex-shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium transition-colors
                   ${activeTab === 'gtm'
                     ? 'text-accent'
                     : 'text-gray-500 hover:text-gray-900'
@@ -1396,9 +1415,10 @@ function AuditPageContent() {
             )}
             {hasAdsData && (
               <button
+                ref={(node) => { tabButtonRefs.current.ads = node; }}
                 onClick={() => setActiveTab('ads')}
                 className={`
-                  relative px-5 py-3 text-sm font-medium transition-colors
+                  relative flex-shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium transition-colors
                   ${activeTab === 'ads'
                     ? 'text-accent'
                     : 'text-gray-500 hover:text-gray-900'
@@ -1416,9 +1436,10 @@ function AuditPageContent() {
             )}
             {hasMetaData && (
               <button
+                ref={(node) => { tabButtonRefs.current.meta = node; }}
                 onClick={() => setActiveTab('meta')}
                 className={`
-                  relative px-5 py-3 text-sm font-medium transition-colors
+                  relative flex-shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium transition-colors
                   ${activeTab === 'meta'
                     ? 'text-accent'
                     : 'text-gray-500 hover:text-gray-900'
@@ -1436,9 +1457,10 @@ function AuditPageContent() {
             )}
             {hasTikTokData && (
               <button
+                ref={(node) => { tabButtonRefs.current.tiktok = node; }}
                 onClick={() => setActiveTab('tiktok')}
                 className={`
-                  relative px-5 py-3 text-sm font-medium transition-colors
+                  relative flex-shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium transition-colors
                   ${activeTab === 'tiktok'
                     ? 'text-accent'
                     : 'text-gray-500 hover:text-gray-900'
@@ -1456,9 +1478,10 @@ function AuditPageContent() {
             )}
             {hasLinkedInData && (
               <button
+                ref={(node) => { tabButtonRefs.current.linkedin = node; }}
                 onClick={() => setActiveTab('linkedin')}
                 className={`
-                  relative px-5 py-3 text-sm font-medium transition-colors
+                  relative flex-shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium transition-colors
                   ${activeTab === 'linkedin'
                     ? 'text-accent'
                     : 'text-gray-500 hover:text-gray-900'
@@ -1475,7 +1498,7 @@ function AuditPageContent() {
               </button>
             )}
             {crossChecks.length > 0 && (
-              <div className="flex items-center px-5 py-3 text-sm text-accent">
+              <div className="flex flex-shrink-0 items-center whitespace-nowrap px-5 py-3 text-sm text-accent">
                 <div className="flex items-center gap-2">
                   <IconCross />
                   <span className="font-medium">Cross-Check</span>

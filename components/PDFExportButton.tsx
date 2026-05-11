@@ -669,7 +669,7 @@ export function PDFExportButton({
           onClick={handleExport}
           disabled={isGenerating}
           className={`
-            flex h-10 items-center gap-2 rounded-sm px-4 text-sm font-medium transition-colors
+            flex h-10 w-10 items-center justify-center gap-2 rounded-sm px-0 text-sm font-medium transition-colors sm:w-auto sm:px-4
             ${canExportPDF
               ? 'border border-border bg-surface text-ink hover:border-ink/20'
               : 'bg-surface-2 text-muted hover:text-ink'
@@ -680,17 +680,17 @@ export function PDFExportButton({
           {isGenerating ? (
             <>
               <IconSpinner />
-              Generating...
+              <span className="hidden sm:inline">Generating...</span>
             </>
           ) : canExportPDF ? (
             <>
               <IconDownload />
-              Download PDF
+              <span className="hidden sm:inline">Download PDF</span>
             </>
           ) : (
             <>
               <IconLock />
-              Download PDF
+              <span className="hidden sm:inline">Download PDF</span>
             </>
           )}
         </button>

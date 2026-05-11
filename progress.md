@@ -1,5 +1,24 @@
 # AdLint — Progress Log
 
+## v1.22 — Mobile Audit Results Polish
+**Commit:** `uncommitted - git index is read-only in this workspace`
+
+Fixes the mobile layout regressions on `/audit` after the desktop-first v1.6-v1.21 redesign work.
+
+- Header: mobile hides the divider and audit-type subtitle, keeps action controls icon-sized, and preserves the desktop header at `sm:` and up.
+- Tabs: mobile audit tabs now scroll horizontally without label wrapping, and the active tab scrolls into view when changed.
+- Charts: Issue Distribution stacks the legend below the donut on mobile, returning to side-by-side at `sm:`.
+- Findings: mobile hides the redundant table header row so the issue list starts with readable findings instead of tiny column labels.
+
+### Modified
+- `app/audit/page.tsx`
+- `components/AuditHistoryLink.tsx`
+- `components/PDFExportButton.tsx`
+- `package.json`
+- `package-lock.json`
+
+---
+
 ## v1.21 — Post-Redesign Polish (F5–F9)
 **Commit:** `4f0b0fd`
 
