@@ -5,7 +5,7 @@ export interface ToolFileSlot {
   label: string;
   accept: string;
   required: boolean;
-  parser: 'gtm' | 'ads' | 'report' | 'meta';
+  parser: 'gtm' | 'ads' | 'report' | 'meta' | 'tiktok';
 }
 
 export interface ToolConfig {
@@ -94,10 +94,12 @@ export const tools: ToolConfig[] = [
     description: 'Audit your TikTok Pixel setup for event mismatches and missing parameters.',
     icon: '🎵',
     category: 'tiktok',
-    enabled: false,
-    checkCount: 0,
+    enabled: true,
+    checkCount: 10,
     color: 'pink',
-    fileSlots: [],
+    fileSlots: [
+      { key: 'tiktokData', label: 'TikTok Events Export (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'tiktok' },
+    ],
   },
 ];
 

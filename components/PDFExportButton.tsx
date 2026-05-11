@@ -15,7 +15,7 @@ interface PDFExportButtonProps {
 }
 
 interface TaggedCheck extends AuditCheck {
-  source: 'gtm' | 'ads' | 'cross' | 'report';
+  source: 'gtm' | 'ads' | 'cross' | 'report' | 'meta' | 'tiktok';
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -31,6 +31,8 @@ const SOURCE_LABELS: Record<string, string> = {
   ads: 'Ads',
   cross: 'Cross-Check',
   report: 'Report',
+  meta: 'Meta',
+  tiktok: 'TikTok',
 };
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -95,6 +97,8 @@ function tagChecks(results: AuditResults): TaggedCheck[] {
     ...tag(results.ads, 'ads'),
     ...tag(results.cross, 'cross'),
     ...tag(results.report, 'report'),
+    ...tag(results.meta, 'meta'),
+    ...tag(results.tiktok, 'tiktok'),
   ];
 }
 

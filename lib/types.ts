@@ -24,6 +24,7 @@ export interface AuditResults {
   cross: AuditCheck[];
   report: AuditCheck[];
   meta: AuditCheck[];
+  tiktok: AuditCheck[];
   summary: AuditSummary;
 }
 
@@ -117,6 +118,23 @@ export interface MetaPixelData {
   pixelId?: string;
   pixelName?: string;
   events: MetaPixelEvent[];
+}
+
+// TikTok Pixel Data Structures
+export interface TikTokPixelEvent {
+  name: string;
+  eventType: 'standard' | 'custom';
+  status: string;
+  eventCount: number;
+  value: number;
+  currency?: string;
+  attributionWindow?: string;
+}
+
+export interface TikTokPixelData {
+  pixelCode?: string;
+  pixelName?: string;
+  events: TikTokPixelEvent[];
 }
 
 // Contextual Audit Data

@@ -1,5 +1,40 @@
 # AdLint — Progress Log
 
+## v1.7 — TikTok Pixel Auditor
+**Commit:** `069c74b`
+
+Added a TikTok Pixel Auditor that mirrors the Meta Pixel Auditor pattern with TikTok-specific standard events and funnel semantics.
+
+### Parser (`lib/parsers/tiktokPixelParser.ts`)
+- Parses CSV and JSON exports from TikTok Events Manager
+- Handles column aliases for flexible input formats, including pixel code extraction
+- Detects TikTok standard vs custom events automatically
+- Supports EU/US number formats and skips export summary rows
+
+### Checks (`lib/checks/tiktokChecks.ts`)
+- 10 checks total:
+  - `tiktok-base-events-active` — critical
+  - `tiktok-missing-conversion-events` — critical, or warning for agency/other business models
+  - `tiktok-duplicate-events` — warning
+  - `tiktok-similar-event-names` — info
+  - `tiktok-zero-volume-events` — warning
+  - `tiktok-custom-event-standard-alternative` — info
+  - `tiktok-completepayment-missing-value` — critical, or info when value strategy is no-values; info/pass when no CompletePayment events are configured
+  - `tiktok-ecommerce-funnel` — warning when more than two funnel events are missing, otherwise info
+  - `tiktok-event-concentration` — info
+  - `tiktok-disabled-conversions` — warning when disabled conversion events are found, otherwise info
+
+### Tool registration
+- Enabled `tiktok-auditor` in `lib/tools.ts`
+- Added TikTok CSV/JSON parser routing in `app/tools/[slug]/page.tsx`
+- Added TikTok result handling and tab routing in `app/audit/page.tsx`
+
+### Tests
+- Added comprehensive check coverage in `__tests__/checks/tiktokChecks.test.ts`
+- Added parser coverage in `__tests__/parsers/tiktokPixelParser.test.ts`
+
+---
+
 ## v1.6 — Audit Results CTA
 **Commit:** `a41c651`
 

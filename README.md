@@ -13,7 +13,7 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 - **Performance Report Analyzer** — 11 checks
 - **Full-Stack Audit** — 82 checks across GTM, Ads, and performance reports
 - **Meta Pixel Auditor** — 10 checks
-- **TikTok Pixel Auditor** — coming soon
+- **TikTok Pixel Auditor** — 10 checks
 
 ## Features
 
@@ -34,6 +34,7 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 | Cross-Platform | 4 | Tag-to-conversion matching, value mismatches, tag count parity |
 | Cross Advanced | 10 | Dynamic value passing, conversion label matching, transaction ID deduplication, funnel coverage |
 | Meta Pixel | 10 | Missing PageView, missing conversion events, duplicate event names, similar event names, zero volume active events, custom events with standard alternatives, purchase value tracking, e-commerce funnel events, event volume concentration, disabled conversion events |
+| TikTok Pixel | 10 | Base pixel active events, missing conversion events, duplicate event names, similar event names, zero volume active events, custom events with standard alternatives, CompletePayment value tracking, e-commerce funnel events, event volume concentration, disabled conversion events |
 
 ## Getting Started
 
@@ -59,13 +60,16 @@ Open [http://localhost:3000](http://localhost:3000) and upload your files.
 **Meta Pixel Events:**
 Export from Meta Events Manager > Diagnostics or Test Events; supports CSV and JSON.
 
+**TikTok Pixel Events:**
+Export from TikTok Events Manager > Web Events > Export; supports CSV and JSON.
+
 ## Running Tests
 
 ```bash
 npm test
 ```
 
-400 tests covering all checks, parsers, integration scenarios, and edge cases.
+445 tests covering all checks, parsers, integration scenarios, and edge cases.
 
 ## Tech Stack
 

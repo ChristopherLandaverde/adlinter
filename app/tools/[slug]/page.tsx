@@ -8,6 +8,7 @@ import { parseGTMJSON } from '@/lib/parsers/gtmParser';
 import { parseAdsCSV } from '@/lib/parsers/adsParser';
 import { parseAdsReportCSV } from '@/lib/parsers/adsReportParser';
 import { parseMetaPixelCSV } from '@/lib/parsers/metaPixelParser';
+import { parseTikTokPixelCSV } from '@/lib/parsers/tiktokPixelParser';
 import FileDropZone from '@/components/FileDropZone';
 import Link from 'next/link';
 
@@ -28,6 +29,8 @@ function parseFile(parser: ToolFileSlot['parser'], text: string) {
       return parseAdsReportCSV(text);
     case 'meta':
       return parseMetaPixelCSV(text);
+    case 'tiktok':
+      return parseTikTokPixelCSV(text);
   }
 }
 
@@ -252,6 +255,16 @@ function ExportInstructions({ parser }: { parser: ToolFileSlot['parser'] }) {
           <li>Open Meta Events Manager</li>
           <li>Select your Pixel</li>
           <li>Go to <strong>Events</strong> tab</li>
+          <li>Click <strong>Export</strong> or download event data</li>
+          <li>Save as CSV or JSON</li>
+        </ol>
+      );
+    case 'tiktok':
+      return (
+        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
+          <li>Open TikTok Events Manager</li>
+          <li>Go to <strong>Web Events</strong></li>
+          <li>Select your Pixel</li>
           <li>Click <strong>Export</strong> or download event data</li>
           <li>Save as CSV or JSON</li>
         </ol>

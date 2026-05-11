@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
-import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, MetaPixelData, Severity } from '@/lib/types';
+import { AuditResults, AuditCheck, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, Severity } from '@/lib/types';
 import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
 import { PDFExportButton } from '@/components/PDFExportButton';
 import {
@@ -13,8 +13,8 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-type Source = 'gtm' | 'ads' | 'cross' | 'report' | 'meta';
-type Tab = 'gtm' | 'ads' | 'meta';
+type Source = 'gtm' | 'ads' | 'cross' | 'report' | 'meta' | 'tiktok';
+type Tab = 'gtm' | 'ads' | 'meta' | 'tiktok';
 
 const severityConfig: Record<Severity, { label: string; color: string; bg: string; border: string; text: string; badge: string; dot: string }> = {
   critical: {
@@ -52,6 +52,7 @@ const sourceConfig: Record<Source, { label: string; badge: string }> = {
   cross: { label: 'Cross-Check', badge: 'bg-orange-100 text-orange-700' },
   report: { label: 'Report', badge: 'bg-teal-100 text-teal-700' },
   meta: { label: 'Meta', badge: 'bg-blue-100 text-blue-700' },
+  tiktok: { label: 'TikTok', badge: 'bg-pink-100 text-pink-700' },
 };
 
 const severityOrder: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
@@ -159,6 +160,7 @@ function tagChecks(results: AuditResults): TaggedCheck[] {
     ...tag(results.cross, 'cross'),
     ...tag(results.report, 'report'),
     ...tag(results.meta, 'meta'),
+    ...tag(results.tiktok, 'tiktok'),
   ];
 }
 
@@ -990,8 +992,9 @@ export default function AuditPage() {
     const adsDataStr = sessionStorage.getItem('adsData');
     const reportDataStr = sessionStorage.getItem('reportData');
     const metaDataStr = sessionStorage.getItem('metaData');
+    const tiktokDataStr = sessionStorage.getItem('tiktokData');
 
-    if (!gtmDataStr && !adsDataStr && !reportDataStr && !metaDataStr) {
+    if (!gtmDataStr && !adsDataStr && !reportDataStr && !metaDataStr && !tiktokDataStr) {
       router.push('/');
       return;
     }
@@ -1001,13 +1004,15 @@ export default function AuditPage() {
       const adsData: AdsData | null = adsDataStr ? JSON.parse(adsDataStr) : null;
       const reportData: AdsReportData | null = reportDataStr ? JSON.parse(reportDataStr) : null;
       const metaData: MetaPixelData | null = metaDataStr ? JSON.parse(metaDataStr) : null;
+      const tiktokData: TikTokPixelData | null = tiktokDataStr ? JSON.parse(tiktokDataStr) : null;
 
-      const auditResults = runAudit(gtmData, adsData, undefined, reportData, metaData);
+      const auditResults = runAudit(gtmData, adsData, undefined, reportData, metaData, tiktokData);
       setResults(auditResults);
       setLoading(false);
 
       // Set initial tab based on available data
-      if (metaData && !gtmData && !adsData) setActiveTab('meta');
+      if (tiktokData && !gtmData && !adsData && !metaData) setActiveTab('tiktok');
+      else if (metaData && !gtmData && !adsData) setActiveTab('meta');
       else if (gtmData && !adsData) setActiveTab('gtm');
       else if (adsData && !gtmData) setActiveTab('ads');
 
@@ -1040,17 +1045,20 @@ export default function AuditPage() {
   const adsChecks = useMemo(() => displayed.filter(c => c.source === 'ads' || c.source === 'report'), [displayed]);
   const crossChecks = useMemo(() => displayed.filter(c => c.source === 'cross'), [displayed]);
   const metaChecks = useMemo(() => displayed.filter(c => c.source === 'meta'), [displayed]);
+  const tiktokChecks = useMemo(() => displayed.filter(c => c.source === 'tiktok'), [displayed]);
 
   // Tab counts for badges
   const gtmFailedCount = useMemo(() => gtmChecks.filter(c => !c.passed).length, [gtmChecks]);
   const adsFailedCount = useMemo(() => adsChecks.filter(c => !c.passed).length, [adsChecks]);
   const crossFailedCount = useMemo(() => crossChecks.filter(c => !c.passed).length, [crossChecks]);
   const metaFailedCount = useMemo(() => metaChecks.filter(c => !c.passed).length, [metaChecks]);
+  const tiktokFailedCount = useMemo(() => tiktokChecks.filter(c => !c.passed).length, [tiktokChecks]);
 
   // Check if tabs have data
   const hasGTMData = gtmChecks.length > 0;
   const hasAdsData = adsChecks.length > 0;
   const hasMetaData = metaChecks.length > 0;
+  const hasTikTokData = tiktokChecks.length > 0;
 
   // ─── Sort handler ────────────────────────────────────────────────────────
 
@@ -1084,6 +1092,7 @@ export default function AuditPage() {
     if (results.ads.length > 0) parts.push('Ads');
     if (results.report.length > 0) parts.push('Report');
     if (results.meta.length > 0) parts.push('Meta');
+    if (results.tiktok.length > 0) parts.push('TikTok');
     if (parts.length === 0) return 'Audit';
     if (parts.length === 1) return `${parts[0]} Audit`;
     return `${parts.join(' + ')} Audit`;
@@ -1244,6 +1253,32 @@ export default function AuditPage() {
                 )}
               </button>
             )}
+            {hasTikTokData && (
+              <button
+                onClick={() => setActiveTab('tiktok')}
+                className={`
+                  relative px-5 py-3 text-sm font-medium transition-colors
+                  ${activeTab === 'tiktok'
+                    ? 'text-pink-600'
+                    : 'text-gray-500 hover:text-gray-900'
+                  }
+                `}
+              >
+                <div className="flex items-center gap-2">
+                  <span>TikTok Pixel</span>
+                  {tiktokFailedCount > 0 && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                      activeTab === 'tiktok' ? 'bg-pink-100 text-pink-600' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {tiktokFailedCount}
+                    </span>
+                  )}
+                </div>
+                {activeTab === 'tiktok' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-600" />
+                )}
+              </button>
+            )}
             {crossChecks.length > 0 && (
               <div className="flex items-center px-5 py-3 text-sm text-orange-600">
                 <div className="flex items-center gap-2">
@@ -1307,6 +1342,24 @@ export default function AuditPage() {
             title="Meta Pixel"
             icon={<span className="text-blue-600">Meta</span>}
             color="blue"
+            search={search}
+            onSearchChange={setSearch}
+            severityFilters={severityFilters}
+            onToggleSeverity={toggleSeverityFilter}
+            sortColumn={sortColumn}
+            sortDir={sortDir}
+            onSort={handleSort}
+            selectedCheck={selectedCheck}
+            onSelectCheck={setSelectedCheck}
+          />
+        )}
+
+        {activeTab === 'tiktok' && hasTikTokData && (
+          <TabSection
+            checks={tiktokChecks}
+            title="TikTok Pixel"
+            icon={<span className="text-pink-600">TikTok</span>}
+            color="pink"
             search={search}
             onSearchChange={setSearch}
             severityFilters={severityFilters}

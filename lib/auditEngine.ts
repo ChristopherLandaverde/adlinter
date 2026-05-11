@@ -1,4 +1,4 @@
-import { GTMContainer, AdsData, AdsReportData, MetaPixelData, AuditResults, AuditContext } from './types';
+import { GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, AuditResults, AuditContext } from './types';
 import { allGTMChecks } from './checks/gtmChecks';
 import { allAdsChecks } from './checks/adsChecks';
 import { allCrossChecks } from './checks/crossChecks';
@@ -13,13 +13,15 @@ import { allSignalQualityChecks } from './checks/signalQualityChecks';
 import { allSettingsReportCrossChecks } from './checks/settingsReportCrossChecks';
 import { allEdgeCaseChecks } from './checks/edgeCaseChecks';
 import { allMetaChecks } from './checks/metaChecks';
+import { allTikTokChecks } from './checks/tiktokChecks';
 
 export const runAudit = (
   gtmData: GTMContainer | null = null,
   adsData: AdsData | null = null,
   context?: AuditContext,
   reportData?: AdsReportData | null,
-  metaData?: MetaPixelData | null
+  metaData?: MetaPixelData | null,
+  tiktokData?: TikTokPixelData | null
 ): AuditResults => {
   const results: AuditResults = {
     gtm: [],
@@ -27,6 +29,7 @@ export const runAudit = (
     cross: [],
     report: [],
     meta: [],
+    tiktok: [],
     summary: {
       critical: 0,
       warning: 0,
@@ -104,8 +107,14 @@ export const runAudit = (
     results.meta = metaResults;
   }
 
+  // Run TikTok Pixel checks if TikTok data provided
+  if (tiktokData) {
+    const tiktokResults = allTikTokChecks.map(check => check(tiktokData, context));
+    results.tiktok = tiktokResults;
+  }
+
   // Calculate summary
-  const allChecks = [...results.gtm, ...results.ads, ...results.cross, ...results.report, ...results.meta];
+  const allChecks = [...results.gtm, ...results.ads, ...results.cross, ...results.report, ...results.meta, ...results.tiktok];
   allChecks.forEach(check => {
     if (check.passed) {
       results.summary.passed++;

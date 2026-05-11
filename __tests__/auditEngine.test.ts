@@ -1,5 +1,5 @@
 import { runAudit } from '@/lib/auditEngine';
-import { GTMContainer, AdsData, AuditContext } from '@/lib/types';
+import { GTMContainer, AdsData, AuditContext, TikTokPixelData } from '@/lib/types';
 import { parseGTMJSON } from '@/lib/parsers/gtmParser';
 import { parseAdsCSV } from '@/lib/parsers/adsParser';
 import { readFileSync } from 'fs';
@@ -19,6 +19,9 @@ describe('Audit Engine', () => {
       expect(results).toHaveProperty('gtm');
       expect(results).toHaveProperty('ads');
       expect(results).toHaveProperty('cross');
+      expect(results).toHaveProperty('report');
+      expect(results).toHaveProperty('meta');
+      expect(results).toHaveProperty('tiktok');
       expect(results).toHaveProperty('summary');
       expect(results.summary).toHaveProperty('critical');
       expect(results.summary).toHaveProperty('warning');
@@ -32,6 +35,9 @@ describe('Audit Engine', () => {
       expect(results.gtm).toEqual([]);
       expect(results.ads).toEqual([]);
       expect(results.cross).toEqual([]);
+      expect(results.report).toEqual([]);
+      expect(results.meta).toEqual([]);
+      expect(results.tiktok).toEqual([]);
       expect(results.summary.critical).toBe(0);
       expect(results.summary.warning).toBe(0);
       expect(results.summary.info).toBe(0);
@@ -89,6 +95,31 @@ describe('Audit Engine', () => {
 
       // 11 basic + 15 advanced + 8 structure + 8 edge cases = 42
       expect(results.ads.length).toBe(42);
+    });
+  });
+
+  describe('TikTok-only audit', () => {
+    it('should run all 10 TikTok checks when TikTok data provided', () => {
+      const tiktokData: TikTokPixelData = {
+        events: [
+          {
+            name: 'CompletePayment',
+            eventType: 'standard',
+            status: 'active',
+            eventCount: 100,
+            value: 5000,
+          },
+        ],
+      };
+
+      const results = runAudit(null, null, undefined, null, null, tiktokData);
+
+      expect(results.tiktok.length).toBe(10);
+      expect(results.gtm).toEqual([]);
+      expect(results.ads).toEqual([]);
+      expect(results.cross).toEqual([]);
+      expect(results.report).toEqual([]);
+      expect(results.meta).toEqual([]);
     });
   });
 
