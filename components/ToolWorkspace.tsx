@@ -278,6 +278,7 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
                   processing={slots[slot.key]?.processing}
                   error={slots[slot.key]?.error}
                   compact
+                  showLabel={false}
                 />
               </div>
             ))}

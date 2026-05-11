@@ -11,6 +11,7 @@ interface FileDropZoneProps {
   processing?: boolean;
   error?: string;
   compact?: boolean;
+  showLabel?: boolean;
 }
 
 export default function FileDropZone({
@@ -22,6 +23,7 @@ export default function FileDropZone({
   processing = false,
   error,
   compact = false,
+  showLabel = true,
 }: FileDropZoneProps) {
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -76,7 +78,7 @@ export default function FileDropZone({
       >
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-medium text-ink text-sm">{label}</p>
+            {showLabel && <p className="font-medium text-ink text-sm">{label}</p>}
             {uploaded && fileName ? (
               <p className="text-pass text-xs mt-0.5 truncate">{fileName}</p>
             ) : error ? (

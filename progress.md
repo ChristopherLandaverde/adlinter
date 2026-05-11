@@ -1,5 +1,18 @@
 # AdLint — Progress Log
 
+## v1.21 — Post-Redesign Polish (F5–F9)
+**Commit:** `TBD`
+
+Closes the remaining /design-review findings from the v1.19 audit.
+
+- F5: Hero headline now uses `text-wrap: balance` so "tracking." no longer orphans on its own line.
+- F6: Multi-file upload step on /tools/full-audit is now one grouped panel with internal dividers instead of three stacked cards.
+- F7: "Audit your own files" CTA now anchors to the tool grid (#tools) instead of being a no-op.
+- F8: Context picker selects constrained to max-w-md for visual lightness.
+- F9: Audit page tab labels rewritten to show issue counts unambiguously (e.g. "Ads · 5 issues" with a severity-colored chip) instead of the cryptic "Ads 5/7".
+
+---
+
 ## v1.20 — Post-Redesign Fix Pass (F1–F4)
 **Commit:** `f36c72d`
 

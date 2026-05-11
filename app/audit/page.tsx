@@ -242,6 +242,30 @@ function collectFileNames(sourceData: AuditSourceData) {
   return names.filter((name): name is string => !!name);
 }
 
+function getIssueBadgeClass(checks: TaggedCheck[]) {
+  const failed = checks.filter((check) => !check.passed);
+
+  if (failed.some((check) => check.severity === 'critical')) {
+    return 'bg-critical/10 text-critical';
+  }
+
+  if (failed.some((check) => check.severity === 'warning')) {
+    return 'bg-warning/10 text-warning';
+  }
+
+  return 'bg-info/10 text-info';
+}
+
+function TabIssueBadge({ count, checks }: { count: number; checks: TaggedCheck[] }) {
+  if (count === 0) return null;
+
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getIssueBadgeClass(checks)}`}>
+      {count} issue{count === 1 ? '' : 's'}
+    </span>
+  );
+}
+
 function restoreSourceData(sourceData: AuditSourceData) {
   const keys = ['gtmData', 'adsData', 'reportData', 'metaData', 'tiktokData', 'linkedinData'] as const;
 
@@ -1363,13 +1387,7 @@ function AuditPageContent() {
               >
                 <div className="flex items-center gap-2">
                   <span>Google Tag Manager</span>
-                  {gtmFailedCount > 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      activeTab === 'gtm' ? 'bg-accent/10 text-accent' : 'bg-surface-2 text-muted'
-                    }`}>
-                      {gtmFailedCount}
-                    </span>
-                  )}
+                  <TabIssueBadge count={gtmFailedCount} checks={gtmChecks} />
                 </div>
                 {activeTab === 'gtm' && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
@@ -1389,13 +1407,7 @@ function AuditPageContent() {
               >
                 <div className="flex items-center gap-2">
                   <span>Google Ads</span>
-                  {adsFailedCount > 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      activeTab === 'ads' ? 'bg-accent/10 text-accent' : 'bg-surface-2 text-muted'
-                    }`}>
-                      {adsFailedCount}
-                    </span>
-                  )}
+                  <TabIssueBadge count={adsFailedCount} checks={adsChecks} />
                 </div>
                 {activeTab === 'ads' && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
@@ -1415,13 +1427,7 @@ function AuditPageContent() {
               >
                 <div className="flex items-center gap-2">
                   <span>Meta Pixel</span>
-                  {metaFailedCount > 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      activeTab === 'meta' ? 'bg-accent/10 text-accent' : 'bg-surface-2 text-muted'
-                    }`}>
-                      {metaFailedCount}
-                    </span>
-                  )}
+                  <TabIssueBadge count={metaFailedCount} checks={metaChecks} />
                 </div>
                 {activeTab === 'meta' && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
@@ -1441,13 +1447,7 @@ function AuditPageContent() {
               >
                 <div className="flex items-center gap-2">
                   <span>TikTok Pixel</span>
-                  {tiktokFailedCount > 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      activeTab === 'tiktok' ? 'bg-accent/10 text-accent' : 'bg-surface-2 text-muted'
-                    }`}>
-                      {tiktokFailedCount}
-                    </span>
-                  )}
+                  <TabIssueBadge count={tiktokFailedCount} checks={tiktokChecks} />
                 </div>
                 {activeTab === 'tiktok' && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
@@ -1467,13 +1467,7 @@ function AuditPageContent() {
               >
                 <div className="flex items-center gap-2">
                   <span>LinkedIn Insight Tag</span>
-                  {linkedinFailedCount > 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      activeTab === 'linkedin' ? 'bg-accent/10 text-accent' : 'bg-surface-2 text-muted'
-                    }`}>
-                      {linkedinFailedCount}
-                    </span>
-                  )}
+                  <TabIssueBadge count={linkedinFailedCount} checks={linkedinChecks} />
                 </div>
                 {activeTab === 'linkedin' && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
@@ -1485,11 +1479,7 @@ function AuditPageContent() {
                 <div className="flex items-center gap-2">
                   <IconCross />
                   <span className="font-medium">Cross-Check</span>
-                  {crossFailedCount > 0 && (
-                    <span className="rounded-full bg-accent/10 px-1.5 py-0.5 text-xs text-accent">
-                      {crossFailedCount}
-                    </span>
-                  )}
+                  <TabIssueBadge count={crossFailedCount} checks={crossChecks} />
                   <span className="text-xs text-gray-400 ml-1">(always visible)</span>
                 </div>
               </div>

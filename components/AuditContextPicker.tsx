@@ -189,7 +189,7 @@ function ContextSelect<T extends string>({
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value || undefined)}
-        className="w-full rounded-sm border border-border bg-surface px-4 py-3 text-sm text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/10"
+        className="w-full max-w-md rounded-sm border border-border bg-surface px-4 py-3 text-sm text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/10"
       >
         <option value="">— Skip this question —</option>
         {options.map((option) => (

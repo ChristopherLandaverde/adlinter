@@ -113,7 +113,7 @@ export default function Home() {
 
       {/* Hero */}
       <section className="container mx-auto px-4 pt-20 pb-14 text-center">
-        <h1 className="mx-auto mb-5 max-w-4xl font-display text-4xl font-semibold leading-tight text-ink sm:text-5xl">
+        <h1 className="mx-auto mb-5 max-w-4xl text-balance font-display text-4xl font-semibold leading-tight text-ink sm:text-5xl">
           Find what&apos;s actually broken in your tracking.
         </h1>
         <p className="mx-auto mb-8 max-w-3xl text-lg leading-8 text-muted">
@@ -130,44 +130,46 @@ export default function Home() {
             href="#tools"
             className="inline-flex h-10 items-center justify-center rounded-sm border border-border bg-surface px-5 text-sm font-medium text-ink transition-colors hover:border-ink/20"
           >
-            Audit your own files
+            Browse tools ↓
           </a>
         </div>
       </section>
 
-      {/* Filter Pills */}
-      <div id="tools" className="container mx-auto mb-8 max-w-4xl px-4">
-        <div className="flex flex-wrap justify-center gap-2">
-          {categories.map((cat) => (
-            <button
-              key={cat.key}
-              onClick={() => setFilter(cat.key as 'all' | ToolCategory)}
-              className={`rounded-sm px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
-                filter === cat.key
-                  ? 'bg-accent text-white'
-                  : 'border border-border bg-surface text-muted hover:text-ink'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Tool Grid */}
-      <div className="container mx-auto max-w-5xl px-4 pb-16">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((tool) => (
-            <ToolCard key={tool.slug} tool={tool} />
-          ))}
+      <section id="tools" className="scroll-mt-6">
+        {/* Filter Pills */}
+        <div className="container mx-auto mb-8 max-w-4xl px-4">
+          <div className="flex flex-wrap justify-center gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => setFilter(cat.key as 'all' | ToolCategory)}
+                className={`rounded-sm px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
+                  filter === cat.key
+                    ? 'bg-accent text-white'
+                    : 'border border-border bg-surface text-muted hover:text-ink'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {filtered.length === 0 && (
-          <p className="text-center text-gray-400 py-12">
-            No tools in this category yet.
-          </p>
-        )}
-      </div>
+        {/* Tool Grid */}
+        <div className="container mx-auto max-w-5xl px-4 pb-16">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((tool) => (
+              <ToolCard key={tool.slug} tool={tool} />
+            ))}
+          </div>
+
+          {filtered.length === 0 && (
+            <p className="text-center text-gray-400 py-12">
+              No tools in this category yet.
+            </p>
+          )}
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="border-t border-border py-6">
