@@ -1,7 +1,7 @@
 # AdLint — Progress Log
 
 ## v1.16 — Tracking Health Score
-**Commit:** `TBD`
+**Commit:** `c44f1aa`
 
 Replaces the "8 critical / 12 warning / 17 info" wall with a single 0-100 anchor — the screenshot-worthy number users can compare and share.
 
