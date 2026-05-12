@@ -687,6 +687,478 @@ export const explainers: CheckExplainer[] = [
     relatedChecks: ['duplicate-conversions', 'conversion-label-matching'],
   },
   {
+    id: 'perf-identical-volumes',
+    name: 'Identical Conversion Volumes',
+    source: 'report',
+    severity: 'warning',
+    summary: 'Two or more conversion actions report exactly the same conversion count over the period.',
+    directAnswer:
+      'Two or more of your Google Ads conversion actions report the exact same conversion count. Identical counts on independent actions are statistically unlikely. The usual cause is two tags wired to the same event, or one event being imported twice (once from the site tag, once from GA4 or an offline upload).',
+    why: 'Each Google Ads conversion action should represent a distinct user outcome. When two enabled actions land on the same integer (say, 247 and 247) across hundreds of sessions, the actions are almost certainly being fed by the same underlying trigger. Common patterns: a Purchase tag that was forked into Purchase and Purchase_New during a migration but never decommissioned, a GA4 imported conversion that mirrors a site-tag conversion, or two GTM tags listening to the same dataLayer push.\n\nThe downstream damage is subtle. Conversion totals on the account double. Smart Bidding sees twice the volume it should and bids more aggressively. Reported ROAS halves because spend is real but value is duplicated only on the count side, not the value side. Finance reconciliation breaks. The conversion column in Ads Manager and the order count in the commerce backend stop matching.',
+    howToFix:
+      '1. Open Tools and Settings, Measurement, Conversions in Google Ads. 2. Filter to the actions with matching counts and inspect Source for each (Website, Google Analytics 4, Import, Firebase). 3. If two share the same source, open the GTM container or site tag and find every tag that sends conv id and label for either action. 4. Keep one canonical action per business outcome, mark the duplicate as Secondary or set it to Removed (not just disabled). 5. Walk one real conversion end to end in Tag Assistant to confirm only one network call hits per outcome.',
+    example: 'Purchase - Website: 247 conversions\nPurchase (GA4 import): 247 conversions\nSame event, two paths.',
+    citationTemplate:
+      'Two or more enabled Google Ads conversion actions on this account report identical conversion counts over the reporting period. Per Google Ads conversion tracking documentation, each conversion action is intended to represent a distinct user outcome, and identical counts across independent actions strongly indicate the same underlying event being counted through two paths (for example, a website tag and a Google Analytics 4 import wired to the same purchase, or two GTM tags listening to the same dataLayer event). The result is inflated total conversions, Smart Bidding optimizing against duplicated volume, and reported ROAS that diverges from backend revenue because spend is real while count is double. Fix: identify the duplicated source in the Conversions list, keep one canonical action per outcome, set the duplicate to Removed or Secondary, and verify in Tag Assistant that only one conversion request fires per real user outcome. Source: support.google.com/google-ads/answer/1722022.',
+    references: [
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+      {
+        label: 'Google Ads. About conversion goals',
+        url: 'https://support.google.com/google-ads/answer/12727548',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['volume-weighted-duplicates', 'duplicate-conversions', 'conversion-label-matching'],
+  },
+  {
+    id: 'perf-negative-values',
+    name: 'Problematic Conversion Values',
+    source: 'report',
+    severity: 'critical',
+    summary: 'Conversion actions report negative values, or report zero value alongside meaningful volume.',
+    directAnswer:
+      'Your Google Ads performance report contains conversion actions with negative total values, or actions with significant volume but zero value. Either pattern breaks value-based bidding. Negative values mean refunds or chargebacks are being passed without isolating them. Zero value with volume means the value parameter is not being sent.',
+    why: 'Google Ads expects each conversion value to be a non-negative number representing the worth of the outcome. Negative numbers typically appear when refund logic is wired into the same tag as the purchase, or when an offline import sends adjustments as raw negatives instead of using the Conversion Adjustments API. The bidding system was not designed to see negative revenue arrive as a conversion. Smart Bidding will pull average value down, sometimes below zero, and the Target ROAS bidder will react by either pausing spend or thrashing.\n\nZero value on a high-volume action is the second failure mode. The tag fires, the count increments, but the value parameter is missing, set to a literal zero, or sourced from a DOM element that no longer exists. Value-based bidding cannot run on actions that report zero, and ROAS columns will read zero across the board for that action even when orders carry real revenue.',
+    howToFix:
+      '1. For negative values: stop sending refunds through the standard conversion tag. Use the Conversion Adjustments API or upload restatement files in Google Ads. 2. For zero value with volume: trace the value parameter from the data layer through GTM into the Google Ads conversion tag. Source from the order object or platform variable, never from a hardcoded number or a page selector. 3. Verify with Tag Assistant that the value parameter on a test purchase matches the actual order total. 4. Once fixed, give value-based bidding a 2 to 4 week relearning window before judging the result.',
+    example: 'Action: Purchase. Conversions: 412. Conversion value: -1,238.50. Cause: refund tag firing as negative conversion.',
+    citationTemplate:
+      'This Google Ads account contains conversion actions with negative total values or with significant volume reporting zero value. Per Google Ads value-based bidding documentation, each conversion is expected to carry a non-negative value representing the outcome worth, and refunds or restatements should be submitted through the Conversion Adjustments API rather than as negative conversions on the standard tag. Negative values destabilize Target ROAS bidding by pulling average value below zero. Zero values on high-volume actions disable value-based bidding for that action entirely and produce ROAS reports of zero regardless of true revenue. Fix: route refund logic through Conversion Adjustments uploads, repair the value parameter in the conversion tag (sourcing from the order object, not a DOM element), and verify in Tag Assistant that the value sent matches the backend order total. Source: support.google.com/google-ads/answer/7335652.',
+    references: [
+      {
+        label: 'Google Ads. About value-based bidding',
+        url: 'https://support.google.com/google-ads/answer/7335652',
+      },
+      {
+        label: 'Google Ads. Set up conversion values',
+        url: 'https://support.google.com/google-ads/answer/13064107',
+      },
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['perf-value-without-volume', 'zero-value-purchases', 'roas-sanity'],
+  },
+  {
+    id: 'perf-pareto-concentration',
+    name: 'Value Concentration (Pareto)',
+    source: 'report',
+    severity: 'info',
+    summary: 'A very small slice of conversion volume drives 80% of total conversion value.',
+    directAnswer:
+      'Under 10% of your conversions drive 80% of your total conversion value. That is heavier concentration than a normal Pareto curve. If any of those high-value conversion actions has a tracking gap or a value-source issue, your reported account ROAS will swing hard.',
+    why: 'Concentration itself is not a bug. Some businesses sell high-ticket items alongside a long tail of smaller orders, and the math will naturally skew. The reason it is worth surfacing is fragility. When a handful of conversion actions account for nearly all reported value, the account is exposed to single-point-of-failure risk. A broken Purchase tag on the enterprise plan checkout, a stale value parameter on the wholesale path, or a currency mismatch on the highest-AOV product line can knock out most of the apparent ROAS even though most of the conversion count is unaffected.\n\nIt also affects Smart Bidding stability. Target ROAS bidding learns faster on actions with steady volume. When 80% of value comes from a small set of conversions, the bidder is essentially learning from those few rows. Small upstream errors in how those conversions are valued get amplified.',
+    howToFix:
+      '1. Identify the conversion actions inside the top 80% of value. They are listed in the check details. 2. For each one, walk the value source end to end: data layer variable, GTM tag value parameter, Google Ads conversion action settings, and a sample real order in the commerce backend. 3. Confirm currency code is correct on every high-value action. Currency assumptions of USD on EUR or GBP orders are common. 4. Annotate these as critical paths in your monitoring. Any future tag-deploy QA should run a transaction through each of these flows. 5. Consider whether the long tail should be promoted to Primary or kept Secondary; it is currently driving optimization volume more than value.',
+    example: 'Top 4 conversion actions drive 80% of value. Bottom 47 actions drive the remaining 20%.',
+    citationTemplate:
+      'On this Google Ads account, fewer than 10% of conversion actions drive 80% of total conversion value, which is heavier concentration than a typical Pareto distribution. Per Google Ads value-based bidding documentation, Smart Bidding strategies such as Target ROAS depend on stable, accurate value reporting across the conversion actions that feed them. When value is highly concentrated, the account becomes fragile: a tracking gap, value-parameter error, or currency mismatch on any one high-AOV action can swing reported ROAS substantially even while conversion counts remain stable. Fix: identify the conversion actions inside the top 80% of value, validate each value source end to end from data layer to commerce backend, confirm currency configuration on high-value actions, and treat these flows as critical paths in tag-deploy QA. Source: support.google.com/google-ads/answer/7335652.',
+    references: [
+      {
+        label: 'Google Ads. About value-based bidding',
+        url: 'https://support.google.com/google-ads/answer/7335652',
+      },
+      {
+        label: 'Google Ads. Set up conversion values',
+        url: 'https://support.google.com/google-ads/answer/13064107',
+      },
+      {
+        label: 'Google Ads. Currency conversion',
+        url: 'https://support.google.com/google-ads/answer/2998565',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['roas-sanity', 'perf-value-variance', 'perf-roas-outliers'],
+  },
+  {
+    id: 'perf-perfect-roas',
+    name: 'Suspiciously Perfect ROAS',
+    source: 'report',
+    severity: 'info',
+    summary: 'One or more conversion actions report ROAS that lands exactly on a round number such as 1.0, 5.0, or 10.0.',
+    directAnswer:
+      'One or more of your conversion actions reports a ROAS that lands on an exact round number (1.0, 2.0, 5.0, 10.0). Real revenue divided by real spend almost never produces a clean integer. This pattern is the signature of a static value being applied to every conversion instead of the actual transaction value.',
+    why: 'When a Google Ads conversion action is configured with a fixed value (say, $50 per lead), and the spend distribution lands such that the conversion count multiplied by 50 produces an exact ratio against cost, you get a suspiciously clean ROAS. This often appears on lead-gen accounts where the value is a placeholder, on accounts where ecommerce value was hardcoded during initial setup, or on B2B accounts assigning a flat deal value to every form fill.\n\nFixed-value conversions are not always wrong. A lead-gen account that genuinely values every lead at the same dollar amount can run that way. The problem is that Target ROAS bidding will learn the value is constant and stop differentiating between high-quality and low-quality leads. Every form fill gets the same weight, so the bidder optimizes for volume, not quality. The account ends up with more leads from cheaper sources and worse close rates.',
+    howToFix:
+      '1. Confirm whether the flagged conversion actions are intentionally fixed-value. Open Tools and Settings, Conversions, and check the Value setting on each. 2. If the business has dynamic value (true revenue, deal size, LTV proxy), wire it: source the value from the data layer or offline import. 3. If fixed value is genuinely correct, document it so future audits do not re-flag it, and consider whether Maximize Conversions is a better bid strategy than Target ROAS for these actions. 4. For lead-gen, evaluate Enhanced Conversions for Leads with offline conversion uploads so closed-won revenue replaces the static placeholder.',
+    example: 'Action: Demo Request. Conversions: 86. ROAS: exactly 5.00. Cause: value hardcoded at $5 per lead.',
+    citationTemplate:
+      'One or more Google Ads conversion actions on this account reports ROAS at an exact round number such as 1.0, 5.0, or 10.0. Per Google Ads conversion tracking documentation, ROAS is calculated as conversion value divided by cost, and on accounts with genuine transaction-level revenue this ratio is essentially never an exact integer. The pattern indicates a fixed or placeholder value applied to every conversion rather than a dynamic value sourced from the actual transaction or deal. While intentional fixed values are valid for some lead-gen models, they prevent Target ROAS bidding from distinguishing high-quality from low-quality outcomes and tend to push the bidder toward cheaper, lower-converting traffic. Fix: confirm whether each flagged action is meant to be fixed-value, wire dynamic values from the data layer or via offline conversion uploads where applicable, and consider Enhanced Conversions for Leads to replace placeholder values with closed-won revenue. Source: support.google.com/google-ads/answer/13064107.',
+    references: [
+      {
+        label: 'Google Ads. Set up conversion values',
+        url: 'https://support.google.com/google-ads/answer/13064107',
+      },
+      {
+        label: 'Google Ads. About Target ROAS',
+        url: 'https://support.google.com/google-ads/answer/6268637',
+      },
+      {
+        label: 'Google Ads. About value-based bidding',
+        url: 'https://support.google.com/google-ads/answer/7335652',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['roas-sanity', 'perf-roas-outliers', 'mismatched-values'],
+  },
+  {
+    id: 'perf-roas-outliers',
+    name: 'ROAS Statistical Outliers',
+    source: 'report',
+    severity: 'warning',
+    summary: 'One or more conversion actions report ROAS far outside the normal range for the account.',
+    directAnswer:
+      'One or more conversion actions report ROAS that sits well outside the interquartile range for the rest of your account, or lands above 100x or below 0.01x. Extreme ROAS values almost always trace back to a value pipeline issue rather than genuinely exceptional performance.',
+    why: 'AdLint calculates the interquartile range across conversion actions with at least 10 conversions and a positive ROAS, then flags anything outside 1.5 times the IQR. It also flags any ROAS above 100 or below 0.01, which are arithmetically possible but practically diagnostic of broken data.\n\nThe common causes: cents passed where dollars were expected (or vice versa), inflating ROAS by 100x. Currency mismatch where EUR or GBP revenue is treated as USD. A test conversion with a $99,999 value that was never deleted. A conversion action where the value parameter is reading a string like "12.99 USD" instead of the number 12.99 and getting parsed inconsistently. On the low end, a tag firing on every pageview and counting page views as conversions while the value parameter rounds to near zero.\n\nLeft alone, outlier ROAS feeds Target ROAS bidding bad data. The bidder either chases the inflated action with too much budget or starves the deflated action of impressions. Either way the account drifts off where actual revenue lives.',
+    howToFix:
+      '1. Open each flagged action and pull recent conversion-level data from the Conversions report. 2. Look for value units that do not match the rest of the account (cents vs dollars, wrong currency, parsed-as-string). 3. Compare a sample of conversions to the actual orders in the commerce backend for the same time range. 4. Repair the value source at the tag or import level, then delete any one-off test conversions polluting the history. 5. Once values are correct, give Smart Bidding 2 to 4 weeks to relearn before judging campaign performance against the corrected baseline.',
+    example: 'Action: Purchase EU. ROAS: 187.4x. Cause: EUR cart values treated as USD, no currency conversion applied.',
+    citationTemplate:
+      'One or more Google Ads conversion actions on this account report ROAS values statistically outside the rest of the account, or above 100x and below 0.01x. Per Google Ads value-based bidding documentation, ROAS is calculated from the conversion value parameter, and extreme outliers in this ratio are diagnostic of value-pipeline errors rather than genuine performance signal. Typical root causes include currency mismatches, cents-vs-dollars unit errors, residual test conversions with arbitrary high values, and value parameters parsed from strings instead of numeric fields. Left in place, outlier ROAS misleads Target ROAS bidding into overspending on inflated actions or starving deflated actions, and produces account-level reports that diverge sharply from backend revenue. Fix: inspect the value source on each flagged action, repair unit and currency mismatches, remove residual test conversions, and allow Smart Bidding 2 to 4 weeks to relearn against corrected values. Source: support.google.com/google-ads/answer/7335652.',
+    references: [
+      {
+        label: 'Google Ads. About value-based bidding',
+        url: 'https://support.google.com/google-ads/answer/7335652',
+      },
+      {
+        label: 'Google Ads. Currency conversion',
+        url: 'https://support.google.com/google-ads/answer/2998565',
+      },
+      {
+        label: 'Google Ads. About Target ROAS',
+        url: 'https://support.google.com/google-ads/answer/6268637',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['roas-sanity', 'perf-perfect-roas', 'perf-value-variance', 'mismatched-values'],
+  },
+  {
+    id: 'perf-value-variance',
+    name: 'Value per Conversion Variance',
+    source: 'report',
+    severity: 'warning',
+    summary: 'Within a single conversion category, value per conversion swings wildly (CV above 150%).',
+    directAnswer:
+      'Within a single conversion category on your account, value per conversion has a coefficient of variation above 150%. That means the dollar amount per conversion is jumping around more than the average value itself. Either the category bundles unrelated conversion types, or the value source is unstable.',
+    why: 'Coefficient of variation is the standard deviation divided by the mean. A CV above 150% on a single category means the spread of values is larger than the average value. Practically, that looks like a Purchase category where some conversions come in at $12, others at $4,200, and the mix is not explained by product mix variability.\n\nThe usual root causes: a single Purchase action receives both retail orders ($30-150) and B2B wholesale orders ($1,000-10,000) without splitting them into separate conversion actions. Or the value parameter is reading from two different data layer locations depending on the page type, and the values come through with different magnitudes. Or refund logic is firing through the same path with negative-adjacent zero-dollar values.\n\nFor Smart Bidding, this is a learning problem. Target ROAS bidding assumes the value distribution per action is roughly predictable. When the variance is this wide, the bidder either hedges (bids low across the board, missing the high-value orders) or overcorrects after a single high-value conversion (bids up, then ROAS collapses on the next 50 small orders).',
+    howToFix:
+      '1. Pull the conversion details for the flagged category in Google Ads Reports. Sort by value descending. 2. Look at the top and bottom of the list. If they represent legitimately different business outcomes (retail vs wholesale, free trial vs paid, etc), split them into separate conversion actions. 3. If they should be one category, investigate the value source for inconsistent readings (different DOM elements, different data layer keys, currency mixing). 4. Once split or repaired, expect Smart Bidding to relearn over the next 2 to 4 weeks.',
+    example: 'Category: Purchase. CV: 234%. Min value: $8.99. Max value: $11,400. Cause: retail and wholesale mixed into one action.',
+    citationTemplate:
+      'Within a single conversion category on this Google Ads account, value per conversion has a coefficient of variation above 150%, meaning the spread of values exceeds the mean value itself. Per Google Ads value-based bidding documentation, Target ROAS and other value-based strategies depend on roughly predictable value distributions per conversion action. When variance is this wide, the most common causes are unrelated business outcomes bundled into one conversion action (such as retail and wholesale purchases sharing a single Purchase action), value parameters sourced from inconsistent data layer locations, or value units differing across page types. The result is unstable bidding behavior: the optimizer either hedges low across the board or overcorrects on individual high-value events. Fix: split unrelated business outcomes into separate conversion actions, audit the value parameter source for consistency, and allow Smart Bidding a 2 to 4 week relearning window after correction. Source: support.google.com/google-ads/answer/7335652.',
+    references: [
+      {
+        label: 'Google Ads. About value-based bidding',
+        url: 'https://support.google.com/google-ads/answer/7335652',
+      },
+      {
+        label: 'Google Ads. Set up conversion values',
+        url: 'https://support.google.com/google-ads/answer/13064107',
+      },
+      {
+        label: 'Google Ads. About Target ROAS',
+        url: 'https://support.google.com/google-ads/answer/6268637',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['perf-roas-outliers', 'roas-sanity', 'perf-pareto-concentration'],
+  },
+  {
+    id: 'perf-value-without-volume',
+    name: 'Conversion Value Without Conversions',
+    source: 'report',
+    severity: 'critical',
+    summary: 'A conversion action reports positive conversion value while showing zero conversion count.',
+    directAnswer:
+      'A conversion action on your account reports positive conversion value but zero conversions. Value cannot exist without a conversion count. This is a data integrity issue at the platform or import layer, not a configuration choice.',
+    why: 'Google Ads computes value by summing the value parameter across counted conversions. If conversions equals zero, value must also equal zero. Seeing a positive value with a zero count indicates one of three things: a stale offline conversion upload that included a value column but failed the matching step, a Conversion Adjustments upload that arrived after the original conversion was removed, or a reporting bug tied to a recent settings change (such as a category move that cleared the count but kept the value).\n\nWhile the underlying state is rare, the consequences are immediate. Reported ROAS for that action becomes mathematically undefined and may render as infinity, zero, or a placeholder in Ads Manager depending on the surface. Smart Bidding logic that consumes value-per-conversion for Target ROAS calibration can behave unpredictably. Finance reconciliation will fail because there is revenue with no transaction to tie it to.',
+    howToFix:
+      '1. Open Tools and Settings, Conversions, and find the flagged action. Check the Source column. 2. If the source is Import (offline conversions, GA4, Salesforce, etc), pull the last upload file and verify each row has both a conversion identifier (GCLID or order ID) and a non-zero value tied to a real, recent click. 3. Re-upload the corrected file. 4. If the source is Website, contact Google Ads support with a screenshot showing positive value and zero conversions; this typically requires backend intervention. 5. Until resolved, exclude this action from any reporting denominator and from Smart Bidding optimization sets.',
+    example: 'Action: Salesforce Closed Won. Conversions: 0. Conversion value: $48,200. Cause: offline upload matched values but failed GCLID join.',
+    citationTemplate:
+      'A Google Ads conversion action on this account reports positive conversion value with zero conversions. Per Google Ads conversion tracking documentation, conversion value is the sum of the value parameter across counted conversions, so positive value with a zero count is not a configuration state but a data integrity failure. The pattern typically traces to an offline conversion upload where rows carried values but failed the GCLID or order-ID match, to a Conversion Adjustments upload that arrived after the original conversion was removed, or to a reporting artifact following a recent settings change. Reported ROAS for the affected action becomes mathematically undefined and Smart Bidding strategies that consume value-per-conversion can behave unpredictably. Fix: audit the most recent offline upload file for unmatched rows, re-upload corrected entries with valid identifiers, and exclude the affected action from optimization sets and reporting denominators until the underlying state is resolved. Source: support.google.com/google-ads/answer/1722022.',
+    references: [
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+      {
+        label: 'Google Ads. Set up conversion values',
+        url: 'https://support.google.com/google-ads/answer/13064107',
+      },
+      {
+        label: 'Google Ads. About value-based bidding',
+        url: 'https://support.google.com/google-ads/answer/7335652',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['perf-negative-values', 'ghost-conversions', 'roas-sanity'],
+  },
+  {
+    id: 'perf-vtc-only',
+    name: 'View-Through Only Conversions',
+    source: 'report',
+    severity: 'warning',
+    summary: 'A conversion action reports significant view-through volume with zero click-through volume.',
+    directAnswer:
+      'A conversion action on your account reports more than 10 view-through conversions and zero click-through conversions. Real customer journeys produce a mix of both. View-through-only volume is the signature of either an impression-fraud pattern, a placement that is not actually driving clicks, or a setup error where click-based conversion paths are not being recorded.',
+    why: 'View-through conversions credit an ad impression when the user converts later without clicking. They are real, but they should sit alongside click-through conversions in a healthy account. When an action has 80 view-through conversions and zero click-through conversions, something has decoupled clicks from outcomes.\n\nThe usual causes: a Display or YouTube campaign serving heavily on low-quality placements where bots produce impressions but no clicks. A site that uses a custom click identifier other than GCLID, so the click-side handshake is broken (no Conversion Linker, GCLID stripped by a redirect, etc). Or the action is genuinely impression-driven (a long-cycle B2B awareness campaign), which is rare and should be intentional.\n\nThe risk: view-through-only volume looks like performance in Ads Manager. Smart Bidding will lean toward placements that produce view-through credit. If the underlying impressions are not influencing real behavior, spend keeps flowing to surfaces that are not driving incremental revenue.',
+    howToFix:
+      '1. Open the flagged conversion action and pull the Placement report for campaigns feeding it. Look for placements with high impressions and near-zero click-through rate. 2. Exclude the worst offenders or move them to a separate campaign for isolated evaluation. 3. Confirm the GTM Conversion Linker is firing on all pages and that no redirect is stripping the GCLID before landing. 4. Shorten the view-through conversion window in Google Ads to match the realistic post-impression decision time for the business (often 1 to 7 days, not the default 30). 5. Run an incrementality test (Conversion Lift or geo holdout) to measure whether the view-through volume is causal.',
+    example: 'Action: Lead Form. View-through: 84. Click-through: 0. Source: GDN remarketing campaign.',
+    citationTemplate:
+      'A Google Ads conversion action on this account reports significant view-through conversion volume with zero click-through conversions. Per Google Ads view-through conversion documentation, view-through credit fires when a user converts after an ad impression without clicking, and a healthy account typically shows a mix of click-through and view-through volume on the same action. An all-view-through pattern indicates one of three states: Display or video placements producing impressions on low-quality inventory without driving clicks, a broken click-side handshake where the Conversion Linker is missing or GCLID is being stripped by a redirect, or an intentional impression-only campaign that should be reviewed for incrementality. Without correction, Smart Bidding will favor surfaces that produce post-impression credit regardless of whether those impressions are causally influencing behavior. Fix: pull the Placement report, exclude low-quality inventory, verify Conversion Linker coverage and GCLID preservation, shorten view-through windows to realistic decision times, and run a Conversion Lift or geo holdout to validate incrementality. Source: support.google.com/google-ads/answer/2998563.',
+    references: [
+      {
+        label: 'Google Ads. About view-through conversions',
+        url: 'https://support.google.com/google-ads/answer/2998563',
+      },
+      {
+        label: 'Google Ads. About attribution models',
+        url: 'https://support.google.com/google-ads/answer/6394265',
+      },
+      {
+        label: 'Google Ads. About conversion windows',
+        url: 'https://support.google.com/google-ads/answer/3123169',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['vtc-click-ratio', 'model-attribution-drift'],
+  },
+  {
+    id: 'signal-cross-account-import',
+    name: 'Cross-Account Imported Conversions',
+    source: 'report',
+    severity: 'info',
+    summary: 'One or more conversion actions appear to be imported from another account or external system.',
+    directAnswer:
+      'One or more conversion actions on your account have names matching common cross-account or external-import patterns (imported_, [MCC], ga4_, firebase_, sf_, hubspot_). Imported conversions are valid, but they need a deduplication plan. If the same outcome is being counted by both an imported action and a native tag, Smart Bidding sees inflated volume.',
+    why: 'Imports come from a few places: GA4 conversions linked into Google Ads, Salesforce or HubSpot offline conversion uploads, Firebase events from mobile apps, or MCC-level shared conversions inherited from a parent account. Each is a legitimate setup. The risk is overlap.\n\nA common pattern: the site has a native Google Ads conversion tag for Purchase, and the same Purchase event is also synced from GA4 as an imported conversion. Both arrive in Google Ads with similar names. If both are set to Primary, every order is counted twice and Target ROAS bidding sees doubled volume against the same spend. Reported ROAS halves and the bidder behaves erratically.\n\nThe second risk is naming hygiene. Imported conversions often carry prefixes (imported_, ga4_, sf_) that survived from the source system. When the conversion list grows past 20 or 30 entries, distinguishing the canonical action from the import becomes difficult and stale imports linger past their useful life.',
+    howToFix:
+      '1. List every flagged imported action and identify the source system (GA4, Salesforce, Firebase, MCC). 2. For each, find the corresponding native action on the same outcome. If both exist and both are Primary, pick one canonical source and set the other to Secondary or Removed. 3. Document which source is authoritative for each business outcome (typically: native tag for website Purchase, offline upload for closed-won deals, GA4 import only when no native option exists). 4. Rename surviving imports to remove source-system prefixes where they obscure intent. 5. Re-run the audit after the next reporting cycle to confirm volume is no longer duplicated.',
+    example: 'Active actions: Purchase (Website, Primary), ga4_purchase (Import, Primary). Same outcome counted twice.',
+    citationTemplate:
+      'One or more conversion actions on this Google Ads account appear to be imported from another system based on naming conventions such as imported_, ga4_, sf_, hubspot_, firebase_, or [MCC]. Per Google Ads conversion tracking documentation, imported conversions are a supported source but require deduplication when a native tag covers the same outcome. The most common failure mode is a website Purchase tag and a GA4-imported Purchase both set to Primary, resulting in doubled conversion counts feeding Target ROAS bidding against the same spend and producing halved reported ROAS. Imports also tend to accumulate stale entries with source-system prefixes that obscure the canonical action. Fix: identify the source system for each imported action, pick one authoritative source per business outcome, demote duplicates to Secondary or Removed, and document the authoritative source so future audits can be reasoned about clearly. Source: support.google.com/google-ads/answer/1722022.',
+    references: [
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+      {
+        label: 'Google Ads. About conversion goals',
+        url: 'https://support.google.com/google-ads/answer/12727548',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['volume-weighted-duplicates', 'perf-identical-volumes', 'duplicate-conversions'],
+  },
+  {
+    id: 'signal-micro-as-primary',
+    name: 'Micro-Conversion Enabled as Primary',
+    source: 'report',
+    severity: 'critical',
+    summary: 'A micro-conversion (page view, scroll, video start, search) is configured as a primary bidding action.',
+    directAnswer:
+      'A micro-conversion such as page view, scroll, video start, search, or view item is currently enabled as a Primary action on your Google Ads account. Primary actions are what Smart Bidding optimizes toward. Putting a micro action there tells the bidder to chase the easiest possible event, which is almost never the event the business actually cares about.',
+    why: 'Google Ads splits conversion actions into Primary and Secondary. Primary actions feed Smart Bidding, populate the Conversions column, and drive optimization. Secondary actions are observable in reports but do not steer bidding. The split exists so micro-conversions (early-funnel events worth tracking but not worth optimizing toward) stay out of the bidding signal.\n\nWhen a page view or scroll event is set to Primary, Smart Bidding sees enormous volume per dollar of spend and concludes the campaign is performing well. Cost per "conversion" plummets, the Maximize Conversions and Target CPA strategies aggressively scale, and the account fills with traffic that bounces. Reported conversion counts climb. Actual revenue does not. Months later the client asks why spend doubled but pipeline stayed flat.\n\nThis pattern is most common after a GA4 import sweep, where every linked GA4 event got imported as a conversion action and the team forgot to demote the upstream events to Secondary.',
+    howToFix:
+      '1. Open Tools and Settings, Conversions in Google Ads. Sort by Conversion action and find the flagged micro action. 2. Open the action and switch its Conversion goal action setting from Primary to Secondary. The action remains visible in reports but stops feeding bidding. 3. Confirm at least one macro action (Purchase, Lead, SubmitApplication, etc) is set to Primary so the bidder has a real optimization target. 4. If the account had been bidding on the micro action for a while, expect Smart Bidding to relearn over 2 to 4 weeks. Reported conversion counts will drop sharply during this window; that is correct behavior. 5. Audit any active Target CPA or Maximize Conversions campaigns to ensure their target reflects the macro action, not the previous micro signal.',
+    example: 'Active Primary actions: Page View, Scroll 50%, Video Start. Active Secondary actions: Purchase. Bidder optimizes for page views.',
+    citationTemplate:
+      'A micro-conversion such as page view, scroll, video start, search, or view item is currently configured as a Primary action on this Google Ads account. Per Google Ads conversion goals documentation, Primary actions feed Smart Bidding and populate the Conversions column, while Secondary actions remain observable in reports without steering bidding. When a micro-conversion is promoted to Primary, Smart Bidding treats the easiest funnel event as the optimization target, drives down apparent cost-per-conversion, and scales spend toward traffic that does not produce downstream revenue. The pattern frequently follows a GA4 conversion sync where upstream events were imported as Primary without manual demotion. Fix: demote each micro-conversion to Secondary, ensure at least one macro action (Purchase, Lead, SubmitApplication) is set to Primary, audit any Target CPA or Maximize Conversions campaigns to align with the macro action, and allow Smart Bidding 2 to 4 weeks to relearn against the corrected signal. Source: support.google.com/google-ads/answer/12727548.',
+    references: [
+      {
+        label: 'Google Ads. About conversion goals',
+        url: 'https://support.google.com/google-ads/answer/12727548',
+      },
+      {
+        label: 'Google Ads. About Smart Bidding',
+        url: 'https://support.google.com/google-ads/answer/7065882',
+      },
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['signal-micro-pollution', 'signal-primary-dilution', 'micro-conversion-pollution'],
+  },
+  {
+    id: 'signal-micro-pollution',
+    name: 'Micro-Conversion Signal Pollution',
+    source: 'report',
+    severity: 'critical',
+    summary: 'Micro-conversion volume exceeds macro-conversion volume by more than 100x.',
+    directAnswer:
+      'On your account, micro-conversion volume (page views, scrolls, searches, video starts) outweighs macro-conversion volume (purchases, leads, signups) by more than 100 to 1. Even if the macro action is correctly set to Primary, the sheer volume of micro events in the conversion set can pollute Smart Bidding learning, especially when value-based strategies are pulling from value-per-conversion averages.',
+    why: 'Google Ads conversion goals were redesigned in 2022 to let Primary and Secondary actions coexist without Secondary actions affecting bidding. In practice, when the volume ratio is extreme (say, 800,000 page views to 200 purchases), the Conversions reporting column gets noisy, account-level Conversion Value per Cost calculations can include weighted Secondary contributions, and operators looking at top-level metrics get misled about what is driving performance.\n\nThe practical risk is downstream. Lookalike or Customer Match audiences built off the broader event set inherit micro-event signal. Performance Max asset group reporting weights events differently across goals. Cross-account MCC dashboards that aggregate "Conversions" without filtering for Primary-only end up reporting numbers that look great but bear no relationship to business outcomes.\n\nThe right shape is roughly: macro events outnumber or sit within an order of magnitude of micro events in the conversion set. When micro outpaces macro by 100x or more, the account configuration is signaling that the team has not pruned upstream tracking.',
+    howToFix:
+      '1. Open Tools and Settings, Conversions. Filter to micro categories (page view, scroll, search, video start, view item). 2. For each, ask: does this need to exist as a conversion action at all? GA4 already records these. If they are not used for any Google Ads remarketing audience or any specific optimization use case, set Status to Removed. 3. For micro actions that must remain (for remarketing audience building, for instance), confirm they are Secondary. 4. Re-check the macro to micro ratio after the next reporting period. Healthy accounts typically sit at 10:1 micro-to-macro or less in the active conversion set. 5. Audit any cross-account dashboards to filter on Primary-only conversions where business reporting is the goal.',
+    example: 'Micro volume: 812,400. Macro volume: 240. Ratio: 3,385x. Smart Bidding signal severely polluted.',
+    citationTemplate:
+      'On this Google Ads account, micro-conversion volume (page views, scrolls, searches, video starts) exceeds macro-conversion volume (purchases, leads, signups) by more than 100 to 1. Per Google Ads conversion goals documentation, Primary and Secondary designations control which actions steer Smart Bidding, but extreme volume imbalance in the active conversion set still degrades account-level reporting (Conversion Value per Cost calculations, Performance Max asset group attribution, cross-account MCC dashboards that aggregate Conversions without Primary-only filters). Healthy accounts typically sit within an order of magnitude on the micro-to-macro ratio. Fix: prune micro-conversion actions that are not actively used for remarketing audience building or specific optimization tests, confirm remaining micro actions are set to Secondary, and apply Primary-only filters in any business-facing dashboard. Source: support.google.com/google-ads/answer/12727548.',
+    references: [
+      {
+        label: 'Google Ads. About conversion goals',
+        url: 'https://support.google.com/google-ads/answer/12727548',
+      },
+      {
+        label: 'Google Ads. About Smart Bidding',
+        url: 'https://support.google.com/google-ads/answer/7065882',
+      },
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['signal-micro-as-primary', 'micro-conversion-pollution', 'signal-primary-dilution'],
+  },
+  {
+    id: 'signal-primary-dilution',
+    name: 'Primary Conversion Dilution',
+    source: 'report',
+    severity: 'warning',
+    summary: 'More than three macro-eligible conversion actions are enabled as Primary.',
+    directAnswer:
+      'Your account has more than three Primary conversion actions in the macro category (purchase, sale, transaction, lead, signup). Smart Bidding can optimize across multiple Primary actions, but when the list grows beyond three or four, the optimization signal blurs and Target ROAS calibration becomes harder.',
+    why: 'Google Ads supports multiple Primary actions per conversion goal, and account-default goals can include several Primary actions across categories. The platform optimizes against the sum of value across all Primary actions in a campaign goal. That is sound when the actions represent distinct, comparably weighted outcomes. It breaks down when the Primary list expands to include every plausible business outcome under one campaign.\n\nA common scenario: an account starts with Purchase as Primary, then adds Lead Form Submit as Primary for a different campaign, then adds Demo Request, then adds Phone Call, then adds Email Signup. By month six there are six or seven Primary actions all feeding the same Smart Bidding strategies. The bidder has no clean way to weight them. The conversion value per cost calculation rolls them all together. Campaigns that should optimize toward purchases pull volume from cheaper Lead Form Submits because they look better on a count basis.\n\nThe fix is not to delete actions, it is to scope them. Each campaign should target the Primary actions that match its business goal. Cross-campaign Primary sprawl is the dilution.',
+    howToFix:
+      '1. Open Tools and Settings, Goals. Review which actions are Primary in the account default goal. 2. For each campaign, set a campaign-level conversion goal that targets only the Primary actions relevant to that campaign (Purchase campaigns target Purchase, Lead campaigns target Lead Form Submit, etc). This overrides the account default. 3. If multiple macro actions genuinely need to coexist at the account level, ensure value-based bidding is in use so the optimizer weights them by revenue rather than count. 4. Demote macro actions that are not actively used for optimization to Secondary. 5. Re-audit after the next quarter to confirm Primary count stays below four per campaign goal.',
+    example: 'Account Primary actions: Purchase, Lead Form, Demo Request, Phone Call, Email Signup, Newsletter Subscribe. All feed every campaign.',
+    citationTemplate:
+      'This Google Ads account has more than three macro-eligible conversion actions configured as Primary. Per Google Ads conversion goals documentation, Smart Bidding optimizes against the sum of value across all Primary actions in a campaign goal, which functions cleanly when actions represent distinct, comparably weighted outcomes. As the Primary list expands beyond three or four macro actions feeding the same campaigns, the optimizer cannot weight them coherently, Target ROAS calibration becomes unreliable, and campaigns intended to drive purchases tend to pull volume from cheaper Lead or Signup actions on a count basis. The remediation is scoping rather than deletion: use campaign-level conversion goals to target only the actions relevant to each campaign, enable value-based bidding when multiple macro outcomes must coexist, and demote unused macro actions to Secondary. Source: support.google.com/google-ads/answer/12727548.',
+    references: [
+      {
+        label: 'Google Ads. About conversion goals',
+        url: 'https://support.google.com/google-ads/answer/12727548',
+      },
+      {
+        label: 'Google Ads. About Smart Bidding',
+        url: 'https://support.google.com/google-ads/answer/7065882',
+      },
+      {
+        label: 'Google Ads. About Target ROAS',
+        url: 'https://support.google.com/google-ads/answer/6268637',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['signal-micro-as-primary', 'signal-secondary-leakage', 'missing-primary-conversion'],
+  },
+  {
+    id: 'signal-secondary-leakage',
+    name: 'Secondary Conversion Leakage',
+    source: 'report',
+    severity: 'warning',
+    summary: 'All conversions count is more than 2x the Conversions count for one or more actions.',
+    directAnswer:
+      'For one or more conversion actions on your account, the All conversions column is more than double the Conversions column. The Conversions column reflects Primary actions feeding bidding. The All conversions column adds Secondary actions on top. A 2x or higher gap means Secondary actions are carrying volume comparable to or larger than your Primary actions, which usually indicates either misclassified actions or duplicate tracking paths.',
+    why: 'Google Ads splits reporting into two columns. Conversions includes only actions set to Primary in the relevant goal. All conversions includes everything, Primary and Secondary. A healthy account will see All conversions slightly higher than Conversions (because Secondary actions like add-to-cart or page-view contribute real volume), but typically within 1.2 to 1.5x of the Primary count.\n\nWhen the ratio is 2x or higher, two things commonly explain it. First, an action that should be Primary was demoted to Secondary by mistake (or never promoted), so the same Purchase event is showing up only in All conversions. Bidding can not see it. Second, there are duplicate tags or imports such that a Purchase is counted once as Primary and once as Secondary under a different name, inflating All conversions without affecting bidding.\n\nThe practical impact: reported Conversion Value per Cost (the ROAS proxy) calculates from Conversions, but operators reading All conversions for "actual outcomes" will see a much larger number. Disagreements between media buyer dashboards and finance dashboards usually trace back here.',
+    howToFix:
+      '1. Open the Conversions report and add the All conversions and Conversions columns side by side for each action. 2. For the flagged actions, check the Conversion goal action setting (Primary vs Secondary). If a macro outcome is set to Secondary, promote it to Primary. 3. If both Primary and Secondary actions cover the same outcome, identify the duplicate and remove or rename it. 4. After correction, expect the All conversions to Conversions ratio to fall to under 1.5x for most actions. 5. Document the rationale for any action intentionally kept at a high ratio (for instance, an action that legitimately receives both website-tag and offline-upload volume where one is Primary and the other is Secondary by design).',
+    example: 'Action: Purchase. Conversions: 124. All conversions: 386. Ratio: 3.1x. Cause: GA4 Purchase Secondary firing in parallel with website Purchase Primary.',
+    citationTemplate:
+      'On this Google Ads account, the All conversions column is more than 2x the Conversions column for one or more conversion actions. Per Google Ads conversion goals documentation, the Conversions column reflects Primary actions feeding Smart Bidding while All conversions adds Secondary actions, and the healthy gap is typically within 1.2 to 1.5x. A 2x or higher ratio indicates either a macro outcome misclassified as Secondary (so bidding does not see it) or duplicate tracking paths where the same outcome counts once as Primary and once as Secondary under a different name or source. The result is reporting divergence between media-buyer dashboards reading Conversions and finance dashboards reading All conversions. Fix: audit the Primary versus Secondary setting on each flagged action, promote misclassified macro outcomes, remove or rename duplicate paths, and target a ratio below 1.5x for most actions after correction. Source: support.google.com/google-ads/answer/12727548.',
+    references: [
+      {
+        label: 'Google Ads. About conversion goals',
+        url: 'https://support.google.com/google-ads/answer/12727548',
+      },
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+      {
+        label: 'Google Ads. About Smart Bidding',
+        url: 'https://support.google.com/google-ads/answer/7065882',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['signal-primary-dilution', 'volume-weighted-duplicates', 'perf-identical-volumes'],
+  },
+  {
+    id: 'signal-window-overkill',
+    name: 'Attribution Window Overkill',
+    source: 'report',
+    severity: 'info',
+    summary: 'A purchase-category conversion action uses a click-through window longer than 30 days.',
+    directAnswer:
+      'A purchase-category conversion action on your account uses a click-through attribution window longer than 30 days. For most direct-response purchase flows, that window is wider than the actual buying behavior. The action will end up crediting clicks that occurred weeks before the purchase, even when those clicks had no causal role.',
+    why: 'Google Ads lets you set the click-through window per conversion action, with options up to 90 days. For B2B and considered-purchase categories, long windows often match the real sales cycle. For ecommerce purchase flows where the median click-to-purchase delay is hours or a few days, a 60- or 90-day window introduces noise rather than accuracy.\n\nThe practical effect: a user clicks a brand search ad in week one, never returns through paid, and buys organically in week eight. With a 90-day window, that purchase still gets credited to the week-one click and shows up in the campaign\'s conversion column. The campaign looks more efficient than it is. Smart Bidding scales spend on it. Newer, harder-to-attribute campaigns lose budget by comparison.\n\nThe right window is the one that captures roughly the 90th percentile of real click-to-purchase delay. Pull the Time Lag report under Reports, Predefined, Time, and read the actual distribution before setting the window.',
+    howToFix:
+      '1. In Google Ads, open Reports, Predefined, Time, Time lag. Filter to the flagged purchase action. 2. Identify the time bucket containing the 90th percentile of conversions. For typical ecommerce, that lands at 7 to 14 days. 3. Open Tools and Settings, Conversions, the affected action, and update Click-through conversion window to the smallest window that captures that 90th percentile. 4. Annotate the change date in the account history so reported conversion counts that drop after the change are not misread as a campaign issue. 5. Allow 4 to 8 weeks of stabilization before judging campaign performance against the new window.',
+    example: 'Action: Purchase. Click window: 90 days. Real 90th percentile click-to-purchase delay: 6 days. Window is 15x too wide.',
+    citationTemplate:
+      'A purchase-category conversion action on this Google Ads account uses a click-through attribution window longer than 30 days. Per Google Ads conversion window documentation, the click-through window controls how long after an ad interaction a conversion can be credited to that click. For direct-response purchase flows where the actual click-to-purchase delay is hours or a few days, a 60- or 90-day window credits clicks that had no causal role in the purchase, inflates campaign-reported efficiency, and biases Smart Bidding toward older campaigns at the expense of newer ones. The right window is the smallest one that captures roughly the 90th percentile of real click-to-conversion delay, which can be read directly from the Time Lag report under Reports, Predefined, Time. Fix: review Time Lag for the affected action, shorten the click-through window to match the 90th percentile, annotate the change date, and allow 4 to 8 weeks of stabilization before judging campaign performance against the new baseline. Source: support.google.com/google-ads/answer/3123169.',
+    references: [
+      {
+        label: 'Google Ads. About conversion windows',
+        url: 'https://support.google.com/google-ads/answer/3123169',
+      },
+      {
+        label: 'Google Ads. About attribution models',
+        url: 'https://support.google.com/google-ads/answer/6394265',
+      },
+      {
+        label: 'Google Ads. About Smart Bidding',
+        url: 'https://support.google.com/google-ads/answer/7065882',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['model-attribution-drift', 'vtc-click-ratio'],
+  },
+  {
+    id: 'signal-zero-value-primary',
+    name: 'Zero-Value Primary Conversions',
+    source: 'report',
+    severity: 'critical',
+    summary: 'A Primary purchase-category conversion action reports zero conversion value despite recording conversions.',
+    directAnswer:
+      'A Primary conversion action in the purchase/sale/transaction category on your account is recording conversions but reporting zero value. Value-based bidding (Target ROAS, Maximize Conversion Value) cannot run on an action with no value. The action will look productive on count, but every revenue-weighted optimization on the account is operating blind for this outcome.',
+    why: 'Google Ads Target ROAS and Maximize Conversion Value strategies require each Primary conversion action they optimize against to send a value parameter. When a purchase-category Primary action has conversions but zero value, one of three things is happening. The conversion tag is firing but the value parameter is unset, hardcoded to zero, or sourced from a variable that returns empty. The conversion action settings have Use the same value for each conversion enabled with a value of zero. Or an offline upload populates the count but not the value column.\n\nThe consequence is that Smart Bidding cannot bid on revenue for that action. If it is the only Primary action, value-based strategies fall back to count optimization (treating every order identically regardless of size). If it is one of several Primary actions, it pulls the value-weighted average down sharply because Google divides total value by total conversions across all Primary actions in the goal.\n\nThis is one of the most common findings on accounts that switched from Maximize Conversions to Target ROAS without auditing the value pipeline first.',
+    howToFix:
+      '1. Open Tools and Settings, Conversions, and find the flagged Primary purchase action. 2. Check the Value setting. If Don\'t use a value or Use the same value with zero is selected, switch to Use different values for each conversion (dynamic). 3. In GTM, open the Google Ads conversion tag for that action and confirm the Conversion Value field references a data layer variable returning the actual order total (for example, {{DLV - ecommerce.purchase.value}}). 4. Test a real or staging purchase. Verify in Tag Assistant that the conversion request carries a non-zero value matching the backend order total. 5. Allow Smart Bidding 2 to 4 weeks to relearn against real values, and confirm the action\'s value-per-conversion stabilizes above zero in the next reporting period.',
+    example: 'Action: Purchase, Primary, Enabled. Conversions: 312. Conversion value: $0. Cause: GTM value parameter unset on conversion tag.',
+    citationTemplate:
+      'A Primary purchase-category conversion action on this Google Ads account is recording conversions while reporting zero conversion value. Per Google Ads value-based bidding documentation, Target ROAS and Maximize Conversion Value strategies require each Primary action they optimize against to send a non-zero value parameter, and a zero-value Primary action either disables value-based optimization for that outcome or drags the value-weighted average down across the goal. The typical root causes are an unset or hardcoded value parameter in the GTM conversion tag, a conversion action setting configured for Don\'t use a value or Use the same value with zero, or an offline upload that populates count but not value. The pattern frequently appears on accounts that migrated to Target ROAS without first auditing the value pipeline. Fix: switch the conversion action to Use different values for each conversion, wire the GTM Conversion Value field to a data layer variable returning the order total, validate in Tag Assistant against a real backend order, and allow Smart Bidding 2 to 4 weeks to relearn. Source: support.google.com/google-ads/answer/13064107.',
+    references: [
+      {
+        label: 'Google Ads. Set up conversion values',
+        url: 'https://support.google.com/google-ads/answer/13064107',
+      },
+      {
+        label: 'Google Ads. About value-based bidding',
+        url: 'https://support.google.com/google-ads/answer/7335652',
+      },
+      {
+        label: 'Google Ads. About Target ROAS',
+        url: 'https://support.google.com/google-ads/answer/6268637',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['perf-negative-values', 'zero-value-purchases', 'roas-sanity', 'mismatched-values'],
+  },
+  {
     id: 'ads-conversion-missing-gtm-tag',
     name: 'Ads Conversion Missing GTM Tag',
     source: 'cross',
