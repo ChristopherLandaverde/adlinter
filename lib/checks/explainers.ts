@@ -693,9 +693,21 @@ export const explainers: CheckExplainer[] = [
     source: 'tiktok',
     severity: 'critical',
     summary: 'The TikTok Pixel export has no active events with recorded volume.',
-    why: 'No active event volume usually means the base pixel is missing, blocked, disabled, or not receiving traffic. TikTok cannot build audiences, optimize campaigns, or diagnose conversion delivery without a working event stream. Any performance data from this setup is incomplete at best.',
-    howToFix: 'Verify the TikTok Pixel base code or GTM template is installed on every page that should be tracked. Check consent behavior, trigger rules, and browser blockers, then use TikTok Events Manager diagnostics or Pixel Helper to confirm live events. Do not launch conversion-optimized campaigns until events are active.',
-    example: 'Expected: Page browsing generates ViewContent or ClickButton volume in Events Manager within the test window',
+    directAnswer:
+      'Your TikTok Pixel is reporting zero active events. No ViewContent, no ClickButton, no CompletePayment. TikTok cannot see this site at all, which means any campaign optimizing toward a pixel event is optimizing on nothing.',
+    why: 'TikTok Pixel sends events via the `ttq.track()` call (or its GTM template equivalent). When Events Manager shows zero volume across every event for a full reporting window, only a handful of things can be true. The base pixel snippet is not on the page. It is on the page but `ttq.page()` is never called. The pixel loads but every `ttq.track()` is gated behind a consent state that never resolves. Or a script blocker, ad blocker, or CSP rule kills the request before it leaves the browser.\n\nWhat happens downstream is the part agencies care about. TikTok cannot build retargeting audiences without event volume. Smart Performance Campaigns optimize toward a conversion goal you have not defined, so they fall back to the loosest signal available. Pixel-attributed conversions report as zero in the dashboard, but the spend still goes out the door. Anyone reading TikTok performance reports for this account is reading fiction.\n\nNo events also blocks the Events API path. You cannot deduplicate server-side hits against client-side hits when the client side is empty. So the usual server-side fallback story does not save this one.',
+    howToFix:
+      '1. Load any tracked page and open DevTools. Filter network for `analytics.tiktok.com`. If you see no requests at all, the pixel snippet is missing or blocked. 2. If the snippet is present, confirm `ttq.page()` runs on initial load and that `ttq.track()` is wired to real site actions (button click, form submit, add-to-cart). 3. Check your CMP. TikTok Pixel needs marketing consent to fire. If default consent is denied and never granted, Events Manager stays at zero. 4. Reload TikTok Events Manager, switch to Test Events, paste your test URL, and walk a real flow. Live events should appear within seconds. 5. Do not enable conversion-optimized campaigns until at least one standard event is reporting consistent volume.',
+    example: 'Expected: page browsing generates ViewContent or ClickButton volume in Events Manager within the test window.',
+    citationTemplate:
+      'This TikTok Pixel is reporting zero active events in Events Manager across the audited window. Per TikTok\'s Pixel setup documentation, an installed pixel should record at least one standard event (ViewContent, ClickButton, AddToCart, or CompletePayment) within minutes of page activity; sustained zero volume indicates the base snippet is missing, blocked by consent or CSP, or not wired to real site actions. The downstream impact is that no retargeting audience can build, no Smart Performance Campaign can optimize toward a real conversion goal, and any pixel-attributed performance in the TikTok Ads Manager is unreliable. Fix: confirm the base pixel and `ttq.page()` fire on every tracked page, validate consent gating, and walk a live flow in TikTok Test Events before launching conversion-optimized campaigns. Source: ads.tiktok.com/help/article/get-started-pixel.',
+    references: [
+      { label: 'TikTok. Get started with TikTok Pixel', url: 'https://ads.tiktok.com/help/article/get-started-pixel' },
+      { label: 'TikTok. Standard events and parameters', url: 'https://ads.tiktok.com/help/article/standard-events-parameters' },
+      { label: 'TikTok. About Events API', url: 'https://ads.tiktok.com/help/article/about-events-api' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['tiktok-ecommerce-funnel', 'tiktok-completepayment-missing-value'],
   },
   {
@@ -704,9 +716,21 @@ export const explainers: CheckExplainer[] = [
     source: 'tiktok',
     severity: 'critical',
     summary: 'TikTok CompletePayment events are firing without value data.',
-    why: "CompletePayment is TikTok's key e-commerce revenue event. If it fires without value and currency, TikTok can count orders but cannot optimize toward order value or report ROAS accurately. This makes high-value and low-value purchases look equivalent to the bidding system.",
-    howToFix: 'Pass dynamic value and currency properties with every CompletePayment event. Source the value from the confirmed order total and make sure discounts, taxes, and shipping are handled consistently with your reporting standard. Validate the payload in TikTok Events Manager after a test purchase.',
-    example: "ttq.track('CompletePayment', { value: 129.99, currency: 'USD', contents: [{ content_id: 'SKU-1', quantity: 1 }] });",
+    directAnswer:
+      'Your CompletePayment events fire on every order, but they ship with no `value` and no `currency` field. TikTok counts the order. TikTok cannot tell you what it was worth. Every purchase looks identical to the bidding system, so optimization treats a $9 trial and a $900 enterprise plan as the same outcome.',
+    why: 'CompletePayment is the TikTok standard event tied to revenue. Per TikTok\'s standard-events spec, the event accepts `value` (the order total), `currency` (ISO 4217, e.g. USD), and a `contents` array describing the line items. When `value` is missing, TikTok\'s reporting drops to count-only. Value-based bidding (VBB), ROAS reporting, and the auction signals that prioritize high-LTV shoppers all degrade to a flat conversion count.\n\nThe usual failure modes look the same in code: a hardcoded `value: 0`, a templated value that resolves to `undefined` because the variable name does not match the data layer, or a value computed before discount and tax so it disagrees with what the customer actually paid. The pixel still fires. Events Manager still records the event. The match quality score even looks healthy. Only the revenue column is hollow.\n\nThe knock-on effect is that Event Match Quality cannot help you here. EMQ measures identifier coverage (email, phone, IP, user agent). It does not validate parameter completeness. So an account can hit a green EMQ score and still be invisible for value-based optimization. This is the gap agencies miss most often when reviewing client setups.',
+    howToFix:
+      '1. On the order-confirmation page, source the order total from the same field your accounting system reads. Pass it as `value` (number, not string) on `ttq.track(\'CompletePayment\', { value, currency, contents })`. 2. Set `currency` explicitly as a 3-letter ISO code. Do not assume USD. Multi-region storefronts must pass the buyer\'s currency, not the store default. 3. Decide once whether your value is gross (with tax, with shipping) or net, and document it. Mismatched conventions between client and server events break deduplication. 4. Open TikTok Test Events, run a real test purchase, and confirm `value` and `currency` appear on the CompletePayment payload. 5. Backfill the same parameters on any matching server-side Events API call so client and server agree.',
+    example: "ttq.track('CompletePayment', { value: 129.99, currency: 'USD', contents: [{ content_id: 'SKU-1', quantity: 1, price: 129.99 }] });",
+    citationTemplate:
+      'This TikTok Pixel fires CompletePayment events without the `value` or `currency` parameters required for value-based optimization. Per TikTok\'s standard events and parameters reference, CompletePayment must include `value` (numeric order total) and `currency` (ISO 4217) for revenue reporting and value-based bidding to function; events without these parameters degrade to count-only and treat every purchase as equivalent at auction. Reported ROAS for this account is therefore not derived from actual order value, and high-LTV shoppers receive no bidding priority. Fix: pass dynamic `value` and `currency` from the confirmed order total on every CompletePayment call, align the same parameters across client and server Events API hits, and verify in TikTok Test Events. Source: ads.tiktok.com/help/article/standard-events-parameters.',
+    references: [
+      { label: 'TikTok. Standard events and parameters', url: 'https://ads.tiktok.com/help/article/standard-events-parameters' },
+      { label: 'TikTok. Events API overview', url: 'https://business-api.tiktok.com/portal/docs?id=1741601162187777' },
+      { label: 'TikTok. Event Match Quality', url: 'https://ads.tiktok.com/help/article/event-match-quality' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['tiktok-base-events-active', 'tiktok-ecommerce-funnel'],
   },
   {
@@ -715,9 +739,21 @@ export const explainers: CheckExplainer[] = [
     source: 'tiktok',
     severity: 'warning',
     summary: 'TikTok standard e-commerce funnel events are missing or incomplete.',
-    why: 'TikTok needs ViewContent, AddToCart, InitiateCheckout, and CompletePayment to understand where users drop out. Missing funnel events weaken retargeting pools and make optimization depend on a single end event. That is especially fragile for lower-volume stores or campaigns still learning.',
-    howToFix: 'Install TikTok standard events at each real funnel step and keep the event names exactly as TikTok expects. Include product IDs, quantities, value, and currency where available. Test product view, cart, checkout, and purchase in Events Manager before trusting campaign optimization.',
-    example: 'Expected events: ViewContent -> AddToCart -> InitiateCheckout -> CompletePayment',
+    directAnswer:
+      'Your TikTok Pixel is firing CompletePayment but not the events that lead up to it. ViewContent, AddToCart, or InitiateCheckout are missing. TikTok can see the sale and nothing else, which kills retargeting and forces the bidder to learn from a single end-of-funnel signal.',
+    why: 'TikTok\'s recommended e-commerce funnel is ViewContent, AddToCart, InitiateCheckout, CompletePayment. Each step builds a retargeting pool (cart abandoners, checkout abandoners) and feeds the optimizer enough mid-funnel signal to find lookalikes before purchase volume scales. When one of those steps is missing, three things break.\n\nRetargeting pools collapse. You cannot target "added to cart, did not buy" without an AddToCart event. You fall back to broad retargeting against pageview audiences, which performs worse and exhausts faster. Optimization gets brittle. With only CompletePayment as a signal, Smart Performance Campaigns at low daily volume cannot exit learning, because TikTok needs roughly 50 conversions in 7 days to stabilize. Mid-funnel events give the system something to chew on while purchase volume builds. Diagnosis goes blind. When a campaign underperforms, you cannot tell whether the drop is at product view, cart, or checkout. Every conversation with the client ends in "we need more data."\n\nThis is the failure mode where match quality scores look fine but campaigns never scale.',
+    howToFix:
+      '1. Map each real funnel step on the site to a TikTok standard event: product detail page to `ViewContent`, add-to-cart button to `AddToCart`, checkout start to `InitiateCheckout`, order confirmation to `CompletePayment`. Use the exact event names from TikTok\'s standard events reference. 2. Include `content_id` (your SKU), `content_type` (`product` for single, `product_group` for variant), `quantity`, `value`, and `currency` on every event that has them. The bidder uses these for content-level optimization. 3. If you also run Events API server-side, send matching events with the same `event_id` so client and server deduplicate cleanly. 4. Walk the full funnel in TikTok Test Events. Confirm every step lands with the right parameters. 5. Wait 24 hours, then check Events Manager event volumes match real site behavior (cart events should outnumber checkout events, which should outnumber payments).',
+    example: 'Expected events: ViewContent -> AddToCart -> InitiateCheckout -> CompletePayment.',
+    citationTemplate:
+      'This TikTok Pixel is missing one or more standard e-commerce funnel events (ViewContent, AddToCart, InitiateCheckout, CompletePayment). Per TikTok\'s standard events and parameters reference, the full funnel is required for retargeting pool construction, Smart Performance Campaign exit from learning, and content-level optimization. With only end-of-funnel events firing, cart-abandoner and checkout-abandoner retargeting is impossible, low-volume campaigns cannot stabilize on a single conversion signal, and underperformance cannot be diagnosed at the funnel-step level. Fix: implement each standard event at its matching site action, include `content_id`, `quantity`, `value`, and `currency` where applicable, and verify the full path in TikTok Test Events before relying on campaign optimization. Source: ads.tiktok.com/help/article/standard-events-parameters.',
+    references: [
+      { label: 'TikTok. Standard events and parameters', url: 'https://ads.tiktok.com/help/article/standard-events-parameters' },
+      { label: 'TikTok. Get started with TikTok Pixel', url: 'https://ads.tiktok.com/help/article/get-started-pixel' },
+      { label: 'TikTok. Event Match Quality', url: 'https://ads.tiktok.com/help/article/event-match-quality' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['tiktok-base-events-active', 'tiktok-completepayment-missing-value'],
   },
   {
