@@ -44,7 +44,7 @@ const softwareSchema = {
   browserRequirements: 'Requires JavaScript. Modern browser.',
   inLanguage: 'en',
   isAccessibleForFree: true,
-  author: { '@type': 'Person', name: authorName, url: siteUrl },
+  author: { '@type': 'Person', '@id': `${siteUrl}/about#person`, name: authorName, url: `${siteUrl}/about` },
   publisher: { '@type': 'Organization', name: 'AdLint', url: siteUrl },
   sameAs: ['https://github.com/ChristopherLandaverde/adlinter'],
 };
@@ -61,7 +61,7 @@ const organizationSchema = {
   description:
     'Privacy-respecting ad-tracking audit suite for agencies and freelancers. Trusted reference for findings cited in client deliverables.',
   foundingDate: '2025-09',
-  founder: { '@type': 'Person', name: authorName },
+  founder: { '@type': 'Person', '@id': `${siteUrl}/about#person`, name: authorName, url: `${siteUrl}/about` },
   sameAs: ['https://github.com/ChristopherLandaverde/adlinter'],
 };
 

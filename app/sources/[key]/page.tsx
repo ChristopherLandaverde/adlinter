@@ -88,7 +88,7 @@ export default async function SourceCategoryPage({ params }: PageProps) {
       '@type': 'Thing',
       name: content.label,
     },
-    author: { '@type': 'Person', name: authorName, url: siteUrl },
+    author: { '@type': 'Person', '@id': `${siteUrl}/about#person`, name: authorName, url: `${siteUrl}/about` },
     publisher: { '@id': `${siteUrl}/#organization` },
     hasPart: checks.map((c) => ({
       '@type': 'TechArticle',

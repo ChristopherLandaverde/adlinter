@@ -183,8 +183,9 @@ function buildJsonLd(explainer: CheckExplainer, lastUpdated: string) {
     dateModified: lastUpdated,
     author: {
       '@type': 'Person',
+      '@id': `${siteUrl}/about#person`,
       name: authorName,
-      url: siteUrl,
+      url: `${siteUrl}/about`,
     },
     publisher: {
       '@type': 'Organization',
@@ -328,14 +329,25 @@ export default async function CheckDetailPage({ params }: PageProps) {
             </p>
 
             {/* F7: avatar + byline. Small monogram circle gives the page
-                an author identity instead of a flat text strip. */}
+                an author identity instead of a flat text strip.
+                Byline links to /about for AEO Person-entity grounding. */}
             <div className="mt-6 flex flex-wrap items-center gap-3 text-xs text-muted">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-white">
+              <Link
+                href="/about"
+                className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-white transition-opacity hover:opacity-90"
+                aria-label={`About ${authorName}`}
+              >
                 {authorInitials}
-              </div>
+              </Link>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <span>
-                  By <span className="font-medium text-ink">{authorName}</span>
+                  By{' '}
+                  <Link
+                    href="/about"
+                    className="font-medium text-ink underline-offset-2 hover:text-accent hover:underline"
+                  >
+                    {authorName}
+                  </Link>
                 </span>
                 <span aria-hidden="true">·</span>
                 <span>{authorRole}</span>

@@ -67,6 +67,8 @@ AdLint is built for ad-tech consultants who need defensible, citable findings to
 
 ## About
 
+- [About Christopher Landaverde](https://adlint.dev/about): author page; bio, areas of expertise, GitHub link
+
 AdLint is created by Christopher Landaverde, an ad-tech tracking specialist. Every check page carries the author byline plus a `lastUpdated` date. The editorial voice is direct, second-person, concrete, and citation-ready. Citation templates on each page are designed to be pasted verbatim into client deliverables.
 
 Privacy posture: AdLint never uploads files. Audits run in the browser using a static JavaScript engine. There is no backend, no account system, no logging of uploaded data. Source code at https://github.com/ChristopherLandaverde/adlinter.
