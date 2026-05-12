@@ -762,9 +762,30 @@ export const explainers: CheckExplainer[] = [
     source: 'linkedin',
     severity: 'warning',
     summary: 'Too many LinkedIn conversion actions are categorized as Other.',
-    why: 'Other is valid in LinkedIn, but it is often used as a catch-all when the action is really Lead, SignUp, Download, KeyPageView, or Purchase. That makes conversion reporting harder to read and weakens the account structure for optimization reviews. Engineers lose the ability to tell which actions represent real funnel stages from the export alone.',
-    howToFix: 'Open each Other conversion action in LinkedIn Campaign Manager and map it to the closest standard category. Use Lead for form submits or qualified inquiries, SignUp for account creation, Download for gated assets, KeyPageView for intentionally valuable pages, and Purchase for revenue events. Keep Other only for actions that truly do not fit the standard set.',
+    directAnswer:
+      'Your LinkedIn account has a stack of conversion actions sitting under the Other category. Other is a valid choice, but when it becomes the default bucket it stops carrying information. A reviewer reading the export cannot tell which actions are leads, which are signups, and which are page views worth optimizing for.',
+    why: 'LinkedIn Conversion Categories (Lead, Sign-Up, Purchase, Download, Key Page View, Add to Cart, and a handful of others) are how Campaign Manager understands what a conversion means. Picking the right one is not cosmetic. The category shapes how the action shows up in reporting groupings, how comparable it is across campaigns, and how an account stranger reads the structure during a handoff or audit.\n\nOther exists for the genuinely uncategorizable. The pattern AdLint flags is the opposite. Demo Request marked as Other. Whitepaper download marked as Other. Newsletter signup marked as Other. Every one of those has a closer standard category, and using it costs nothing.\n\nThe damage shows up in three places. Conversion reports group by category, so an Other-heavy account turns one column into a junk drawer. Account reviews take longer because nothing about the export tells you the funnel stage of each action. And the team that inherits the account next quarter has to open every action in Campaign Manager to figure out what it actually represents.',
+    howToFix:
+      '1. Open Campaign Manager. Account Assets. Conversions. Sort or filter by category and pull out every action sitting under Other. 2. For each one, decide which standard Conversion Category fits. Lead for form submits and qualified inquiries. Sign-Up for account creation. Download for gated assets. Key Page View for high-intent pages you deliberately want to measure. Purchase for revenue. Add to Cart for ecommerce mid-funnel. 3. Edit the conversion action and update the category. The internal ID stays the same. Historical data is preserved. 4. Keep Other only when no standard category honestly applies. If you find yourself defending the Other choice with a long explanation, that is the sign it belongs somewhere else. 5. Re-run the audit. The finding should clear once the Other rate drops below the threshold.',
     example: 'Problem: Demo Request categorized as Other\nBetter: Demo Request categorized as Lead',
+    citationTemplate:
+      'This LinkedIn account has a disproportionate share of conversion actions filed under the Other category when standard Conversion Categories (Lead, Sign-Up, Download, Key Page View, Purchase) would apply. Per LinkedIn\'s conversion tracking documentation, the Conversion Category determines how an action is grouped in Campaign Manager reporting and how it is interpreted across the account. Overuse of Other degrades the legibility of the conversion structure, complicates handoffs, and makes category-grouped reports less useful. Fix: open each Other conversion in Campaign Manager and remap it to the closest standard category; reserve Other for actions that genuinely do not fit. Source: linkedin.com/help/lms/answer/a425606.',
+    references: [
+      {
+        label: 'LinkedIn. Conversion tracking overview',
+        url: 'https://www.linkedin.com/help/lms/answer/a425606',
+      },
+      {
+        label: 'LinkedIn. Add a conversion tracking event',
+        url: 'https://www.linkedin.com/help/lms/answer/a425683',
+      },
+      {
+        label: 'Microsoft Learn. LinkedIn Insight Tag',
+        url: 'https://learn.microsoft.com/en-us/linkedin/marketing/insight-tag/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['linkedin-missing-key-conversions', 'linkedin-disabled-key-conversions'],
   },
   {
@@ -773,9 +794,30 @@ export const explainers: CheckExplainer[] = [
     source: 'linkedin',
     severity: 'warning',
     summary: 'Active LinkedIn conversion actions are not attached to any campaign.',
-    why: 'A LinkedIn conversion can be active and still be dormant for campaign measurement if no campaigns use it. The tag may fire, the export may show the action, but campaign reporting and optimization will not benefit from it. This is a LinkedIn-specific failure mode because campaign attachment is part of making a conversion action operational.',
-    howToFix: 'For each active unattached conversion, decide whether it should be used for reporting or retired. Attach the active business outcomes to the relevant campaigns in Campaign Manager, especially Lead, SignUp, Purchase, and high-intent KeyPageView actions. Disable stale conversions that are kept only as historical artifacts.',
+    directAnswer:
+      'Your account has active LinkedIn conversion actions that no campaign is using. The Insight Tag fires, the action records, the export looks healthy. But because the conversion is not attached at the campaign level, none of your campaigns can report on it or optimize toward it. The data lands in the account and stops there.',
+    why: 'This is a LinkedIn-specific shape that trips up teams coming from Google Ads or Meta. Creating a conversion action is one step. Attaching it to a campaign is a separate step. Both have to happen before the conversion contributes to campaign reporting or bidding signal. A conversion can be active at the Account Asset level and invisible at the campaign level at the same time.\n\nWhen that mismatch exists, three things follow. Campaign-level reports show fewer conversions than the account totals, and nobody can tell whether the gap is real performance or an attachment bug. Optimization toward those outcomes never engages, because LinkedIn only optimizes for conversions a campaign is configured to track. And during a quarterly review the unattached actions look healthy on the account page, which makes the underperformance on the campaign page harder to diagnose.\n\nThis check usually catches one of two things. A new conversion that was rolled out at the tag level but never wired into the campaigns that should use it. Or a legacy conversion that used to be attached, got detached during a campaign rebuild, and was forgotten.',
+    howToFix:
+      '1. Open Campaign Manager. Account Assets. Conversions. Look at the Campaigns column for each flagged action. Empty means unattached. 2. Decide whether the action still matters. If yes, edit each campaign that should use it and add the conversion under Campaign Attachment. Lead, Sign-Up, Purchase, and high-intent Key Page View actions almost always belong on a campaign. 3. If the action is genuinely stale (a launch event, a retired form, an experiment that ended), disable it rather than leaving it active and detached. Disabled actions stop firing and stop cluttering the account inventory. 4. Run the audit again. Newly attached actions clear the finding; retired ones drop out of the active set.',
     example: 'Active conversion: Book Demo\nCampaign attachments: 0\nFix: attach Book Demo to the demand-gen campaigns that should optimize for it',
+    citationTemplate:
+      'This LinkedIn account has active conversion actions with zero campaign attachments. Per LinkedIn\'s conversion tracking documentation, a conversion action only contributes to campaign-level reporting and optimization when it is attached to a campaign; an active but unattached action records at the account level and is invisible everywhere else. The result is a quiet measurement gap: account totals look correct, campaign totals undercount, and optimization never engages with the outcome. Fix: attach each active, business-relevant conversion to the campaigns that should report on or optimize toward it, and disable any conversion that is no longer in use. Source: linkedin.com/help/lms/answer/a425606.',
+    references: [
+      {
+        label: 'LinkedIn. Conversion tracking overview',
+        url: 'https://www.linkedin.com/help/lms/answer/a425606',
+      },
+      {
+        label: 'LinkedIn. Add a conversion tracking event',
+        url: 'https://www.linkedin.com/help/lms/answer/a425683',
+      },
+      {
+        label: 'LinkedIn. Install the LinkedIn Insight Tag',
+        url: 'https://www.linkedin.com/help/lms/answer/a420536',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['linkedin-no-active-conversions', 'linkedin-zero-volume-conversions'],
   },
   {
@@ -784,9 +826,30 @@ export const explainers: CheckExplainer[] = [
     source: 'linkedin',
     severity: 'warning',
     summary: 'LinkedIn conversion windows are shorter than 7 days.',
-    why: 'LinkedIn traffic is often B2B or considered purchase traffic. A 3-day or 5-day window can cut off legitimate leads that convert after research, stakeholder review, or a follow-up visit. The tag can be technically correct while campaign reporting undercounts the channels that started the deal.',
-    howToFix: 'Compare each conversion action window to the real delay between click and conversion. For B2B lead generation or SaaS, use a wider window such as 30 days post-click unless the business truly converts immediately. Keep short windows only for immediate actions where delayed attribution would be misleading.',
+    directAnswer:
+      'Your LinkedIn account has conversion actions running on Click conversion windows shorter than 7 days. On LinkedIn, where most traffic is B2B or considered-purchase, that window cuts off legitimate conversions before they happen. The Insight Tag still fires correctly. Campaign reporting just undercounts the click that started the deal.',
+    why: 'LinkedIn conversion windows have two dials. The Click conversion window (how long after a click LinkedIn will credit a conversion) and the View-through conversion window (how long after an impression LinkedIn will credit a view-attributed conversion). Both default to options that are reasonable for fast-converting actions, but B2B audiences rarely fit that shape.\n\nHere is what a 3-day Click window does on a typical B2B funnel. Someone sees a sponsored post on Monday, clicks through, lands on a product page, and bounces. They come back on Thursday, read a case study, book a demo. LinkedIn does not credit the click, because Thursday is outside the 3-day window. The demo gets logged as direct or unattributed. The campaign reports zero conversions for that user even though the click is what started the path.\n\nMultiply that across a quarter and the campaign looks unprofitable. The team cuts budget. The actual click-to-conversion lag never gets examined, because the dashboard says the campaign does not work. The Insight Tag is correctly configured the entire time.\n\nThe fix is to set the window to match the real click-to-conversion delay distribution for the business, not the LinkedIn default.',
+    howToFix:
+      '1. Open Campaign Manager. Account Assets. Conversions. Open each flagged conversion action. 2. Look at the Click conversion window setting. For B2B lead generation, SaaS, considered-purchase ecommerce, or anything with stakeholder review built into the journey, set this to 30 days post-click. LinkedIn supports 1, 7, 30, 60, and 90 day Click windows. 3. If you have historical conversion lag data (CRM timestamps minus first-click timestamps), target the 90th percentile of that distribution. 4. Keep short windows only for genuinely immediate actions: webinar registration during a live promotion, time-boxed signup offers. 5. Save. Existing data is not re-attributed retroactively, so annotate the date and wait one full sales cycle before judging the new baseline.',
     example: 'Problem: Demo Request uses a 3-day post-click window\nBetter: 30 days post-click for a medium B2B sales cycle',
+    citationTemplate:
+      'This LinkedIn account has conversion actions configured with Click conversion windows shorter than the realistic click-to-conversion delay for the business. Per LinkedIn\'s conversion tracking documentation, the Click conversion window determines the maximum gap between an ad click and a credited conversion; windows shorter than the actual lag distribution systematically undercount campaign performance and bias optimization away from working creative. Fix: set the Click conversion window to match the 90th percentile of historical click-to-conversion delay (typically 30 days for B2B lead generation), and re-baseline campaign performance after one full sales cycle. Source: linkedin.com/help/lms/answer/a425606.',
+    references: [
+      {
+        label: 'LinkedIn. Conversion tracking overview',
+        url: 'https://www.linkedin.com/help/lms/answer/a425606',
+      },
+      {
+        label: 'LinkedIn. Add a conversion tracking event',
+        url: 'https://www.linkedin.com/help/lms/answer/a425683',
+      },
+      {
+        label: 'Microsoft Learn. LinkedIn Insight Tag',
+        url: 'https://learn.microsoft.com/en-us/linkedin/marketing/insight-tag/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['linkedin-missing-key-conversions', 'linkedin-unattached-conversions'],
   },
   {
