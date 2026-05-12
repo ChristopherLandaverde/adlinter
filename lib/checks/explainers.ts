@@ -949,6 +949,156 @@ export const explainers: CheckExplainer[] = [
     relatedChecks: ['tiktok-base-events-active', 'tiktok-completepayment-missing-value'],
   },
   {
+    id: 'tiktok-custom-event-standard-alternative',
+    name: 'TikTok Custom Event Has Standard Alternative',
+    source: 'tiktok',
+    severity: 'info',
+    summary: 'Custom TikTok events are firing where a standard event would map cleanly.',
+    directAnswer:
+      'Your TikTok Pixel is firing custom events with names like `purchase_complete` or `cart_add` when a standard event (CompletePayment, AddToCart) covers the same action. Custom events still record, but they sit outside the optimization paths TikTok built around the standard event taxonomy.',
+    why: 'TikTok organizes its bidding, audience building, and reporting around a defined list of standard events: ViewContent, ClickButton, Search, AddToWishlist, AddToCart, InitiateCheckout, AddPaymentInfo, PlaceAnOrder, CompletePayment, CompleteRegistration, Contact, Download, SubmitForm, and Subscribe. Each maps to recognized auction signals and prebuilt reporting columns.\n\nWhen a pixel ships custom names instead (`buy_now`, `paid_checkout`, `cart_added`), three things degrade. Smart Performance Campaigns cannot target a custom event as a high-intent conversion goal with the same confidence as a standard one, because the bidder has less cross-account benchmarking to lean on. Ecommerce reports in TikTok Ads Manager group by standard event, so custom events appear as separate one-off rows that nobody compares against benchmarks. And handoff suffers: a new agency reading the account has to map every custom name back to a real funnel step before they can audit performance.\n\nThe fix is rarely invasive. Most of these custom names were chosen because a developer was unaware that a standard equivalent existed.',
+    howToFix:
+      '1. Open TikTok Events Manager and list every event firing on the pixel. 2. For each custom event, find its standard equivalent in TikTok\'s standard events reference. `purchase`, `buy`, `paid`, `bought` map to CompletePayment. `cart` or `added_item` map to AddToCart. `signup` maps to CompleteRegistration. 3. Update the `ttq.track()` call (or its GTM tag) to use the standard name and the parameters TikTok expects for that event (`value`, `currency`, `content_id`, `quantity` where applicable). 4. Leave the old custom event firing in parallel for one reporting window so you can deduplicate against historical data, then retire it. 5. Confirm in TikTok Test Events that the standard event lands with the right parameters before launching new conversion-optimized campaigns.',
+    citationTemplate:
+      'This TikTok Pixel is firing custom-named events where a standard TikTok event would cover the same site action. Per TikTok\'s standard events and parameters reference, recognized standard events (CompletePayment, AddToCart, InitiateCheckout, CompleteRegistration, SubmitForm, Subscribe, and others) feed Smart Performance Campaign optimization, prebuilt ecommerce reporting columns, and cross-account benchmarks. Custom events still record but sit outside those paths, which weakens auction signals and forces every reviewer to translate the naming back to real funnel steps. Fix: replace custom names with the matching standard event in `ttq.track()`, pass the parameters TikTok expects for that event, and verify in TikTok Test Events before retiring the custom version. Source: ads.tiktok.com/help/article/standard-events-parameters.',
+    references: [
+      { label: 'TikTok. Standard events and parameters', url: 'https://ads.tiktok.com/help/article/standard-events-parameters' },
+      { label: 'TikTok. Get started with TikTok Pixel', url: 'https://ads.tiktok.com/help/article/get-started-pixel' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['tiktok-base-events-active', 'tiktok-ecommerce-funnel'],
+  },
+  {
+    id: 'tiktok-disabled-conversions',
+    name: 'TikTok Disabled Conversion Events',
+    source: 'tiktok',
+    severity: 'warning',
+    summary: 'Standard TikTok conversion events are marked disabled in Events Manager.',
+    directAnswer:
+      'One or more of your TikTok conversion events (CompletePayment, PlaceAnOrder, CompleteRegistration, Subscribe, AddToCart, InitiateCheckout) is sitting in Events Manager with a Disabled status. Disabled events do not feed bidding, do not build audiences, and do not show in conversion reports.',
+    why: 'Events get disabled for two reasons that look identical in the export. Someone paused the event deliberately (a seasonal campaign ended, the conversion was retired, the team migrated to Events API). Or someone disabled it by accident in a Campaign Manager cleanup sweep and never re-enabled it. Both cases land in the same place: the event still exists, the pixel call may still fire, but TikTok will not score it.\n\nThe risk is not theoretical. If a CompletePayment event is disabled and the team launches a purchase-optimization campaign anyway, TikTok will accept the campaign and optimize toward the next-best signal it can find, often a broad ViewContent pool. Spend goes out, attributed conversions stay at zero in the disabled column, and the dashboard tells a story that does not match revenue.\n\nDisabled events also tangle audit trails. A reviewer who pulls Events Manager and sees CompletePayment listed assumes the account tracks purchases. The Disabled status is easy to miss in a quick scan. The fix is to either re-enable or formally retire each disabled conversion so the export reflects what the account actually measures.',
+    howToFix:
+      '1. Open TikTok Events Manager and filter events by status. Pull every event tagged Disabled. 2. For each disabled conversion, decide its fate. If it should be live, re-enable it and verify with a test fire in TikTok Test Events. If it is genuinely retired, delete it or rename it so audit exports do not show a misleading active-conversion list. 3. Confirm no active campaign is configured to optimize toward a disabled conversion. Campaign Manager will let you save that configuration silently, so check the campaign-level optimization goal explicitly. 4. If the event was disabled as part of a migration to Events API, confirm the server-side path is reporting volume before retiring the client-side counterpart. 5. Document why each disabled event was disabled so the next reviewer does not have to reconstruct the history.',
+    citationTemplate:
+      'This TikTok Pixel has one or more standard conversion events (CompletePayment, PlaceAnOrder, CompleteRegistration, Subscribe, AddToCart, InitiateCheckout) marked Disabled in Events Manager. Per TikTok\'s Pixel documentation, disabled events do not feed Smart Performance Campaign optimization, do not build retargeting audiences, and do not populate the conversion reporting columns; campaigns configured to optimize for a disabled conversion will still spend but fall back to weaker signals. The Disabled status is easy to overlook in account handoffs and produces audit exports that misrepresent which conversions the account actually measures. Fix: re-enable each conversion that should be live, retire or rename the events that are genuinely paused, and confirm no campaign is optimizing toward a disabled goal. Source: ads.tiktok.com/help/article/get-started-pixel.',
+    references: [
+      { label: 'TikTok. Get started with TikTok Pixel', url: 'https://ads.tiktok.com/help/article/get-started-pixel' },
+      { label: 'TikTok. Standard events and parameters', url: 'https://ads.tiktok.com/help/article/standard-events-parameters' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['tiktok-missing-conversion-events', 'tiktok-zero-volume-events'],
+  },
+  {
+    id: 'tiktok-duplicate-events',
+    name: 'TikTok Duplicate Event Names',
+    source: 'tiktok',
+    severity: 'warning',
+    summary: 'Two or more TikTok events share the same name and double-count conversions.',
+    directAnswer:
+      'Your TikTok Pixel has multiple events configured under the same name. Two `CompletePayment` entries, two `AddToCart` entries. When both fire on the same site action, TikTok counts the conversion twice. Reported volume is inflated and bidding optimizes on a phantom signal.',
+    why: 'Duplicate events typically come from a migration that left old configurations in place. A team rebuilt their pixel through GTM and forgot to remove the hardcoded snippet. A new agency added a fresh CompletePayment event without checking whether one already existed. The pixel now has two paths to the same name, and both fire on the same `ttq.track()` invocation or two separate trigger sources hit the same action.\n\nThe damage shows up in three places. Reported conversions and revenue inflate, sometimes by 2x. Smart Performance Campaigns optimize against a signal that does not match reality, so cost-per-action targets get set on inflated denominators. And deduplication against Events API server-side hits breaks, because TikTok cannot reconcile two client events with one server event when both clients share an event name and trigger window.\n\nFor agencies inheriting an account, this is one of the quickest wins on the audit list. Volume reconciles immediately and reported ROAS realigns with the source-of-truth order system.',
+    howToFix:
+      '1. Open TikTok Events Manager and sort the event list by name. Identify every name that appears more than once. 2. For each duplicate, open both events and compare their trigger source, parameters, and recent fire timestamps. The one that ships from your current GTM container or current code path is the keeper. 3. Pause and delete the older or hardcoded duplicate. Do not just rename it; rename leaves the trigger live under a new label. 4. Walk a real test transaction. Confirm only one `CompletePayment` lands in TikTok Test Events. 5. Reconcile the next 24 hours of TikTok-reported conversions against your order system. The inflated multiplier should drop to roughly 1.0.',
+    citationTemplate:
+      'This TikTok Pixel has multiple events configured under the same name, which causes TikTok to count the same site action more than once. Per TikTok\'s Pixel setup documentation, each conversion should map to a single event configuration; duplicate names typically result from incomplete migrations between hardcoded snippets and GTM containers, or from a second team adding an event without auditing the existing setup. The downstream impact is inflated conversion and revenue volume in TikTok reporting, Smart Performance Campaigns optimizing on a phantom signal, and broken deduplication against Events API server-side hits. Fix: identify the keeper configuration for each duplicate name, pause and delete the redundant one, and reconcile TikTok reported volume against the source-of-truth order system in the following 24 hours. Source: ads.tiktok.com/help/article/get-started-pixel.',
+    references: [
+      { label: 'TikTok. Get started with TikTok Pixel', url: 'https://ads.tiktok.com/help/article/get-started-pixel' },
+      { label: 'TikTok. About Events API', url: 'https://ads.tiktok.com/help/article/about-events-api' },
+      { label: 'TikTok. Standard events and parameters', url: 'https://ads.tiktok.com/help/article/standard-events-parameters' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['tiktok-similar-event-names', 'tiktok-event-concentration'],
+  },
+  {
+    id: 'tiktok-event-concentration',
+    name: 'TikTok Event Volume Concentration',
+    source: 'tiktok',
+    severity: 'info',
+    summary: 'A single non-ViewContent event accounts for almost all TikTok Pixel volume.',
+    directAnswer:
+      'Your TikTok Pixel volume is concentrated in one event that is not ViewContent. Over 95% of all event fires belong to a single name (often AddToCart, ClickButton, or a custom event). The rest of the funnel is either missing or barely firing, which is a tracking gap, not a behavioral truth.',
+    why: 'A healthy TikTok Pixel distribution looks like a funnel. ViewContent at the top with the largest volume, AddToCart and other mid-funnel events in the middle, CompletePayment at the bottom. When one non-ViewContent event swallows the whole pie, the usual explanation is not that customers skipped every other step. The explanation is that the other events were never wired.\n\nThis hurts in two ways. First, the bidder has only one signal to optimize against. Smart Performance Campaigns work best with funnel context, because mid-funnel events let TikTok learn faster on accounts with low purchase volume. With one dominant event, learning slows and the system leans hard on whatever proxy that event represents, even if it is a weak conversion indicator. Second, retargeting pools collapse to a single audience. You cannot build a cart-abandoner audience without an AddToCart event firing on the cart page. You cannot build a checkout-abandoner audience without InitiateCheckout. The single dominant event probably is not the right audience anchor for most campaigns.\n\nThe check tolerates ViewContent dominance because ViewContent legitimately fires on every page load. Any other event taking 95%+ of volume is a tracking shape problem.',
+    howToFix:
+      '1. Identify the dominant event in TikTok Events Manager. Confirm what site action triggers it. 2. Audit the rest of the funnel. If the account is ecommerce, walk the product page (ViewContent), add-to-cart button (AddToCart), checkout start (InitiateCheckout), and order confirmation (CompletePayment). If any of these does not fire in TikTok Test Events, that is your gap. 3. Implement the missing standard events with their expected parameters (`content_id`, `quantity`, `value`, `currency` where applicable). 4. Wait 24 hours and recheck volume distribution. A balanced funnel should show descending volume from ViewContent down to CompletePayment, not a single event holding the whole account. 5. If the dominant event is a custom event, also check whether it has a standard equivalent and consolidate.',
+    citationTemplate:
+      'This TikTok Pixel has over 95% of total event volume concentrated in a single non-ViewContent event. Per TikTok\'s Pixel guidance, a healthy ecommerce or lead-gen setup should produce a descending funnel of volume (ViewContent down to CompletePayment), and concentration in one mid- or bottom-funnel event usually indicates missing tracking on the rest of the funnel rather than real user behavior. The impact is that Smart Performance Campaigns have only one signal to learn from, retargeting pools collapse to one audience, and funnel-step diagnosis is impossible. Fix: walk the full site funnel in TikTok Test Events, implement the missing standard events with their expected parameters, and recheck the volume distribution after 24 hours of live traffic. Source: ads.tiktok.com/help/article/standard-events-parameters.',
+    references: [
+      { label: 'TikTok. Standard events and parameters', url: 'https://ads.tiktok.com/help/article/standard-events-parameters' },
+      { label: 'TikTok. Get started with TikTok Pixel', url: 'https://ads.tiktok.com/help/article/get-started-pixel' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['tiktok-ecommerce-funnel', 'tiktok-zero-volume-events'],
+  },
+  {
+    id: 'tiktok-missing-conversion-events',
+    name: 'TikTok Missing Conversion Events',
+    source: 'tiktok',
+    severity: 'critical',
+    summary: 'No standard TikTok conversion event is active on this pixel.',
+    directAnswer:
+      'Your TikTok Pixel has no active conversion event. No CompletePayment, no PlaceAnOrder, no CompleteRegistration, no Subscribe, no SubmitForm. TikTok cannot optimize toward an outcome that is not configured, so any conversion-objective campaign on this account is optimizing against nothing.',
+    why: 'TikTok Smart Performance Campaigns and standard conversion-objective campaigns need at least one event that represents a real business outcome to bid against. Per the TikTok standard events spec, that means one of CompletePayment (revenue), PlaceAnOrder (order placed pre-confirmation), CompleteRegistration (account created), Subscribe (newsletter or paid subscription), or SubmitForm (lead capture). Without one of these active, the campaign objective falls back to the loosest available signal, usually a click or a ViewContent.\n\nThe immediate effect is that pixel-attributed conversions in Campaign Manager show zero against any conversion-optimized campaign, while spend continues. The strategic effect is that you cannot build value-based bidding, lookalike audiences seeded on converters, or retention exclusion audiences, because none of those features have a converter event to anchor on. Event Match Quality is irrelevant here. EMQ measures identifier coverage on events that do exist. It cannot create a conversion event that was never configured.\n\nLead-gen and agency-managed accounts often hit this finding when a client passes over a pixel that was set up for retargeting only. Adding one standard conversion event usually unlocks the whole optimization stack.',
+    howToFix:
+      '1. Decide which standard conversion fits the business. Ecommerce: CompletePayment on the order confirmation page. Lead-gen: SubmitForm on form submit success, or CompleteRegistration if accounts are created. Subscription: Subscribe. SaaS: a combination of CompleteRegistration and CompletePayment for paid signups. 2. Implement the event via `ttq.track(\'CompletePayment\', { value, currency, contents })` or its GTM tag equivalent. Pass the parameters TikTok expects for that event. 3. Fire a real test transaction and confirm the event lands in TikTok Test Events with the right parameters. 4. If you run Events API server-side, send the same event with a matching `event_id` for deduplication. 5. Wait until at least 50 conversions accrue in a 7-day window before launching Smart Performance Campaigns against the new conversion goal.',
+    citationTemplate:
+      'This TikTok Pixel has no active standard conversion event (CompletePayment, PlaceAnOrder, CompleteRegistration, Subscribe, or SubmitForm). Per TikTok\'s standard events and parameters reference, conversion-objective and Smart Performance Campaigns require at least one configured conversion event to bid against; without one, the optimizer falls back to weak proxy signals like clicks or page views and the conversion column in Campaign Manager stays at zero. Value-based bidding, converter-seeded lookalikes, and retention exclusion audiences are also impossible without a converter event to anchor on. Fix: pick the standard conversion that matches the business model, implement it with the expected parameters on the matching site action, verify in TikTok Test Events, and let volume accrue before launching conversion-optimized campaigns. Source: ads.tiktok.com/help/article/standard-events-parameters.',
+    references: [
+      { label: 'TikTok. Standard events and parameters', url: 'https://ads.tiktok.com/help/article/standard-events-parameters' },
+      { label: 'TikTok. Get started with TikTok Pixel', url: 'https://ads.tiktok.com/help/article/get-started-pixel' },
+      { label: 'TikTok. About Events API', url: 'https://ads.tiktok.com/help/article/about-events-api' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['tiktok-base-events-active', 'tiktok-completepayment-missing-value', 'tiktok-disabled-conversions'],
+  },
+  {
+    id: 'tiktok-similar-event-names',
+    name: 'TikTok Similar Event Names',
+    source: 'tiktok',
+    severity: 'info',
+    summary: 'Two or more TikTok events have near-identical names that suggest typos or duplicates.',
+    directAnswer:
+      'Your TikTok Pixel has events with names so close that they are likely typos or accidental duplicates. `AddToCart` and `Add_To_Cart`. `CompletePayment` and `Complete_Payment`. The pixel treats them as two separate events. TikTok bidding and reporting do too, so volume splits between names that should be one.',
+    why: 'TikTok event names are case-sensitive and whitespace-sensitive at the configuration level. `AddToCart` and `addtocart` are the same in many of TikTok\'s standard-event lookups, but `Add_To_Cart` is not, and `Add-To-Cart` is not either. When a pixel ships near-duplicate names, three things happen.\n\nVolume splits across the variants, so no single name accrues enough volume to clear the optimization learning threshold (~50 conversions / 7 days for Smart Performance Campaigns). Reporting fragments, so the cart-add column in TikTok Events Manager shows half the real volume and the other half hides under a misspelled twin. And retargeting audiences anchored on one name miss everyone whose session triggered the other name.\n\nThe pattern usually traces to a code branch (server-side passes `Complete_Payment`, client-side passes `CompletePayment`) or a CMS theme that renamed a hook without telling the GTM team. The fix is almost always cosmetic in code and meaningful in results.',
+    howToFix:
+      '1. Open TikTok Events Manager and review the similarity pairs AdLint flagged. Confirm whether each pair is two real events or one event with a typo on one side. 2. For each typo, identify the source of the misspelled fire (GTM tag, hardcoded snippet, server-side Events API call, app SDK) and update it to the canonical standard event name from TikTok\'s reference. 3. Run a real test action and confirm only the canonical name lands in TikTok Test Events. 4. Leave the misspelled event in place for one reporting window so historical data does not stranded, then delete it once new volume reconciles. 5. Document the canonical event name list in your tracking spec so future contributors do not re-introduce variants.',
+    citationTemplate:
+      'This TikTok Pixel has two or more events with near-identical names (separated only by case, whitespace, or punctuation), which TikTok treats as separate events. Per TikTok\'s standard events and parameters reference, event names must match the canonical spelling for the standard-event behavior to apply; near-duplicate variants split volume across names, slow Smart Performance Campaign learning, fragment reporting, and break retargeting audiences anchored on one spelling. The pattern typically comes from a mismatch between client-side and server-side code paths or from a CMS theme renaming a hook independently of the GTM container. Fix: identify the canonical spelling for each pair, update the misspelled source, verify in TikTok Test Events, and retire the variant after one reporting window. Source: ads.tiktok.com/help/article/standard-events-parameters.',
+    references: [
+      { label: 'TikTok. Standard events and parameters', url: 'https://ads.tiktok.com/help/article/standard-events-parameters' },
+      { label: 'TikTok. Get started with TikTok Pixel', url: 'https://ads.tiktok.com/help/article/get-started-pixel' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['tiktok-duplicate-events', 'tiktok-custom-event-standard-alternative'],
+  },
+  {
+    id: 'tiktok-zero-volume-events',
+    name: 'TikTok Zero Volume Events',
+    source: 'tiktok',
+    severity: 'warning',
+    summary: 'TikTok events are active but reporting zero volume across the audited window.',
+    directAnswer:
+      'Your TikTok Pixel has active events (status is not disabled) that are recording zero fires. The configuration exists, the event is enabled, but nothing is reaching TikTok. Usually this means a broken trigger, a renamed site element, or a consent gate that never resolves.',
+    why: 'A zero-volume active event is worse than a disabled one in some ways. Disabled events at least announce their state. Zero-volume active events look healthy in a quick scan of Events Manager (green status, no warnings), but they contribute nothing to bidding, audiences, or reporting. A campaign optimizing toward one of them spends against a goal that the pixel will never report.\n\nThe usual root causes look like this. A GTM trigger references a button class that the site CSS renamed during a redesign, so the click event no longer matches. An Events API server-side call was wired in dev and never deployed to production. A consent management platform defaults to denied for marketing storage, and the event sits behind a consent check that never gets granted. Or the event was added speculatively (a future feature, a campaign that never launched) and was never wired to a real site action.\n\nThe risk during an audit handoff is that the zero-volume events make the Events Manager export look fuller than the pixel really is. A new agency reads "we have AddToCart, InitiateCheckout, CompletePayment" and assumes coverage. The pixel has those names. It does not have the data.',
+    howToFix:
+      '1. List every zero-volume active event in TikTok Events Manager. For each one, identify the trigger source (GTM tag, hardcoded snippet, server-side Events API, app SDK). 2. Load the page where the event is supposed to fire. Open DevTools, filter network for `analytics.tiktok.com`, and trigger the action. If no request leaves the browser, the trigger is broken. 3. Check your CMP. If marketing consent is required and defaults to denied, confirm the event fires after consent is granted. 4. If the event was speculative, delete it rather than leaving it active. A clean Events Manager export is more useful than a padded one. 5. Re-run the audit after 24 hours of live traffic. Events that should fire will report volume; events that should not will disappear from the active list.',
+    citationTemplate:
+      'This TikTok Pixel has one or more active events reporting zero fires across the audited window. Per TikTok\'s Pixel setup documentation, an active event should record volume within minutes of real site activity; sustained zero volume on an active event indicates a broken trigger, a consent gate that never resolves, an undeployed server-side call, or an event that was added speculatively and never wired. The risk is that Events Manager exports look fuller than the pixel actually is, leading new reviewers or inheriting agencies to assume coverage that does not exist, and any campaign optimized toward a zero-volume event spends against a goal the pixel will never report. Fix: validate the trigger for each zero-volume event, confirm consent gating, and either re-wire the trigger or delete the event so the export reflects real coverage. Source: ads.tiktok.com/help/article/get-started-pixel.',
+    references: [
+      { label: 'TikTok. Get started with TikTok Pixel', url: 'https://ads.tiktok.com/help/article/get-started-pixel' },
+      { label: 'TikTok. Standard events and parameters', url: 'https://ads.tiktok.com/help/article/standard-events-parameters' },
+      { label: 'TikTok. About Events API', url: 'https://ads.tiktok.com/help/article/about-events-api' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['tiktok-base-events-active', 'tiktok-disabled-conversions', 'tiktok-event-concentration'],
+  },
+  {
     id: 'linkedin-other-category-overuse',
     name: 'LinkedIn Other Category Overuse',
     source: 'linkedin',
