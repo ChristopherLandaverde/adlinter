@@ -688,6 +688,198 @@ export const explainers: CheckExplainer[] = [
     relatedChecks: ['meta-missing-pageview', 'meta-purchase-missing-value'],
   },
   {
+    id: 'meta-custom-event-standard-alternative',
+    name: 'Meta Custom Events With Standard Alternatives',
+    source: 'meta',
+    severity: 'info',
+    summary: 'Custom Meta events appear to duplicate standard events that would optimize better.',
+    directAnswer:
+      'Your Meta Pixel is using custom event names for actions that map cleanly to Meta standard events. A custom event called `add_cart` or `complete_signup` works for tracking, but Meta\'s optimizer treats it as an unknown signal. Switching to the standard `AddToCart` or `CompleteRegistration` unlocks better delivery and audience tooling.',
+    why: 'Standard events (PageView, ViewContent, AddToCart, InitiateCheckout, AddPaymentInfo, Purchase, Lead, CompleteRegistration, Subscribe, AddToWishlist) are not just naming conventions. Meta\'s ad delivery system has years of cross-account training data tied to each standard event. When a campaign optimizes for AddToCart, Meta knows what behaviour, placements, and audiences correlate with that action across every advertiser using the pixel. A custom event named `cart_add` carries none of that prior. The optimizer has to learn from your account alone, which lengthens the learning phase and often never reaches stable performance on smaller budgets.\n\nThe second cost is audience building. Lookalike sources built from standard Purchase or Lead events get processed through Meta\'s value-tier modeling. Custom events do not. You also lose access to Advantage+ Catalog Ads (which require ViewContent and AddToCart with proper content IDs) and to a handful of Events Manager diagnostics that only grade against standard event names.\n\nThe usual root cause is a developer who tagged the site from scratch using internal naming conventions, or a GTM template that exposed a free-form event name field and was filled with whatever felt natural.',
+    howToFix:
+      '1. Pull the list of flagged custom events from AdLint. 2. For each one, map to the closest standard event from Meta\'s reference: AddToCart, ViewContent, InitiateCheckout, AddPaymentInfo, Purchase, Lead, CompleteRegistration, Subscribe. Match on intent, not on string similarity. 3. Update the `fbq("trackCustom", "...")` calls to `fbq("track", "<StandardName>", { ... })`. Standard event names are case-sensitive. 4. Keep the legacy custom event firing in parallel for two to four weeks so any campaigns or audiences built against it do not break. 5. Migrate campaigns and audiences to the standard event, then retire the custom event once the standard event shows stable volume in Events Manager.',
+    example: "// Before\nfbq('trackCustom', 'add_cart', { value: 49.99 });\n// After\nfbq('track', 'AddToCart', { value: 49.99, currency: 'USD', content_ids: ['sku-123'] });",
+    citationTemplate:
+      'This Meta Pixel is using custom event names for user actions that map directly to Meta standard events (such as AddToCart, ViewContent, Lead, CompleteRegistration, or Purchase). Per Meta\'s standard events reference, standard events are pre-trained signals that the delivery system uses for optimization, lookalike seeding, Advantage+ Catalog Ads eligibility, and Events Manager diagnostics. Custom events bypass all of this and force the optimizer to learn from a single account\'s history, which extends learning phases and limits scale. The typical root cause is internal naming conventions applied during initial pixel setup, or a free-form event name field in a GTM template. Fix: map each flagged custom event to its standard equivalent, switch the `fbq("track", ...)` call to the standard name with the correct parameters (`value`, `currency`, `content_ids`), run both in parallel for two to four weeks, then migrate campaigns and audiences onto the standard event. Source: developers.facebook.com/docs/meta-pixel/reference.',
+    references: [
+      {
+        label: 'Meta. Standard events reference',
+        url: 'https://developers.facebook.com/docs/meta-pixel/reference',
+      },
+      {
+        label: 'Meta Business Help. About Standard Events',
+        url: 'https://www.facebook.com/business/help/402791146561655',
+      },
+      {
+        label: 'Meta. Meta Pixel implementation guide',
+        url: 'https://developers.facebook.com/docs/meta-pixel/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['meta-missing-conversion-events', 'meta-ecommerce-funnel'],
+  },
+  {
+    id: 'meta-disabled-conversions',
+    name: 'Disabled Meta Conversion Events',
+    source: 'meta',
+    severity: 'warning',
+    summary: 'One or more standard Meta conversion events are marked Disabled in Events Manager.',
+    directAnswer:
+      'Your Meta Pixel has a standard conversion event (Purchase, Lead, CompleteRegistration, Subscribe, AddToCart, or InitiateCheckout) flagged as Disabled in Events Manager. Disabled events do not feed campaign optimization, do not populate audiences, and do not appear in the Results column. If a campaign was built against one of these before it was disabled, it is now optimizing against silence.',
+    why: 'In Events Manager, each pixel event has a status: active, inactive, or disabled. Disabled is an explicit toggle, usually flipped by an admin in the Aggregated Event Measurement configuration or in the event settings panel itself. Once disabled, the event still arrives at Meta\'s servers, but Meta drops it on receipt. Nothing downstream sees it.\n\nThe damage depends on which event was disabled. A disabled Purchase event means no Value optimization, no ROAS reporting, no Purchase lookalike refresh. A disabled Lead event means lead-gen campaigns silently lose their target. A disabled AddToCart breaks abandoned-cart audiences across every Advantage+ Catalog Ads campaign on the account.\n\nThe two common causes are AEM cleanup gone wrong and accidental toggles during account audits. Aggregated Event Measurement limits each domain to eight prioritized events, and when teams need to add a new one they sometimes disable an existing one without realizing a live campaign depends on it. The other case is a freelancer or new agency user clicking through Events Manager settings and toggling a status without context.',
+    howToFix:
+      '1. Open Meta Events Manager and go to the Data Sources panel for the pixel. 2. Filter events by status and identify each one marked Disabled. Cross-reference against the list AdLint flagged. 3. For each disabled event, check the AEM configuration. If the slot is needed for something else, ranking matters more than disabling. If not, re-enable the event. 4. Inspect every active campaign on the account. Any campaign optimizing for the disabled event has been running blind and needs either re-pointing or pausing. 5. After re-enabling, wait 24 to 48 hours for volume to recover before resuming optimized delivery.',
+    example: 'Events Manager > Data Sources > Events > Status column should read Active for all in-use standard events.',
+    citationTemplate:
+      'This Meta Pixel has one or more standard conversion events (Purchase, Lead, CompleteRegistration, Subscribe, AddToCart, InitiateCheckout) flagged as Disabled in Events Manager. Per Meta\'s pixel documentation, disabled events are dropped on receipt and contribute nothing to campaign optimization, audience refresh, or Results reporting. Any campaign that was built against a now-disabled event is optimizing against zero signal and will drift toward the cheapest fallback action. The typical root cause is Aggregated Event Measurement reprioritization where an active event was disabled to free a slot for a new one, or an accidental status toggle during an account audit. Fix: identify each disabled event in the Events Manager status column, reconcile against Aggregated Event Measurement priorities, re-enable any event that still has live dependencies, and pause or re-point campaigns that were optimizing against the disabled events. Source: developers.facebook.com/docs/meta-pixel.',
+    references: [
+      {
+        label: 'Meta. Meta Pixel implementation guide',
+        url: 'https://developers.facebook.com/docs/meta-pixel/',
+      },
+      {
+        label: 'Meta. Standard events reference',
+        url: 'https://developers.facebook.com/docs/meta-pixel/reference',
+      },
+      {
+        label: 'Meta Business Help. About Standard Events',
+        url: 'https://www.facebook.com/business/help/402791146561655',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['meta-missing-conversion-events', 'meta-zero-volume-events'],
+  },
+  {
+    id: 'meta-duplicate-events',
+    name: 'Duplicate Meta Event Names',
+    source: 'meta',
+    severity: 'warning',
+    summary: 'The same event name is configured more than once in the pixel.',
+    directAnswer:
+      'Your Meta Pixel has two or more entries with the same event name. Meta does not collapse them automatically. Each configured event runs its own counter, fires its own optimization signal, and can inflate conversion totals or split learning data depending on how the duplicates were created.',
+    why: 'There are two flavours of this problem and they cause different damage.\n\nThe first is unintentional double-firing on the client. The same `fbq("track", "Purchase", ...)` call runs twice on the order confirmation page because the tag is in both the page template and a GTM container, or because a single-page-app router re-runs the pixel on a state change. Meta receives two Purchase events for one order. The Results column doubles. ROAS calculations look stronger than they are. Campaigns optimize toward a phantom conversion rate.\n\nThe second is Conversions API duplication without `event_id`. The browser pixel fires Purchase. The server fires Purchase. Both arrive at Meta. Without a matching `event_id` and timestamp pair, Meta has no way to deduplicate them and counts each one. The same order gets attributed twice across the funnel.\n\nThe third (less common) is two distinct event configurations in Events Manager that share a name because someone duplicated the row during AEM editing. Meta treats them as separate routing slots and the volume splits unpredictably.',
+    howToFix:
+      '1. Pull the duplicate names AdLint flagged. For each one, walk a real flow in Meta Pixel Helper and count how many times the event fires per user action. Exactly one fire per action is the target. 2. If the duplication is client-side, identify the source: a hardcoded template tag plus a GTM tag, a router re-init, or a third-party app that ships its own pixel. Remove one of them. 3. If the duplication is client plus Conversions API, implement deduplication. Send the same `event_id` and `event_time` from both browser and server. Meta\'s deduplication doc covers the exact payload shape. 4. If two configurations share a name in Events Manager, delete one of the rows in the AEM panel and let the remaining one carry the volume. 5. After the fix, watch the event in Events Manager for 24 to 48 hours. Volume should drop to roughly half if you removed a true duplicate.',
+    example: "// Conversions API deduplication\nfbq('track', 'Purchase', { value: 99 }, { eventID: 'order_12345' });\n// Server payload also includes event_id: 'order_12345' and matching event_time",
+    citationTemplate:
+      'This Meta Pixel has duplicate event configurations sharing the same name. Per Meta\'s deduplication documentation, Meta only collapses identical events when both browser pixel and Conversions API payloads carry a matching `event_id` and `event_time`; otherwise each event is counted independently. The downstream damage depends on the source: client-side double-firing (page template plus GTM, or SPA router re-init) inflates Results and ROAS columns; Conversions API duplication without `event_id` double-counts the same order across the funnel; and two Events Manager rows with the same name split volume unpredictably across optimization slots. Fix: walk the funnel in Meta Pixel Helper and confirm exactly one fire per user action, remove redundant client-side sources, implement `event_id`-based deduplication for any browser plus server pairs, and consolidate duplicate rows in the Events Manager configuration. Source: developers.facebook.com/docs/marketing-api/conversions-api/deduplicate-pixel-and-server-events.',
+    references: [
+      {
+        label: 'Meta. Deduplicate pixel and server events',
+        url: 'https://developers.facebook.com/docs/marketing-api/conversions-api/deduplicate-pixel-and-server-events',
+      },
+      {
+        label: 'Meta. Conversions API',
+        url: 'https://developers.facebook.com/docs/marketing-api/conversions-api/',
+      },
+      {
+        label: 'Meta. Meta Pixel implementation guide',
+        url: 'https://developers.facebook.com/docs/meta-pixel/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['meta-similar-event-names', 'meta-event-concentration'],
+  },
+  {
+    id: 'meta-event-concentration',
+    name: 'Meta Event Volume Concentration',
+    source: 'meta',
+    severity: 'info',
+    summary: 'A single non-PageView event accounts for an outsized share of total pixel volume.',
+    directAnswer:
+      'Your Meta Pixel has one event (other than PageView) carrying more than 95 percent of all reported volume. That pattern usually means the rest of the funnel is missing, mis-named, or mis-fired. A healthy pixel shows volume tapering from PageView through ViewContent, AddToCart, InitiateCheckout, and Purchase, not a single spike with nothing else around it.',
+    why: 'Meta\'s optimizer reads the relative shape of your event volume as a health signal. When ViewContent, AddToCart, and InitiateCheckout are absent or near zero, but a single mid-funnel event is responsible for almost everything, two things tend to be true.\n\nFirst, the dominant event is probably mis-mapped. A common case: AddToCart is wired to every product page view instead of the actual cart-add click, so it counts as both browsing and intent. The volume looks great. The signal is garbage. Campaigns optimized against it learn to chase product page traffic, not real cart adds.\n\nSecond, the surrounding events probably exist on the site but are not reaching Meta. A consent gate, a CSP rule, or a broken trigger lets PageView through but blocks the rest. The pixel grading panel in Events Manager will not flag this directly because each individual event passes its own health check; only the ratio gives it away.\n\nA single dominant event also distorts lookalike seed quality. Meta uses the event\'s audience as the source. If that audience is bloated with non-intent traffic, the lookalike inherits the noise.',
+    howToFix:
+      '1. Identify which event is dominating. AdLint reports the name and percentage. 2. Pull the actual trigger configuration for that event in GTM, the tag manager, or the source code. Walk a real session and confirm the event only fires on its intended action. If it fires on every page or on every click, fix the trigger. 3. Check the events that should sit around it in the funnel. ViewContent should be roughly 1x to 3x the AddToCart volume. AddToCart should be roughly 3x to 10x the Purchase volume. If those events are missing entirely, see meta-ecommerce-funnel. If they exist but are starved, investigate consent gating and CSP. 4. In Events Manager, open the Overview tab and look at the event ratio over the last 28 days. The shape should taper, not spike. 5. Once the ratios look right, re-evaluate any campaigns built against the dominant event. They may have been optimizing on inflated signal and need a learning reset.',
+    example: 'Healthy shape (28 days): PageView 50k -> ViewContent 12k -> AddToCart 1.5k -> InitiateCheckout 600 -> Purchase 220.',
+    citationTemplate:
+      'This Meta Pixel shows one non-PageView event carrying more than 95 percent of total event volume. Per Meta\'s pixel documentation, a healthy ecommerce pixel produces a funnel-shaped volume distribution from PageView through Purchase; a single spike usually indicates either a mis-mapped trigger (the event firing on a broader action than intended) or that surrounding funnel events are blocked by consent gating, CSP rules, or missing tags. Either pattern degrades optimization signal quality and bloats lookalike seed audiences with non-intent traffic. Fix: verify the dominant event\'s trigger fires only on its intended user action, restore the surrounding funnel events (ViewContent, AddToCart, InitiateCheckout) where missing, confirm consent paths permit the full pixel, and reassess campaigns that may have been optimizing against the inflated signal. Source: developers.facebook.com/docs/meta-pixel.',
+    references: [
+      {
+        label: 'Meta. Meta Pixel implementation guide',
+        url: 'https://developers.facebook.com/docs/meta-pixel/',
+      },
+      {
+        label: 'Meta. Standard events reference',
+        url: 'https://developers.facebook.com/docs/meta-pixel/reference',
+      },
+      {
+        label: 'Meta Business Help. About Standard Events',
+        url: 'https://www.facebook.com/business/help/402791146561655',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['meta-ecommerce-funnel', 'meta-zero-volume-events'],
+  },
+  {
+    id: 'meta-similar-event-names',
+    name: 'Similar Meta Event Names',
+    source: 'meta',
+    severity: 'info',
+    summary: 'Two or more Meta events have nearly identical names and may be the same action tagged twice.',
+    directAnswer:
+      'Your Meta Pixel has events with names so close that they are probably the same action tagged twice. Patterns like `Purchase` and `purchase`, or `AddToCart` and `add_to_cart`, are not collapsed by Meta. They run as separate events, split volume, and confuse anyone reading Events Manager.',
+    why: 'Meta event names are case-sensitive and exact-match. `Purchase` and `purchase` are two different events. So are `AddToCart` and `add_to_cart`. So are `lead` and `Lead`. Meta does not normalize them, does not warn, and does not merge their volume in reporting.\n\nThe split causes three problems. First, the standard event optimization path only recognizes the exact-cased standard name (`Purchase`, `AddToCart`, `Lead`). The variant gets treated as a custom event and loses access to value optimization, Advantage+ tooling, and standard lookalike seeding. Second, half the conversions land in the standard slot, the other half in the custom slot, and campaign Results columns show the wrong total. Third, when an analyst later reads Events Manager and sees two events with similar names, they cannot tell which one is real, which one is dead, or whether dedupe is happening.\n\nThe usual cause is two tagging surfaces: a hardcoded pixel call uses one casing, a GTM tag uses another, and a third-party plugin ships its own. Each one fires what it thinks is right.',
+    howToFix:
+      '1. Pull the similar-name pairs AdLint flagged. For each pair, identify which is the canonical Meta standard event name (PageView, ViewContent, AddToCart, InitiateCheckout, AddPaymentInfo, Purchase, Lead, CompleteRegistration, Subscribe, AddToWishlist). 2. Locate every source firing either variant: page template, GTM, server-side via Conversions API, third-party plugin. 3. Standardize on the exact Meta casing across all sources. Update GTM tags, server payloads, and any hardcoded `fbq("track", ...)` calls. 4. Leave the legacy variant firing for two to four weeks so campaigns and audiences pointed at it do not break, then retire it once the canonical event shows stable volume. 5. In Events Manager, confirm the duplicate name disappears from the events list after the retirement window.',
+    example: "// Wrong: two events that Meta sees as different\nfbq('track', 'purchase', { value: 99 });\nfbq('track', 'Purchase', { value: 99 });\n// Right: one canonical standard event\nfbq('track', 'Purchase', { value: 99, currency: 'USD' });",
+    citationTemplate:
+      'This Meta Pixel has two or more events with near-identical names (such as `Purchase` and `purchase`, or `AddToCart` and `add_to_cart`). Per Meta\'s standard events reference, event names are case-sensitive and exact-match, which means only the canonical casing receives standard-event treatment (value optimization, Advantage+ eligibility, standard lookalike seeding); variants are routed as custom events and split conversion volume across two slots. The downstream impact is that Results columns under-report against the canonical event, optimization signal is fragmented, and Events Manager becomes ambiguous to read. The typical root cause is multiple tagging surfaces (page template, GTM, third-party plugin, Conversions API) using different casing conventions. Fix: identify the canonical Meta standard event name for each pair, standardize every firing source on the exact casing, run both variants in parallel for two to four weeks, then retire the variant. Source: developers.facebook.com/docs/meta-pixel/reference.',
+    references: [
+      {
+        label: 'Meta. Standard events reference',
+        url: 'https://developers.facebook.com/docs/meta-pixel/reference',
+      },
+      {
+        label: 'Meta Business Help. About Standard Events',
+        url: 'https://www.facebook.com/business/help/402791146561655',
+      },
+      {
+        label: 'Meta. Meta Pixel implementation guide',
+        url: 'https://developers.facebook.com/docs/meta-pixel/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['meta-duplicate-events', 'meta-custom-event-standard-alternative'],
+  },
+  {
+    id: 'meta-zero-volume-events',
+    name: 'Meta Zero Volume Active Events',
+    source: 'meta',
+    severity: 'warning',
+    summary: 'One or more events are marked Active but have recorded zero conversions.',
+    directAnswer:
+      'Your Meta Pixel has events with status Active but zero recorded volume across the audit window. Active means Meta is listening; zero volume means nothing is arriving. The event exists in Events Manager only on paper, and any campaign optimizing toward it has no signal to learn from.',
+    why: 'An active event with no volume is one of three things. First, the trigger is broken: the tag is configured against a CSS selector, a route, or a data layer key that no longer exists after a site change. The pixel call never executes. Second, the event is gated behind a consent state that never resolves to granted, so the request is built but never sent. Third, the event name on the pixel side does not match what Meta expects (subtle casing or spacing differences), so it routes somewhere else and the active row stays empty.\n\nThe consequence depends on which event is empty. An empty Purchase event is the most damaging case because every revenue-optimized campaign on the account is silently broken. An empty AddToCart kills abandoned-cart audiences and Advantage+ Catalog Ads retargeting. An empty Lead event makes lead-gen optimization impossible.\n\nThe quiet part is that the pixel still passes a surface health check. Events Manager shows the event as configured. Pixel Helper does not complain about its absence. Only the Overview tab\'s 28-day volume column gives it away, and only if someone looks.',
+    howToFix:
+      '1. For each zero-volume event AdLint flagged, walk the user action that should trigger it in a real browser with Meta Pixel Helper open. If Pixel Helper does not show the event, the trigger is broken. 2. Inspect the tag configuration: GTM trigger conditions, CSS selectors, data layer keys, route patterns. Confirm each still matches the current site. 3. Walk the consent path. Deny consent, then grant consent, then refresh. The event should fire after grant. If it never fires, the consent gating is misconfigured. 4. Check the exact event name on the pixel side against Meta\'s standard events reference. `Purchase` not `purchase`. `AddToCart` not `Add_To_Cart`. 5. After fixing, wait 24 hours and confirm volume appears in Events Manager Overview. If a campaign was optimizing against the empty event, expect a learning reset.',
+    example: 'Events Manager > Overview > 28-day volume column should show non-zero numbers for every Active event.',
+    citationTemplate:
+      'This Meta Pixel has one or more events with status Active but zero recorded volume across the audit window. Per Meta\'s pixel documentation, an active event with no volume is almost always one of three failures: a broken trigger (CSS selector, data layer key, or route pattern that no longer matches the live site), a consent gate that never resolves to granted, or an event name mismatch where the pixel uses different casing than Meta\'s canonical standard events. The downstream damage scales by event: an empty Purchase silently breaks revenue-optimized campaigns, an empty AddToCart kills abandoned-cart audiences and Advantage+ Catalog Ads retargeting, an empty Lead disables lead-gen optimization. The pixel passes surface health checks while the underlying signal is absent. Fix: walk each zero-volume event in Meta Pixel Helper, repair the trigger or consent path, verify exact-cased standard event names, then confirm 24 hours of recovered volume in Events Manager Overview before resuming optimized delivery. Source: developers.facebook.com/docs/meta-pixel.',
+    references: [
+      {
+        label: 'Meta. Meta Pixel implementation guide',
+        url: 'https://developers.facebook.com/docs/meta-pixel/',
+      },
+      {
+        label: 'Meta. Standard events reference',
+        url: 'https://developers.facebook.com/docs/meta-pixel/reference',
+      },
+      {
+        label: 'Meta Business Help. About Standard Events',
+        url: 'https://www.facebook.com/business/help/402791146561655',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['meta-disabled-conversions', 'meta-event-concentration'],
+  },
+  {
     id: 'tiktok-base-events-active',
     name: 'TikTok Base Events Active',
     source: 'tiktok',
