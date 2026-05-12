@@ -2550,6 +2550,262 @@ export const explainers: CheckExplainer[] = [
     relatedChecks: ['twitter-conversion-id-required', 'twitter-event-id-format'],
   },
   {
+    id: 'twitter-conversion-id-required',
+    name: 'Twitter/X conversion_id Required',
+    source: 'twitter',
+    severity: 'critical',
+    summary: 'Active X Pixel conversion events are firing without a conversion_id parameter.',
+    directAnswer:
+      'One or more active X Pixel conversion events on this site are firing without a `conversion_id` value in the parameters object. The event still reaches X, but X has no key to use when it later tries to merge that hit with a matching server-side event or a duplicate browser hit. The first time the page reloads, or the first time your Conversions API integration sends the same Purchase, you start double-counting.',
+    why: 'Every X Pixel conversion call (Purchase, Lead, SignUp, Subscribe, CheckoutInitiated, AddToCart, AddToWishlist) accepts a `conversion_id` parameter. X uses it as the deduplication key. The contract is simple: if two events arrive on the same configured event tag with the same `conversion_id`, X keeps one. If `conversion_id` is missing, X has nothing to compare against and treats every hit as a fresh conversion.\n\nFor browser-only setups this still bites. A user reloads the confirmation page and your Purchase fires twice. A SPA route change triggers the tag a second time. Your reported Purchase count drifts above truth and the value attached drifts with it. For accounts that also run a server-side Conversions API integration, the impact is larger: every successful merge depends on `conversion_id` being present on both legs. Without it, the browser Purchase and the server Purchase both land in Events Manager as separate records.\n\nThe symptom you see in Ads Events Manager is a Purchase count that runs ahead of the order count in your commerce platform, often by a clean 1.5x to 2x multiple. The cause is almost always a tag that was wired up before `conversion_id` got added to the spec.',
+    howToFix:
+      '1. Pick a stable per-event identifier you already have on the page: order ID for Purchase, lead ID for Lead, subscription ID for Subscribe. 2. Update every active conversion tag so the parameters object includes `conversion_id`, for example `twq(\'event\', \'tw-XXXXX-XXXXX\', { conversion_id: orderId, value: 129.00, currency: \'USD\' })`. 3. Confirm GTM variables, hardcoded snippets, and any server-side tag template all read from the same source. 4. Fire a test conversion and inspect the outgoing request payload in the Network tab to confirm `conversion_id` is populated. 5. After 30 to 60 minutes, check Ads Events Manager and verify the event count tracks your real order count rather than running ahead of it.',
+    example: 'Broken:\n  twq(\'event\', \'tw-o1234-abcde\', { value: 129.00, currency: \'USD\' })\nFixed:\n  twq(\'event\', \'tw-o1234-abcde\', { conversion_id: \'10492\', value: 129.00, currency: \'USD\' })',
+    citationTemplate:
+      'Your active X Pixel conversion events are firing without `conversion_id` in the parameters payload. Per X Ads Help Center documentation on conversion tracking for websites and the web event tags reference, `conversion_id` is the key X uses to deduplicate matching events across browser reloads, SPA re-fires, and any parallel Conversions API path. When the field is absent, X treats every hit as a distinct conversion, which inflates Purchase or Lead counts and pushes reported value above the real order book. The drift typically appears as a clean multiple over the commerce-platform truth, and it feeds directly into bidding once optimisation runs against the same event. Fix: pass a stable per-event identifier such as order ID as `conversion_id` on every X Pixel conversion call, mirror the same value on any server-side path for the same event, and verify in Ads Events Manager that the deduped count tracks your real order count. Source: business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html.',
+    references: [
+      {
+        label: 'X Ads Help Center. Conversion tracking for websites',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html',
+      },
+      {
+        label: 'X Ads Help Center. Conversion tracking tag',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-tag.html',
+      },
+      {
+        label: 'X Developer Platform. Web event tags reference',
+        url: 'https://developer.x.com/en/docs/twitter-ads-api/measurement/api-reference/web-event-tags',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['twitter-deduplication-conversion-id', 'twitter-event-id-format'],
+  },
+  {
+    id: 'twitter-conversion-window-mismatch',
+    name: 'Twitter/X Conversion Window Mismatch',
+    source: 'twitter',
+    severity: 'warning',
+    summary: 'X Pixel events use conversion windows that do not match campaign settings or the real sales cycle.',
+    directAnswer:
+      'One or more X Pixel events on this account are reporting on a conversion window that does not line up with the window set at the campaign level, or the window is shorter than the sales cycle you actually run. The result is reporting that cuts off valid conversions, which then feeds back into optimisation and makes campaigns look worse than they are.',
+    why: 'X conversion tracking supports post-click windows of 1, 7, 14, 30, and 90 days, plus view-through windows of 1 and 7 days. When an event-level window is shorter than the campaign-level window, the campaign sees fewer conversions than the event recorded, and your ROAS column reads low. When the event-level window is longer than the campaign window, the opposite happens and the totals do not reconcile across views.\n\nThe second variant is a window that is honest about itself but mismatched to the business. A 7-day post-click window on a B2B SaaS account with a 45-day median sales cycle truncates the majority of real conversions. Optimisation runs against the short tail it can see, learns from the wrong signal, and bids accordingly. The account does not look broken in Events Manager because the events that do land look clean. The damage is in everything that never got attributed.\n\nMismatches usually appear after a window change at one level (event or campaign) that was not mirrored at the other, or after a campaign was duplicated from a template that predates a window policy update.',
+    howToFix:
+      '1. In X Ads Events Manager, list every active conversion event and note the attribution window on each. 2. Open every campaign that optimises against those events and compare the campaign window to the event window. Resolve mismatches by setting both to the same value. 3. Pick the window from the real sales cycle, not from a template. Ecommerce checkout typically lives at 1 or 7 days post-click. Considered B2B purchases usually need 30 to 90 days. 4. Document the chosen window per event in the measurement plan so future campaign duplications inherit the right setting. 5. After changing windows, allow at least one full cycle of new data before judging the impact, since historical conversions are not reattributed.',
+    example: 'Event Purchase: 7-day post-click attribution window\nCampaign optimising Purchase: 1-day post-click attribution window\nResult: campaign reports fewer Purchases than Events Manager, ROAS reads low.',
+    citationTemplate:
+      'Your X Pixel events are configured with conversion windows that do not align with the matching campaign settings, or the windows are shorter than the real sales cycle for this business. Per X Ads Help Center documentation on conversion tracking for websites, attribution windows are configurable per event and per campaign across the supported post-click options of 1, 7, 14, 30, and 90 days plus view-through options of 1 and 7 days, and reporting only counts conversions that fall inside the configured window. A mismatch between event and campaign settings produces reports that fail to reconcile across views, and a window that is shorter than the sales cycle truncates valid conversions and skews optimisation toward the short tail that the platform can see. Fix: align the event-level and campaign-level windows for every conversion event, pick the window from the real sales cycle rather than the template default, and document the chosen window per event so future campaign duplications inherit it. Source: business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html.',
+    references: [
+      {
+        label: 'X Ads Help Center. Conversion tracking for websites',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html',
+      },
+      {
+        label: 'X Ads Help Center. The X Pixel',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/twitter-pixel.html',
+      },
+      {
+        label: 'X Developer Platform. Web event tags reference',
+        url: 'https://developer.x.com/en/docs/twitter-ads-api/measurement/api-reference/web-event-tags',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['twitter-missing-conversion-events', 'twitter-zero-volume-events'],
+  },
+  {
+    id: 'twitter-duplicate-events',
+    name: 'Twitter/X Duplicate Event Names',
+    source: 'twitter',
+    severity: 'warning',
+    summary: 'Multiple X Pixel events share the same name.',
+    directAnswer:
+      'Two or more X Pixel event tags on this account share the same name. Each tag is a separate event in Events Manager with its own event tag ID, but they all report against the same label. Volume splits across them, optimisation cannot tell which one to learn from, and the reporting view aggregates two distinct configurations into one row.',
+    why: 'Event names in X Ads Events Manager are display labels. The actual routing key is the `tw-XXXXX-XXXXX` event tag ID, and X is happy to issue multiple IDs that share a label. That makes accidental duplication easy: someone creates a new Purchase event for a redesigned checkout, the old Purchase event stays active, and traffic now splits between two tags that both call themselves Purchase.\n\nThe consequence is that Events Manager and the campaign reporting view aggregate by name, which hides the split. The two tags each look healthy on their own, but neither carries the full conversion volume. Optimisation runs against one tag and ignores the other, so the bidder learns from half the signal. If the two tags have slightly different parameter shapes (one passes `value`, the other does not), reported revenue lurches based on which tag the request happened to hit.\n\nThe second variant is two different teams instrumenting the same action: the agency wires a Purchase tag through GTM, the engineering team wires another through the server. Both fire on the same checkout. Both call themselves Purchase. Volume doubles in the merged view.',
+    howToFix:
+      '1. List every active event in Ads Events Manager and group by event name. 2. For each duplicated name, decide which event tag ID is the canonical one and which should be retired. Prefer the tag with cleaner parameters and the integration you trust. 3. Remove the duplicate tag from the source where it is wired (GTM, hardcoded snippet, server template). Do not just pause the event in Events Manager; the tag will keep firing and producing zero-volume noise. 4. Update any campaign that optimises against the retired tag to point at the canonical one. 5. Verify in Events Manager that volume on the canonical tag now reflects the full real conversion count and the retired tag drops to zero.',
+    example: 'Active events:\n  Purchase (tw-o1234-abcde) — 412 events\n  Purchase (tw-o5678-fghij) — 388 events\nReal order count in commerce platform: 800\nReporting view: 800 Purchases (correct in aggregate, wrong for optimisation)',
+    citationTemplate:
+      'Your X Pixel account has multiple active event tags sharing the same event name. Per X Ads Help Center documentation on the website tag and conversion tracking for websites, each event in Events Manager is uniquely identified by its `tw-XXXXX-XXXXX` event tag ID, while the event name is only a display label, which allows distinct tags to share a label and split traffic between them. The reporting view aggregates by name, so the split hides until you inspect Events Manager directly, and optimisation can only learn from one tag at a time, which means the bidder is trained on roughly half the conversion signal. If parameter shapes differ between the duplicates, reported value also lurches between them. Fix: pick a canonical event tag per business action, remove the duplicate tag at its source rather than only pausing it in Events Manager, point every campaign at the canonical tag, and confirm full conversion volume now lands against one event. Source: business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html.',
+    references: [
+      {
+        label: 'X Ads Help Center. The X Pixel',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/twitter-pixel.html',
+      },
+      {
+        label: 'X Ads Help Center. Conversion tracking for websites',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html',
+      },
+      {
+        label: 'X Developer Platform. Web event tags reference',
+        url: 'https://developer.x.com/en/docs/twitter-ads-api/measurement/api-reference/web-event-tags',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['twitter-similar-event-names', 'twitter-zero-volume-events'],
+  },
+  {
+    id: 'twitter-engagements-vs-conversions',
+    name: 'Twitter/X Engagements Used Instead of Conversions',
+    source: 'twitter',
+    severity: 'critical',
+    summary: 'The active X Pixel events are Tweet engagement metrics rather than website conversion events.',
+    directAnswer:
+      'The active events on this X Pixel are all Tweet engagement style metrics (Tweet engagements, Retweets, Likes, Replies) rather than website conversion events. Engagement metrics measure activity on X itself. They do not measure what people do on the site after the click. With no website conversion event configured, campaigns cannot optimise toward Purchase, Lead, SignUp, or any business outcome.',
+    why: 'X Ads supports two parallel measurement surfaces. Tweet engagement metrics come from the platform itself and describe interactions with the ad creative (a Retweet, a Like, a profile visit). Website conversion events come from the X Pixel and describe what the user did after landing on the site (PageView, ContentView, Search, AddToCart, AddToWishlist, CheckoutInitiated, Purchase, Lead, SignUp, Subscribe).\n\nOptimising a campaign against an engagement metric tells X to find people who tend to engage with Tweets. That is a different audience from people who tend to convert on a site, and the gap shows up immediately in ROAS once the campaign runs at scale. The account looks instrumented because events are firing, but the events that are firing have no relationship to the business outcome the spend is supposed to produce.\n\nThe usual cause is a setup that started with engagement objectives, kept the engagement events live, and never added a website conversion event when the goal shifted to performance. The pixel is installed, the JavaScript loads, but the configured event tags in Events Manager are still the engagement set.',
+    howToFix:
+      '1. Decide which website action you want X to optimise toward: Purchase, Lead, SignUp, Subscribe, or another supported event type. 2. In Ads Events Manager, create the matching event tag and copy its `tw-XXXXX-XXXXX` ID. 3. Wire the tag on the site so the conversion fires with parameters appropriate to the event (`value`, `currency`, `conversion_id`, plus event-type-specific fields). 4. Let the event accrue at least the minimum volume X recommends for stable optimisation, typically a few dozen events per week per ad group, before relying on it for bidding. 5. Switch any active campaign optimisation goal from the engagement metric to the new website conversion event, and monitor for at least one full learning phase before re-tuning bids.',
+    example: 'Active events: Tweet engagements, Likes, Retweets\nMissing: Purchase, Lead, SignUp, Subscribe\nCampaign optimisation goal: Tweet engagements\nResult: bidder targets engagers, not buyers; ROAS sits below baseline.',
+    citationTemplate:
+      'This X Pixel has only Tweet engagement metrics active and no website conversion events configured. Per X Ads Help Center documentation on the X Pixel and conversion tracking for websites, engagement metrics are platform-side measurements of interaction with the ad creative and are distinct from website conversion events such as Purchase, Lead, SignUp, Subscribe, AddToCart, CheckoutInitiated, ContentView, and PageView, which are emitted by the X Pixel on the destination site. Optimising a campaign against an engagement metric tells X to find users who engage with Tweets rather than users who convert on the site, which is a different audience and produces poor ROAS once spend scales. Fix: create the website conversion event that matches the business outcome in Ads Events Manager, wire the corresponding `tw-XXXXX-XXXXX` event tag on the site with the right parameters, let the event accrue volume, and switch campaign optimisation goals from the engagement metric to the new conversion event. Source: business.twitter.com/en/help/campaign-measurement-and-analytics/twitter-pixel.html.',
+    references: [
+      {
+        label: 'X Ads Help Center. The X Pixel',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/twitter-pixel.html',
+      },
+      {
+        label: 'X Ads Help Center. Conversion tracking for websites',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html',
+      },
+      {
+        label: 'X Developer Platform. Web event tags reference',
+        url: 'https://developer.x.com/en/docs/twitter-ads-api/measurement/api-reference/web-event-tags',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['twitter-missing-conversion-events', 'twitter-purchase-missing-value'],
+  },
+  {
+    id: 'twitter-missing-conversion-events',
+    name: 'Twitter/X Missing Conversion Events',
+    source: 'twitter',
+    severity: 'critical',
+    summary: 'No website conversion events are configured on this X Pixel.',
+    directAnswer:
+      'This X Pixel has no active website conversion events. The pixel itself may load fine, but Events Manager has nothing configured that maps to a business outcome (Purchase, Lead, SignUp, Subscribe, CheckoutInitiated, AddToCart, AddToWishlist, ContentView, Search). Campaigns running against this account have no conversion signal to optimise toward and no way to report ROAS or cost per acquisition.',
+    why: 'The X Pixel is two layers. The base pixel handles page load and identifies the user. The website event tags, each with a `tw-XXXXX-XXXXX` ID, are what carry the conversion signal. Without at least one conversion event tag, the pixel is effectively a PageView counter. You can build retargeting audiences and that is about it.\n\nThe optimiser cannot run conversion bidding without a conversion event to optimise against. The reporting view cannot produce a meaningful cost per Purchase or cost per Lead column because nothing is feeding it. Campaign managers usually notice this when they try to set an optimisation goal and find no eligible events in the dropdown, or when reports show clicks and engagements but a blank conversion column.\n\nThe fix is to install at least one event that maps to the business outcome the spend is justified by. Ecommerce should have Purchase, plus AddToCart and CheckoutInitiated for funnel diagnostics. Lead gen should have Lead, plus the relevant upstream events such as ContentView and Search. SaaS should have SignUp or Subscribe.',
+    howToFix:
+      '1. Identify the single business outcome that justifies ad spend on this account (the one number you would report to the CFO). 2. In Ads Events Manager, create the matching website event tag (Purchase, Lead, SignUp, or Subscribe) and copy its `tw-XXXXX-XXXXX` ID. 3. Wire the tag on the site at the moment of the action, with the right parameters: `conversion_id`, plus `value` and `currency` for revenue events. 4. If the funnel is multi-step, also configure the upstream events (AddToCart, CheckoutInitiated, ContentView, Search) so you can diagnose drop-off and build optimisation audiences. 5. Validate one real event end-to-end and confirm it lands in Events Manager. Then switch campaign optimisation goals to the new event.',
+    example: 'Configured events: PageView only\nMissing: Purchase, Lead, SignUp, Subscribe, AddToCart, CheckoutInitiated\nResult: campaigns cannot run conversion optimisation; reporting has no CPA column.',
+    citationTemplate:
+      'This X Pixel has no active website conversion events configured. Per X Ads Help Center documentation on the X Pixel and conversion tracking for websites, the pixel\'s base script handles page load and identification, while the website event tags carry the conversion signal that campaigns optimise against, including Purchase, Lead, SignUp, Subscribe, CheckoutInitiated, AddToCart, AddToWishlist, ContentView, and Search. Without at least one conversion event tag, the pixel is a PageView counter and a retargeting source, and campaigns cannot run conversion bidding or report cost per acquisition. Fix: identify the business outcome that justifies the ad spend, create the matching event tag in Ads Events Manager, wire the `tw-XXXXX-XXXXX` ID on the site at the moment of the action with `conversion_id` and (for revenue events) `value` and `currency`, validate one real event end to end, and switch campaign optimisation goals to the new event. Source: business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html.',
+    references: [
+      {
+        label: 'X Ads Help Center. The X Pixel',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/twitter-pixel.html',
+      },
+      {
+        label: 'X Ads Help Center. Conversion tracking for websites',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html',
+      },
+      {
+        label: 'X Developer Platform. Web event tags reference',
+        url: 'https://developer.x.com/en/docs/twitter-ads-api/measurement/api-reference/web-event-tags',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['twitter-engagements-vs-conversions', 'twitter-purchase-missing-value'],
+  },
+  {
+    id: 'twitter-purchase-missing-value',
+    name: 'Twitter/X Purchase Missing Value',
+    source: 'twitter',
+    severity: 'critical',
+    summary: 'X Pixel Purchase or Checkout events are firing without value data.',
+    directAnswer:
+      'Your X Pixel Purchase or CheckoutInitiated events are firing with no `value` parameter (or a value of zero) while the event count is non-zero. The conversions land in Events Manager, but X has no revenue to attach to them, so the ROAS column reads zero and value-based bidding has nothing to optimise toward.',
+    why: 'X Pixel revenue events accept `value` and `currency` parameters on the call: `twq(\'event\', \'tw-XXXXX-XXXXX\', { value: 129.00, currency: \'USD\', conversion_id: orderId })`. Both fields are required for the platform to produce a revenue number. Missing `value` means every Purchase is treated as a unit conversion with no revenue weight. Missing `currency` means X cannot normalise across markets, and the reporting view falls back to the account default, which may not be what the order actually transacted in.\n\nThe symptom is a Purchase column that ticks up in volume while the Revenue column stays at zero or sits suspiciously low. ROAS reads as zero or undefined. Value-based bidding strategies cannot run because there is no value signal to bid against, so the optimiser silently degrades to volume optimisation. Mixed-basket businesses (some $20 orders, some $400 orders) lose the ability to bid higher for higher-value carts, which is usually the reason the value parameter was supposed to be there in the first place.\n\nThe usual cause is a tag template that was wired with `value` mapped to a Data Layer Variable that does not actually carry the cart total at the moment Purchase fires, or a hardcoded snippet that omits the parameter entirely.',
+    howToFix:
+      '1. Identify the source of truth for cart total at the Purchase moment: the order confirmation Data Layer object, the server-rendered template variable, or the commerce platform webhook. 2. Update the Purchase tag so `value` reads that source and `currency` reads the actual transaction currency (ISO 4217 code, for example `USD`, `EUR`, `GBP`). 3. Mirror the same value on any Conversions API call for the same order so server and browser agree. 4. Fire a test Purchase and confirm the outgoing request payload carries the correct numeric `value` and the right `currency` string. 5. After data lands in Events Manager, verify Revenue and ROAS columns populate and the per-order average matches your commerce platform AOV.',
+    example: 'Broken:\n  twq(\'event\', \'tw-o1234-abcde\', { conversion_id: \'10492\' })\nFixed:\n  twq(\'event\', \'tw-o1234-abcde\', { conversion_id: \'10492\', value: 129.00, currency: \'USD\' })',
+    citationTemplate:
+      'Your X Pixel Purchase or CheckoutInitiated events are firing with non-zero volume but no `value` parameter. Per X Ads Help Center documentation on conversion tracking for websites and the web event tags reference, revenue events accept `value` and `currency` parameters and both are required for the platform to attach revenue to a conversion, normalise across markets, and feed value-based bidding strategies. With value missing, every Purchase is recorded as a unit conversion, the Revenue and ROAS columns stay empty, and value-based optimisation degrades to volume optimisation, which costs mixed-basket businesses the ability to bid higher on higher-value carts. Fix: map `value` to the cart total source of truth at the Purchase moment, set `currency` to the actual transaction currency in ISO 4217 form, mirror the same values on any Conversions API path for the same order, and verify Events Manager reports a Revenue figure that matches commerce platform AOV. Source: business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html.',
+    references: [
+      {
+        label: 'X Ads Help Center. Conversion tracking for websites',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html',
+      },
+      {
+        label: 'X Ads Help Center. Conversion tracking tag',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-tag.html',
+      },
+      {
+        label: 'X Developer Platform. Web event tags reference',
+        url: 'https://developer.x.com/en/docs/twitter-ads-api/measurement/api-reference/web-event-tags',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['twitter-conversion-id-required', 'twitter-missing-conversion-events'],
+  },
+  {
+    id: 'twitter-similar-event-names',
+    name: 'Twitter/X Similar Event Names',
+    source: 'twitter',
+    severity: 'info',
+    summary: 'X Pixel events have near-duplicate names that may describe the same action.',
+    directAnswer:
+      'Two or more X Pixel events on this account have names that look like minor variations of each other (Purchase and Purchases, SignUp and Sign Up, Lead and Leads). Each is a distinct event in Events Manager with its own `tw-XXXXX-XXXXX` ID, but they likely describe the same business action and split volume between them. Reporting and optimisation both suffer when the same conversion is reported under two near-identical labels.',
+    why: 'X does not normalise event names. Whatever was typed in Events Manager is what appears in the reporting view. A misspelling, a casing difference, or a pluralisation produces a separate row, and the underlying tags route independently. Volume on the action splits across the rows in proportion to which tag actually fired, which is usually a function of which integration was wired most recently.\n\nThe optimisation impact is the same as the duplicate-name case: the bidder learns from one tag at a time, so it sees roughly half the real conversion signal. The reporting impact is worse: the rows do not aggregate in the standard view because the names are not identical, so the user comparing performance across periods may see a sudden drop that is actually just a renamed tag.\n\nCommon variants worth catching: trailing whitespace, capitalisation drift (`Purchase` vs `purchase`), pluralisation (`Lead` vs `Leads`), spacing (`SignUp` vs `Sign Up`), and translation drift on multi-market accounts (`Achat` and `Purchase` describing the same checkout).',
+    howToFix:
+      '1. Review the flagged pairs and decide for each whether the two events are the same action under different labels or genuinely distinct. 2. For pairs that describe the same action, pick a canonical event tag (the one with cleaner parameter coverage and the integration you trust) and retire the other at its source. 3. Update any campaigns pointing at the retired tag to optimise against the canonical one. 4. Standardise on a naming convention (PascalCase, no plurals, no spaces) and document it so future event creation does not re-introduce the drift. 5. Verify in Events Manager that the canonical tag now carries the full real conversion volume.',
+    example: 'Flagged pair:\n  Purchase (tw-o1234-abcde)\n  Purchases (tw-o5678-fghij)\nLikely the same action; volume splits between them; reporting view shows two rows.',
+    citationTemplate:
+      'Your X Pixel account has multiple event tags with near-duplicate names that likely describe the same business action. Per X Ads Help Center documentation on the X Pixel and conversion tracking for websites, event names in Events Manager are free-text display labels with no platform-level normalisation, while routing happens on the underlying `tw-XXXXX-XXXXX` event tag ID, which means a casing, spacing, or pluralisation difference produces two separate rows that report and optimise independently. Volume on the action splits between them, the bidder learns from one tag at a time, and period-over-period reports can mistake a renamed tag for a drop in performance. Fix: pick a canonical event tag per business action, retire near-duplicates at their source rather than only pausing them, repoint campaigns at the canonical tag, and adopt a naming convention (PascalCase, no plurals, no spaces) so future event creation does not re-introduce drift. Source: business.twitter.com/en/help/campaign-measurement-and-analytics/twitter-pixel.html.',
+    references: [
+      {
+        label: 'X Ads Help Center. The X Pixel',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/twitter-pixel.html',
+      },
+      {
+        label: 'X Ads Help Center. Conversion tracking for websites',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html',
+      },
+      {
+        label: 'X Developer Platform. Web event tags reference',
+        url: 'https://developer.x.com/en/docs/twitter-ads-api/measurement/api-reference/web-event-tags',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['twitter-duplicate-events', 'twitter-zero-volume-events'],
+  },
+  {
+    id: 'twitter-zero-volume-events',
+    name: 'Twitter/X Zero Volume Active Events',
+    source: 'twitter',
+    severity: 'warning',
+    summary: 'X Pixel events are marked active but have zero recorded volume.',
+    directAnswer:
+      'One or more X Pixel event tags on this account are marked active in Events Manager but have recorded zero events over the reporting window. Either the tag is wired but the trigger never fires on the site, the tag is being blocked, the tag is firing with a malformed event ID, or the underlying user activity does not actually exist. None of these are good states for a tag that campaigns may be optimising against.',
+    why: 'An active event in Events Manager with zero volume is a measurement liability. If a campaign is optimising against that event, the bidder has no signal and either fails to spend or spends without a meaningful target. If no campaign is optimising against it yet but one is planned, launch day starts from a cold pixel with no learnings.\n\nThe usual root causes:\n\n1. Tag is wired but the trigger condition never matches. A Purchase tag attached to a thank-you page selector that changed after a redesign. A SignUp tag tied to a form submit listener that the new framework no longer dispatches.\n\n2. Tag is firing but the event ID is malformed, so X drops the hit. This is the failure mode the `twitter-event-id-format` check catches separately, and the symptom in Events Manager is identical: zero volume.\n\n3. Request is being blocked. Tracking protection in the user\'s browser, a CSP that does not allow the X analytics endpoint, or a network-level block at the visitor side.\n\n4. The underlying business activity does not exist. The site does not currently have any of the configured action happening, for example a CheckoutInitiated event on a site that has no checkout flow in production yet.\n\nDistinguishing between these requires checking the tag on the site, the outgoing request, and the business funnel separately.',
+    howToFix:
+      '1. For each zero-volume active event, fire the user action on the site in a clean browser and watch the Network tab for the outgoing request to the X analytics endpoint. 2. If no request fires, the tag is not triggering. Re-validate the trigger condition (selector, event listener, Data Layer push) against the current site. 3. If the request fires but Events Manager still shows zero, inspect the event ID in the payload and confirm it matches the `tw-XXXXX-XXXXX` ID registered for that event. 4. If the request and ID are both correct, check for tracking protection or CSP blocks by repeating the test in a different browser without extensions. 5. If the tag is genuinely correct and there is simply no traffic doing that action, either pause the event to keep Events Manager clean or accept the zero state until the funnel produces activity.',
+    example: 'Active events with zero volume over last 7 days:\n  Purchase (tw-o1234-abcde)\n  AddToCart (tw-o5678-fghij)\nReal orders in commerce platform same period: 220\nLikely cause: thank-you page selector changed in last release; tag trigger no longer matches.',
+    citationTemplate:
+      'Your X Pixel has active event tags reporting zero volume over the audit window. Per X Ads Help Center documentation on the X Pixel and conversion tracking for websites, an active event in Events Manager with no recorded volume indicates one of four failure modes: the tag trigger never matches because of a site change, the tag fires but the event ID does not match a registered `tw-XXXXX-XXXXX` tag, the outbound request is blocked by browser tracking protection or CSP, or the underlying business activity does not currently exist on the site. Any of these leaves campaigns that optimise against the event without a signal, and a planned campaign launch against a cold pixel will start with no learnings. Fix: replay the action on the site in a clean browser, inspect the outbound request for both presence and a correct event ID, repeat in a CSP- and extension-free environment, and either repair the trigger, correct the ID, or pause the event if no real activity exists yet. Source: business.twitter.com/en/help/campaign-measurement-and-analytics/twitter-pixel.html.',
+    references: [
+      {
+        label: 'X Ads Help Center. The X Pixel',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/twitter-pixel.html',
+      },
+      {
+        label: 'X Ads Help Center. Conversion tracking for websites',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html',
+      },
+      {
+        label: 'X Developer Platform. Web event tags reference',
+        url: 'https://developer.x.com/en/docs/twitter-ads-api/measurement/api-reference/web-event-tags',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['twitter-event-id-format', 'twitter-duplicate-events'],
+  },
+  {
     id: 'snapchat-pixel-id-format',
     name: 'Snap Pixel ID Format',
     source: 'snapchat',
