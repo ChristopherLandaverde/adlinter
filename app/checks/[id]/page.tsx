@@ -11,10 +11,14 @@ import {
 } from '@/lib/checks/explainers';
 import { checkRegistry } from '@/lib/checks/registry.generated';
 import { GTMTagListMock } from '@/components/mockups/GTMTagListMock';
+import { GTMTriggerListMock } from '@/components/mockups/GTMTriggerListMock';
 
 function renderMockup(spec: CheckMockupSpec) {
   if (spec.kind === 'gtm-tag-list') {
     return <GTMTagListMock rows={spec.rows} caption={spec.caption} containerLabel={spec.containerLabel} />;
+  }
+  if (spec.kind === 'gtm-trigger-list') {
+    return <GTMTriggerListMock rows={spec.rows} caption={spec.caption} containerLabel={spec.containerLabel} />;
   }
   return null;
 }

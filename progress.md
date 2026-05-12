@@ -1,5 +1,46 @@
 # AdLint — Progress Log
 
+## v1.25.1 — GTM Flagship: 11 More Full-Treatment Explainers
+**Commit:** Pending
+
+Continues the GTM Flagship Sprint started in v1.25. Brings full-treatment GTM explainers from 1 → 12 (41% of all GTM checks). 8 legacy GTM explainers upgraded with the new editorial fields; 3 new high-impact explainers written from scratch.
+
+### Upgraded to full treatment
+Each of these had existing why/howToFix prose. Added `directAnswer` (LLM-citable lead paragraph), `citationTemplate` (paste-into-client-deliverable block), `references` (real platform docs), `lastUpdated`, `status: 'full'`, and mockups where applicable:
+
+- `consent-violations` (critical) — with broken/fixed Tag-list mockup pair
+- `ecommerce-datalayer-structure` (critical)
+- `missing-datalayer-variables` (warning)
+- `conversion-linker-sequencing` (critical)
+- `cross-domain-tracking` (warning)
+- `debug-tags-in-production` (warning)
+- `duplicate-datalayer-paths` (warning)
+- `datalayer-version-conflicts` (warning)
+
+### Written from scratch
+- `enhanced-conversions-missing-data` (critical) — Enhanced Conversions for web, hashed first-party data, match-rate diagnostics
+- `naming-conventions` (info) — prefix-based GTM governance convention, why inconsistency predicts duplicate tags
+- `container-size-score` (warning) — workspace size limits, stale-tag archival, server-side GTM migration
+
+### New mockup component
+- `components/mockups/GTMTriggerListMock.tsx` — companion to `GTMTagListMock`, renders the GTM Triggers screen with the same "obviously synthetic but credible" treatment. For future trigger-related explainers (trigger-conflicts, overlapping-triggers).
+
+### Coverage
+- Full-treatment GTM explainers: 1 → 12 (out of 29)
+- Total full-treatment explainers across all sources: 44 → 47
+- Stub coverage unchanged: all 178 check IDs still render a page
+
+### Remaining GTM work (weeks 2–5 of sprint)
+- 17 more GTM check IDs need writing: circular-tag-dependencies, conversion-error-handling, datalayer-dependencies, datalayer-naming-inconsistency, excessive-custom-html, excessive-sequencing-depth, invalid-css-selectors, missing-descriptions, orphaned-tag-sequences, overlapping-triggers, performance-heavy-triggers, remarketing-tag-issues, stale-tags, trigger-conflicts, unused-datalayer-variables, unused-triggers, unused-variables.
+
+### Files modified
+- `lib/checks/explainers.ts` (8 upgrades + 3 additions + new `GTMTriggerListMockSpec` type)
+- `app/checks/[id]/page.tsx` (wires `GTMTriggerListMock`)
+- `components/mockups/GTMTriggerListMock.tsx` (new)
+- `progress.md`
+
+---
+
 ## v1.25 — /checks AEO+SEO Foundation: Registry, Stubs, Flagship Template
 **Commit:** Pending
 

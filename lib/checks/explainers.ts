@@ -18,7 +18,20 @@ export interface GTMTagListMockSpec {
   }>;
 }
 
-export type CheckMockupSpec = GTMTagListMockSpec;
+export interface GTMTriggerListMockSpec {
+  kind: 'gtm-trigger-list';
+  caption?: string;
+  containerLabel?: string;
+  rows: Array<{
+    name: string;
+    type: string;
+    fires: string;
+    highlight?: 'critical' | 'warning' | 'info' | 'pass';
+    note?: string;
+  }>;
+}
+
+export type CheckMockupSpec = GTMTagListMockSpec | GTMTriggerListMockSpec;
 
 export interface CheckExplainer {
   id: string;
@@ -162,9 +175,88 @@ export const explainers: CheckExplainer[] = [
     source: 'gtm',
     severity: 'warning',
     summary: 'Google Ads tags may be able to fire before the required consent state is granted.',
-    why: 'If ad tags fire before consent in regions that require it, the setup can create compliance risk and pollute measurement with hits that should have been blocked or modeled differently. Consent mistakes also make debugging hard because the same tag can behave differently by geography, consent banner timing, and browser state. Advertisers end up with unstable conversion volume and a setup that is difficult to defend.',
-    howToFix: 'Use GTM consent settings or Consent Mode so Google Ads conversion and remarketing tags require the right ad_storage and ad_user_data states. Make the consent banner set default denied before tags load, then update consent after the user choice. Test denied, granted, and changed-consent paths in GTM Preview before publishing.',
+    directAnswer:
+      'One or more Google Ads tags in the container have no consent settings configured, which means they can fire before the user has granted ad_storage or ad_user_data consent. In regions covered by GDPR, the UK GDPR, or similar regimes, that creates compliance exposure and produces measurement data that should have been blocked or sent in modelled (consent-denied) form.',
+    why: 'Google Consent Mode v2 introduced two ad-related consent signals — ad_storage and ad_user_data — that Google Ads tags are expected to respect. When tags have no consent settings, they fire regardless of the user\'s choice, which has three consequences. First, the account ships data from users who declined consent, exposing the advertiser to regulatory risk. Second, Google Ads can no longer rely on its modelling pipeline (which assumes consent-denied hits are tagged as such) to fill the gap, so measurement quality degrades silently. Third, the same tag behaves differently across geographies, browser states, and banner timings, which makes debugging unstable and audit findings non-reproducible. The fix is not the consent banner alone — it is whether the GTM tags read the consent state and honour it.',
+    howToFix:
+      '1. In GTM, open Admin → Container Settings → Consent and enable "Enable consent overview." This surfaces a per-tag consent column in the Tags list. 2. For each Google Ads Conversion Tracking and Google Ads Remarketing tag, open the tag, expand Consent Settings, and set "Require additional consent for tag to fire" to require `ad_storage` (and `ad_user_data` if the tag uses Enhanced Conversions). 3. Confirm the consent banner sets default consent to denied before any tag loads and updates consent only after the user makes a choice. 4. In Preview mode, walk three paths — denied, granted, and post-banner update — and confirm Ads tags only fire on the granted path. Publish after all three paths behave correctly.',
     example: 'Required consent checks: ad_storage, ad_user_data, ad_personalization\nDefault state before banner choice: denied',
+    citationTemplate:
+      'AdLint detected one or more Google Ads tags in this GTM container with no Consent Settings configured. Per Google\'s Consent Mode v2 specification, Google Ads conversion and remarketing tags must honour the ad_storage and ad_user_data consent signals before firing. Without explicit Consent Settings on each tag, the container will send ad measurement data regardless of user choice, creating both regulatory exposure (GDPR, UK GDPR, ePrivacy) and degraded measurement modelling. Recommended remediation: configure required additional consent on every Google Ads tag and verify denied/granted/updated paths in Preview before publishing. Source: developers.google.com/tag-platform/security/guides/consent.',
+    references: [
+      {
+        label: 'Google — Consent settings in Google Tag Manager',
+        url: 'https://support.google.com/tagmanager/answer/10718549',
+      },
+      {
+        label: 'Google — Consent mode for Google Ads',
+        url: 'https://support.google.com/google-ads/answer/14310715',
+      },
+      {
+        label: 'Google Developers — Consent Mode v2 reference',
+        url: 'https://developers.google.com/tag-platform/security/guides/consent',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    whyMockup: {
+      kind: 'gtm-tag-list',
+      containerLabel: 'GTM-AB12CDE · Workspace: Default',
+      caption:
+        'Google Ads tags configured with no Consent Settings. Every tag fires on All Pages regardless of the user\'s consent state.',
+      rows: [
+        {
+          name: 'Google Ads — Purchase Conversion',
+          type: 'Google Ads Conversion Tracking',
+          firing: 'purchase_success',
+          highlight: 'critical',
+          note: 'Consent Settings: No additional consent required',
+        },
+        {
+          name: 'Google Ads — Remarketing',
+          type: 'Google Ads Remarketing',
+          firing: 'All Pages',
+          highlight: 'critical',
+          note: 'Consent Settings: No additional consent required',
+        },
+        {
+          name: 'Google Ads — Sign-Up Conversion',
+          type: 'Google Ads Conversion Tracking',
+          firing: 'signup_complete',
+          highlight: 'critical',
+          note: 'Consent Settings: No additional consent required',
+        },
+      ],
+    },
+    fixMockup: {
+      kind: 'gtm-tag-list',
+      containerLabel: 'GTM-AB12CDE · Workspace: Default',
+      caption:
+        'Fixed: every Google Ads tag now requires `ad_storage` consent. Tags only fire after the consent banner records a granted state.',
+      rows: [
+        {
+          name: 'Google Ads — Purchase Conversion',
+          type: 'Google Ads Conversion Tracking',
+          firing: 'purchase_success',
+          highlight: 'pass',
+          note: 'Requires: ad_storage, ad_user_data',
+        },
+        {
+          name: 'Google Ads — Remarketing',
+          type: 'Google Ads Remarketing',
+          firing: 'All Pages',
+          highlight: 'pass',
+          note: 'Requires: ad_storage',
+        },
+        {
+          name: 'Google Ads — Sign-Up Conversion',
+          type: 'Google Ads Conversion Tracking',
+          firing: 'signup_complete',
+          highlight: 'pass',
+          note: 'Requires: ad_storage, ad_user_data',
+        },
+      ],
+    },
     relatedChecks: ['missing-conversion-linker', 'conversion-label-matching'],
   },
   {
@@ -184,9 +276,31 @@ export const explainers: CheckExplainer[] = [
     source: 'gtm',
     severity: 'critical',
     summary: 'The dataLayer does not expose purchase and item data in a reliable e-commerce shape.',
-    why: 'Google Ads, GA4, Meta, TikTok, and server-side pipelines all depend on stable event names and value fields. If purchase data is missing or nested unpredictably, conversion tags fall back to fixed values, zero values, or no item data. That breaks ROAS reporting, product-level diagnostics, and remarketing audiences.',
-    howToFix: 'Standardize the purchase event payload before GTM tags fire. Include transaction_id, value, currency, and an items array with item_id, item_name, price, and quantity. Validate the payload in GTM Preview and your browser console on real purchase and refund paths.',
-    example: "dataLayer.push({ event: 'purchase', ecommerce: { transaction_id: 'T123', value: 129.99, currency: 'USD', items: [{ item_id: 'SKU-1', price: 129.99, quantity: 1 }] } });",
+    directAnswer:
+      'Conversion and analytics tags need a predictable dataLayer object on purchase events — at minimum `transaction_id`, `value`, `currency`, and an `items` array. When that shape is missing or inconsistent, downstream Google Ads, GA4, and pixel tags fall back to zero values or empty item data, which silently corrupts ROAS reporting and value-based bidding.',
+    why: 'Google Analytics 4, Google Ads conversion tracking, Meta CAPI, TikTok Events, and most server-side pipelines all read from the same dataLayer object — they each subscribe to specific keys inside an `ecommerce` block. The GA4 recommended events specification defines the canonical structure: an event name like `purchase`, plus a nested `ecommerce` object containing `transaction_id`, `value`, `currency`, and an `items` array of `{ item_id, item_name, price, quantity }` rows. When implementations deviate — values at the top level instead of inside `ecommerce`, missing `currency`, missing `items` array, or different shapes per page template — tags silently degrade. They fire (so the conversion is counted) but the value is zero or undefined (so Smart Bidding learns from noise, ROAS dashboards lie, and remarketing audiences fail to scope by product). This is one of the highest-impact tracking failures because it is invisible until someone asks "why does our reported ROAS not match the e-commerce backend?"',
+    howToFix:
+      '1. Open the site\'s server-rendered HTML or front-end framework and locate the script tag (or component) that pushes the purchase event. 2. Replace any custom shape with the GA4 recommended structure: `dataLayer.push({ event: "purchase", ecommerce: { transaction_id, value, currency, items: [...] } })`. 3. Make sure the push happens before any GTM tag could read from the dataLayer for that event — typically immediately on order-confirmation page render, before the GA4 Configuration tag fires. 4. In GTM Preview, complete a real test purchase and confirm every variable used by conversion tags resolves to a non-empty value at the `purchase` event step. 5. Repeat for refund and partial-cancellation paths if the site supports them. The check clears after one container publish and one verified test purchase.',
+    example:
+      "dataLayer.push({\n  event: 'purchase',\n  ecommerce: {\n    transaction_id: 'T-12345',\n    value: 129.99,\n    currency: 'USD',\n    items: [\n      { item_id: 'SKU-1', item_name: 'Walking Shoes', price: 129.99, quantity: 1 }\n    ]\n  }\n});",
+    citationTemplate:
+      'AdLint detected that this GTM container expects a purchase dataLayer event but the recommended e-commerce shape is incomplete or inconsistent. Per Google\'s GA4 recommended events specification, conversion tags require a `purchase` event with a nested `ecommerce` object containing `transaction_id`, `value`, `currency`, and an `items` array. Without this structure, downstream Google Ads conversion value, GA4 e-commerce reports, and remarketing audiences are at material risk of silent data loss. Recommended remediation: standardise the purchase event payload before any GTM tag fires and verify in Preview. Source: developers.google.com/analytics/devguides/collection/ga4/ecommerce.',
+    references: [
+      {
+        label: 'Google Analytics 4 — Measure ecommerce',
+        url: 'https://developers.google.com/analytics/devguides/collection/ga4/ecommerce',
+      },
+      {
+        label: 'GA4 — Recommended events for e-commerce',
+        url: 'https://support.google.com/analytics/answer/9612232',
+      },
+      {
+        label: 'Google Tag Manager — Data Layer reference',
+        url: 'https://developers.google.com/tag-platform/tag-manager/datalayer',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['missing-datalayer-variables', 'zero-value-purchases', 'value-mismatch'],
   },
   {
@@ -195,9 +309,26 @@ export const explainers: CheckExplainer[] = [
     source: 'gtm',
     severity: 'warning',
     summary: 'GTM tags reference dataLayer values that are missing or not configured as variables.',
-    why: 'A tag can exist and fire while still sending empty conversion value, currency, transaction ID, or user data fields. That creates silent tracking degradation: conversions count, but value-based bidding and deduplication do not work correctly. Engineers usually discover this only after report values look impossible or duplicate rates climb.',
-    howToFix: 'Create GTM Data Layer Variables for every field used by conversion tags, including ecommerce.value, ecommerce.currency, ecommerce.transaction_id, and user-data fields where applicable. Confirm each variable resolves on the exact trigger event, not only after the page has fully loaded. Add fallback handling only when a missing value is expected and harmless.',
-    example: 'Variable: DLV - ecommerce.value\nData Layer Variable Name: ecommerce.value\nUsed by: Google Ads purchase conversion value',
+    directAnswer:
+      'Conversion tags in this container reference fields that are not exposed as GTM Data Layer Variables — typically `ecommerce.value`, `ecommerce.currency`, or `ecommerce.transaction_id`. The tags still fire on the right trigger, but the fields they read resolve to empty, which means the conversion is reported with no value. The dashboard shows a count; the bidding signal is noise.',
+    why: 'A GTM tag does not read the dataLayer directly — it reads variables that are bound to dataLayer paths through the User-Defined Variables panel. If a conversion tag references `{{DLV - ecommerce.value}}` but no such Data Layer Variable exists (or the binding is misspelled), GTM evaluates the placeholder to an empty string and ships the conversion with no value field. Google Ads counts this as a valid conversion at zero revenue. Smart Bidding then optimises against the count signal alone, treating a $1,000 order identically to a $10 order. The damage compounds because the failure is silent: nothing in the tag firing or the Preview-mode summary surfaces "this variable resolved to empty." The user finds out months later when reported ROAS diverges from the e-commerce backend by an unexplainable factor.',
+    howToFix:
+      '1. In GTM, open Workspace → Variables → User-Defined Variables. 2. For every field used by a conversion or analytics tag — `ecommerce.value`, `ecommerce.currency`, `ecommerce.transaction_id`, and any user-data field — create a Data Layer Variable with the matching Data Layer Variable Name (case-sensitive, dot-separated path). 3. Set Data Layer Version to Version 2 for any nested ecommerce path. 4. Open each conversion tag and reference the variables via `{{DLV - …}}` syntax instead of literal values. 5. In Preview mode, complete a test conversion and inspect each variable in the Variables tab at the exact event step the tag fires on — every variable should resolve to a non-empty value before publish.',
+    example: 'Variable: DLV - ecommerce.value\nData Layer Variable Name: ecommerce.value\nData Layer Version: Version 2\nUsed by: Google Ads purchase conversion value',
+    citationTemplate:
+      'AdLint detected GTM tags in this container that reference dataLayer fields without corresponding Data Layer Variables. Per Google\'s Tag Manager Data Layer Variable documentation, tags must read dataLayer values through explicitly-configured Data Layer Variables; unresolved references evaluate to empty strings at runtime. The practical effect is that conversion tags fire with no value, currency, or transaction ID, corrupting value-based bidding and revenue reporting. Recommended remediation: create Data Layer Variables for every dataLayer path used by conversion tags and verify resolution in GTM Preview. Source: support.google.com/tagmanager/answer/6164391.',
+    references: [
+      {
+        label: 'Google Tag Manager — Variable types (Data Layer Variable)',
+        url: 'https://support.google.com/tagmanager/answer/6164391',
+      },
+      {
+        label: 'Google Tag Manager — Data Layer reference',
+        url: 'https://developers.google.com/tag-platform/tag-manager/datalayer',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['ecommerce-datalayer-structure', 'dynamic-value-passing'],
   },
   {
@@ -459,9 +590,26 @@ export const explainers: CheckExplainer[] = [
     source: 'gtm',
     severity: 'critical',
     summary: 'Google Ads conversion tags are not explicitly sequenced to wait for the Conversion Linker tag.',
-    why: 'Google documents the Conversion Linker as the tag that stores ad click information in first-party cookies so later conversion tags can connect the session back to the ad click. If the conversion tag can fire before the linker, a valid conversion may be sent before the click identifiers are available. The failure is intermittent, which makes it worse: testing may pass on some page loads while real users lose attribution on slower pages, consent transitions, or redirect-heavy checkout flows. Smart Bidding then receives incomplete conversion and value feedback even though the conversion tag itself appears to fire.',
-    howToFix: 'In Google Tag Manager, open Workspace -> Tags and confirm the Google Ads Conversion Linker fires on All Pages or on the earliest page event used by the conversion flow. Open each Google Ads Conversion Tracking tag, go to Advanced Settings -> Tag Sequencing, and set the Conversion Linker as the setup tag that fires before the conversion tag. Preview the container in Tag Assistant, complete a test conversion, and confirm the linker fires before every AW conversion request. Publish only after the sequencing is visible on the same event path that produces the conversion.',
+    directAnswer:
+      'The Conversion Linker is in the container, but it is not configured as a setup tag for the Google Ads conversion tags. On a normal page load the linker fires first and the conversion tag picks up the GCLID — but on slower loads, redirect-heavy checkout flows, or consent transitions the order can flip. When that happens, the conversion is sent before the GCLID has been captured, and attribution silently fails for a subset of users.',
+    why: 'Adding the Conversion Linker tag is necessary but not sufficient. GTM has no implicit ordering guarantee between two tags that share the same trigger — they fire in whatever order the runtime decides, which can vary based on resource loading, consent state, and page lifecycle events. The Conversion Linker writes the GCLID to the first-party `_gcl_aw` cookie; the conversion tag reads from that cookie. If the conversion tag wins the race, the cookie is empty and the conversion is reported without click context. The failure is intermittent and easy to miss: in Preview mode on a fast dev machine the ordering looks fine, but real users on slower devices, behind privacy proxies, or who navigate through a consent banner mid-load lose attribution silently. The fix is to explicitly declare the Conversion Linker as a setup tag using GTM\'s Tag Sequencing feature, which guarantees ordering on every fire.',
+    howToFix:
+      '1. In GTM, open Workspace → Tags → the first Google Ads Conversion Tracking tag (e.g. "Google Ads — Purchase"). 2. Expand Advanced Settings → Tag Sequencing. 3. Tick "Fire a tag before [this tag] fires" and select the Google Ads Conversion Linker as the setup tag. 4. Leave "Don\'t fire [this tag] if [setup tag] fails or is paused" unchecked unless your team has a specific reason to suppress conversions when the linker is unavailable. 5. Repeat for every Google Ads Conversion Tracking tag in the container. 6. In Preview mode, complete a test conversion and verify in the Tags Fired panel that the Conversion Linker tag fires immediately before each conversion tag on the same event. Publish only after the sequencing is visible in Preview, not just inferred from the configuration screen.',
     example: 'Setup tag: Google Ads Conversion Linker\nConversion tag: Google Ads - Purchase\nTag sequencing: Fire setup tag before Google Ads - Purchase fires',
+    citationTemplate:
+      'AdLint detected Google Ads conversion tags in this container that share a trigger with the Conversion Linker but do not declare it as a setup tag. Per Google\'s Tag Sequencing documentation, GTM does not guarantee execution order between tags sharing a trigger; explicit sequencing is required when one tag depends on the side effects of another. Without tag sequencing, conversions can be reported before the GCLID is captured, producing intermittent attribution loss that is invisible in dashboards. Recommended remediation: configure each Google Ads conversion tag\'s Tag Sequencing to require the Conversion Linker as a setup tag. Source: support.google.com/tagmanager/answer/6238868.',
+    references: [
+      {
+        label: 'Google Tag Manager — Tag sequencing',
+        url: 'https://support.google.com/tagmanager/answer/6238868',
+      },
+      {
+        label: 'Google Tag Manager — Conversion Linker',
+        url: 'https://support.google.com/tagmanager/answer/7549390',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['missing-conversion-linker', 'conversion-label-matching', 'ads-conversion-missing-gtm-tag'],
   },
   {
@@ -481,9 +629,26 @@ export const explainers: CheckExplainer[] = [
     source: 'gtm',
     severity: 'warning',
     summary: 'The container references multiple domains, but the Conversion Linker is not configured with auto-link domains.',
-    why: 'Google Tag Manager cross-domain measurement depends on linker configuration so identifiers can move across related domains without starting a new unconnected session. This matters when the user moves from the marketing site to a checkout, booking engine, donation platform, or lead form hosted on another domain. If the linker is missing those domains, Google Ads may see the conversion page without the click context that started the visit. The result is under-attribution, split sessions, and weaker remarketing or bidding signals for funnels that leave the main site.',
-    howToFix: 'In Google Tag Manager, open Workspace -> Tags -> Google Ads Conversion Linker. Under Cross domain tracking, add every domain that participates in the conversion path to the auto-link domains field, including payment, booking, and subdomain hosts. Keep the tag firing on All Pages, then use Preview mode to click from the source domain to the destination domain and confirm the linker parameter is appended and consumed. Publish after testing the real navigation path, not only a direct page load on the destination domain.',
+    directAnswer:
+      'This container has a Conversion Linker tag, but its auto-link domains list does not cover every domain in the conversion funnel. When a user clicks from the marketing site to a separately-hosted checkout, booking engine, or payment processor, Google Ads cannot connect the conversion back to the ad click — the GCLID lives in a cookie scoped to one domain and never reaches the other.',
+    why: 'Many real funnels span domains: a Shopify store with a `shop.brand.com` checkout, a SaaS marketing site with a `app.brand.com` signup flow, a hotel website with a `book.brand-reservations.com` engine, a charity with a `donate.thirdparty.org` form. The GCLID is stored in the `_gcl_aw` first-party cookie on the original domain. Without auto-link configuration, that cookie does not follow the user to the second domain — the browser\'s same-origin policy prevents it. The Conversion Linker tag accepts a list of domains it should auto-decorate outbound links with the linker parameter (`_gl=...`); the receiving domain reads that parameter and re-establishes the `_gcl_aw` cookie there. If the funnel crosses a domain not in the list, the GCLID is lost, the conversion is attributed to a different source or direct, and Smart Bidding learns from a degraded signal. The check fires when AdLint sees container hostnames that suggest a multi-domain funnel but the linker domain list is empty or too narrow.',
+    howToFix:
+      '1. List every domain that can appear in the conversion funnel, including payment processors, booking engines, partner platforms, and any subdomain that hosts forms or checkout. 2. In GTM, open Workspace → Tags → the Conversion Linker tag → Linker Settings. 3. Enable "Automatically link domains" and paste the comma-separated list of all funnel domains. 4. Confirm the Conversion Linker still fires on All Pages so outbound links from any page get auto-decorated. 5. In Preview mode, start on the source domain, click a link to the destination domain, and inspect the URL — it should contain a `_gl=` parameter. 6. Open Application → Cookies in DevTools on the destination domain and verify `_gcl_aw` is set. Publish only after the round-trip works on the real navigation path, not a direct page load.',
     example: 'Auto-link domains: example.com, checkout.example-payments.com, booking.example.net\nTrigger: All Pages',
+    citationTemplate:
+      'AdLint detected that this GTM container\'s Conversion Linker is not configured with the auto-link domain list required for the multi-domain funnel observed in the configuration. Per Google\'s cross-domain measurement documentation, the GCLID must be propagated across domains via the linker parameter to maintain attribution. Without this configuration, conversions on hosted checkout, booking, or payment domains will not be attributed to the originating ad click, degrading Google Ads ROAS reporting and Smart Bidding signal. Recommended remediation: add every funnel domain to the Conversion Linker auto-link list and verify the round-trip in Preview mode. Source: support.google.com/google-ads/answer/7521212.',
+    references: [
+      {
+        label: 'Google Ads — About cross-domain measurement',
+        url: 'https://support.google.com/google-ads/answer/7521212',
+      },
+      {
+        label: 'Google Tag Manager — Conversion Linker',
+        url: 'https://support.google.com/tagmanager/answer/7549390',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['missing-conversion-linker', 'conversion-linker-sequencing', 'conversion-label-matching'],
   },
   {
@@ -503,9 +668,26 @@ export const explainers: CheckExplainer[] = [
     source: 'gtm',
     severity: 'warning',
     summary: 'Tags with debug, test, preview, staging, or dev names are firing on All Pages in the production container.',
-    why: 'Debug tags are useful during implementation, but they should not remain active on the production all-pages path. They can send test conversions, duplicate diagnostic events, leak implementation details to third-party endpoints, or create noise that makes Tag Assistant and platform diagnostics harder to read. If a debug tag uses a Google Ads, GA4, or custom HTML template, it may also affect consent behavior or performance on every page load. The risk is not the name alone, but the combination of a test-oriented tag and a broad production trigger.',
-    howToFix: 'In Google Tag Manager, open Workspace -> Tags and filter for names containing debug, test, preview, staging, or dev. For each flagged tag, remove the All Pages trigger, pause the tag, or move the logic into a dedicated testing workspace or environment. If the tag is still needed, restrict it with a Preview Mode, hostname, or environment condition that cannot match production users. Submit the container only after Preview mode shows no debug-named tag firing on the public production hostname.',
+    directAnswer:
+      'One or more tags with debug-style names (containing "debug," "test," "preview," "staging," or "dev") are firing on the production All Pages trigger. These tags were almost certainly created during implementation and forgotten. They can ship duplicate conversions, leak implementation details to third-party endpoints, or interfere with real diagnostics.',
+    why: 'Debug-named tags are a recognised anti-pattern in GTM operations because they signal a workflow problem: a tag was created to verify something during implementation, the implementation shipped, but the debug tag was never paused or removed. The risk depends on what the tag actually does. A "Debug — GA4 event" tag firing on every production page can duplicate every legitimate GA4 event, doubling reported conversions. A "Test — Custom HTML" tag can leak a development webhook URL or analytics ID to every visitor. A "Staging — Pixel" tag firing in production can pollute remarketing audiences with users who were never meant to be in them. Beyond the direct data risk, debug tags clutter Tag Assistant and Preview mode, making real implementations harder to audit. The check is conservative — it flags by name pattern, not by behaviour — because the name itself is the operational signal that something is unfinished.',
+    howToFix:
+      '1. In GTM, open Workspace → Tags and use the search box to filter on each of these terms: `debug`, `test`, `preview`, `staging`, `dev`. 2. For each flagged tag, decide one of three actions. (a) If the tag is no longer needed, pause it (clock icon) or delete it. (b) If it is needed for ongoing diagnostics, restrict its trigger so it can never match production users — add a Page Hostname condition like `equals staging.example.com` or a `Debug Mode` condition that only fires in Preview. (c) If it should remain active in production but was misnamed, rename it to remove the debug terminology so future audits do not flag it. 3. Re-run AdLint after publishing to confirm the check has cleared.',
     example: 'Problem: Debug - GA4 event fires on All Pages\nBetter: Debug - GA4 event fires only when Page Hostname equals staging.example.com',
+    citationTemplate:
+      'AdLint detected GTM tags with debug, test, preview, staging, or dev in their names that are configured to fire on the production All Pages trigger. While the audit cannot determine the runtime behaviour of each tag, the name pattern indicates unfinished implementation work. Per GTM workspace governance best practice, debug tooling should be scoped to non-production environments via hostname conditions, the GTM Environments feature, or a dedicated testing workspace. Recommended remediation: pause, delete, or scope each flagged tag, and re-publish the container. Source: support.google.com/tagmanager/answer/6311518.',
+    references: [
+      {
+        label: 'Google Tag Manager — Use environments',
+        url: 'https://support.google.com/tagmanager/answer/6311518',
+      },
+      {
+        label: 'Google Tag Manager — Preview and debug',
+        url: 'https://support.google.com/tagmanager/answer/6107056',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['consent-violations', 'duplicate-conversions', 'missing-conversion-linker'],
   },
   {
@@ -514,9 +696,26 @@ export const explainers: CheckExplainer[] = [
     source: 'gtm',
     severity: 'warning',
     summary: 'Multiple GTM Data Layer Variables read from the same dataLayer path.',
-    why: 'Google recommends using a consistent data layer structure so tags can reliably read the values they need. When several variables read the same path, teams often update one variable name, default value, or version setting while another copy continues to feed production tags. That creates subtle mismatches where two tags appear to use the same business value but resolve it differently at runtime. The audit flags this because duplicated paths increase maintenance risk around revenue, currency, transaction ID, user data, and trigger conditions.',
-    howToFix: 'In Google Tag Manager, open Workspace -> Variables -> User-Defined Variables and group Data Layer Variables by their Data Layer Variable Name. Pick one canonical variable for each path, update tags and triggers to reference it, and archive the duplicates after Preview mode confirms the canonical variable resolves on the correct event. Use clear names such as DLV - ecommerce.value and avoid creating per-tag copies unless they intentionally use different defaults or data layer versions. Re-export the container and verify each important path appears once.',
+    directAnswer:
+      'This container has multiple GTM Data Layer Variables bound to the same dataLayer path — for example, both `DLV - value` and `DLV - purchase revenue` reading `ecommerce.value`. This is a maintenance hazard: when someone updates one variable\'s version or default value, the other copy continues to feed downstream tags, producing inconsistent behaviour across tags that should be reading the same business value.',
+    why: 'GTM lets you create as many Data Layer Variables as you want, and nothing prevents two of them from pointing at the same dataLayer key. In practice this is how containers accrete legacy: one variable created during a 2021 GA4 migration, another created in 2023 when a new dev was unsure whether the first existed, a third created for a new pixel that "needed its own copy." Each variable can have its own Data Layer Version setting, default value, format value, and conversion settings. When they drift — and they always drift — two conversion tags that nominally read the same revenue value resolve it differently. One reports $129.99, another reports the default $0, and the audit becomes a forensic exercise. The check is informational about size but operationally important: every duplicate is a place future engineers will introduce inconsistency.',
+    howToFix:
+      '1. In GTM, open Workspace → Variables → User-Defined Variables and sort by Data Layer Variable Name. 2. For each duplicated path, pick the variable with the cleanest name and the correct Version setting as canonical (prefer naming like `DLV - ecommerce.value`). 3. Update every tag and trigger that references a duplicate to point at the canonical variable instead. GTM\'s "Find references" link on each variable shows where it is used. 4. In Preview mode on a real conversion event, confirm the canonical variable resolves to the expected value. 5. Archive (do not delete) the duplicates — archiving preserves audit history if something needs to be rolled back. 6. Publish and re-run AdLint.',
     example: 'Problem:\nDLV - value -> ecommerce.value\nDLV - purchase revenue -> ecommerce.value\n\nBetter:\nDLV - ecommerce.value -> ecommerce.value',
+    citationTemplate:
+      'AdLint detected multiple GTM Data Layer Variables bound to the same dataLayer path within this container. Per Google\'s Data Layer Variable documentation, each dataLayer path should be exposed through a single canonical variable to ensure consistent resolution across tags. Duplicated paths create silent drift when Version, default value, or format settings diverge between copies — producing tags that report different values for the same underlying business event. Recommended remediation: consolidate duplicated paths to a single canonical Data Layer Variable, update tag references, and archive the duplicates. Source: support.google.com/tagmanager/answer/6164391.',
+    references: [
+      {
+        label: 'Google Tag Manager — Variable types (Data Layer Variable)',
+        url: 'https://support.google.com/tagmanager/answer/6164391',
+      },
+      {
+        label: 'Google Tag Manager — Data Layer reference',
+        url: 'https://developers.google.com/tag-platform/tag-manager/datalayer',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['missing-datalayer-variables', 'ecommerce-datalayer-structure', 'datalayer-version-conflicts'],
   },
   {
@@ -547,10 +746,109 @@ export const explainers: CheckExplainer[] = [
     source: 'gtm',
     severity: 'warning',
     summary: 'The GTM container mixes version 1 and version 2 Data Layer Variables.',
-    why: 'Data Layer Variable version changes how GTM resolves nested objects and keys, so mixed versions can make two variables behave differently against the same dataLayer payload. Version 2 is normally the expected choice for modern ecommerce objects because it can read nested paths such as ecommerce.value and ecommerce.items. If one purchase tag reads a v2 variable while another uses v1, the account can end up with missing values, wrong defaults, or inconsistent trigger decisions. This undermines the predictability Google emphasizes for data layer implementations.',
-    howToFix: 'In Google Tag Manager, open Workspace -> Variables and inspect every Data Layer Variable. Standardize modern ecommerce and conversion variables on Data Layer Version 2 unless a specific legacy variable requires version 1 behavior. After changing a variable, use Preview mode on the exact event that fires the conversion tag and confirm value, currency, transaction_id, and item paths still resolve. Publish only after all affected tags show the same resolved values as before or the intended corrected values.',
+    directAnswer:
+      'This container has Data Layer Variables configured on both Version 1 and Version 2. The two versions resolve nested dataLayer paths differently — Version 2 can read into nested objects like `ecommerce.value`, while Version 1 cannot. Mixed-version containers produce two variables that read the same path but return different values, which corrupts downstream conversion tracking in ways that are very hard to debug.',
+    why: 'When GTM\'s Data Layer Variable feature shipped, it only supported flat paths — that was Version 1. Version 2 was introduced to support modern e-commerce dataLayer shapes with nested objects and arrays. Most modern containers should use Version 2 everywhere. The problem is that GTM does not auto-migrate variables when you set up a new container — old variables stay on Version 1 indefinitely, and new variables default to Version 2. So a single container can end up with `DLV - oldRevenue` on V1 (which cannot read `ecommerce.value` and silently resolves to undefined) and `DLV - newRevenue` on V2 (which reads the same path correctly). A conversion tag wired to the older variable reports zero; one wired to the newer reports the real value. The root cause is invisible because the variables look identical in the UI unless you open them.',
+    howToFix:
+      '1. In GTM, open Workspace → Variables → User-Defined Variables. 2. Click each Data Layer Variable in turn and check the "Data Layer Version" field. 3. Standardise on Version 2 unless a specific variable has a documented reason to stay on V1 (rare; usually a legacy tag that depends on V1 behaviour). 4. After changing a variable from V1 to V2, complete a test event in Preview and confirm the variable still resolves to a non-empty value. Some legacy variables read top-level keys (e.g. `revenue`) rather than nested keys (`ecommerce.value`); upgrading to V2 should not break these, but verify. 5. Publish only when every Data Layer Variable in the container is on a consistent, documented version.',
     example: 'Variable: DLV - ecommerce.value\nData Layer Variable Name: ecommerce.value\nData Layer Version: Version 2',
+    citationTemplate:
+      'AdLint detected GTM Data Layer Variables on mixed versions (Version 1 and Version 2) within this container. Per Google\'s GTM variable documentation, Data Layer Version 2 is required to read nested dataLayer paths such as `ecommerce.value`; Version 1 cannot resolve them. Mixed-version containers produce variables that read the same path but return different values, corrupting conversion measurement in ways that are not visible in the GTM Tags screen. Recommended remediation: standardise every Data Layer Variable on Version 2 unless explicitly required otherwise, and verify resolution in Preview before publishing. Source: support.google.com/tagmanager/answer/6164391.',
+    references: [
+      {
+        label: 'Google Tag Manager — Variable types (Data Layer Variable)',
+        url: 'https://support.google.com/tagmanager/answer/6164391',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['duplicate-datalayer-paths', 'missing-datalayer-variables', 'ecommerce-datalayer-structure'],
+  },
+  {
+    id: 'enhanced-conversions-missing-data',
+    name: 'Enhanced Conversions Missing User Data',
+    source: 'gtm',
+    severity: 'critical',
+    summary: 'Enhanced Conversions is enabled but user-provided data fields are missing or not being sent.',
+    directAnswer:
+      'Google Ads Enhanced Conversions improves attribution by sending hashed first-party user data (email, phone, name, address) alongside conversion events. This container has Enhanced Conversions enabled but the user-data fields are empty or unmapped. The feature is essentially off — Google Ads receives the conversion but none of the signal that makes Enhanced Conversions worth enabling in the first place.',
+    why: 'Enhanced Conversions is one of the highest-leverage privacy-resilient measurement features Google Ads offers. When a user completes a conversion, GTM hashes their email (or phone, name, address) using SHA-256 and sends it to Google Ads alongside the conversion event. Google can then match that hashed identifier against signed-in Google users who clicked an ad — recovering attribution that would otherwise be lost to cookie restrictions, intelligent tracking prevention, or cross-device journeys. The feature only works if the user data is actually populated at conversion time. The check fires when a Google Ads Conversion Tracking tag has Enhanced Conversions enabled but the user-data parameter is unmapped, mapped to a variable that resolves empty, or set to a field that does not exist on the conversion page. The result: the tag fires with empty user_data, the match rate is zero, and Enhanced Conversions reports show no uplift — leading teams to wrongly conclude the feature does not work.',
+    howToFix:
+      '1. Identify which page has the conversion event (typically order-confirmation or signup-success). Confirm the user\'s email or phone is rendered in the HTML or available in the dataLayer at that moment. 2. In GTM, create a Data Layer Variable for the user identifier (e.g. `DLV - customer.email`). Do not hash it in GTM — Google does the hashing automatically when sent through the user-data parameter. 3. Open the Google Ads Conversion Tracking tag, enable Enhanced Conversions, and choose the "Code" or "Automatic" detection mode. For Code mode, map `email`, `phone_number`, `address.first_name`, `address.last_name`, `address.postal_code`, and `address.country` to the corresponding Data Layer Variables. 4. In Preview mode, complete a real test conversion and inspect the outgoing tag request — look for a `pii=` or `em=` parameter with a hashed value. 5. After 7–14 days in production, check Google Ads → Tools → Conversions → Diagnostics for the Enhanced Conversions match rate. Aim for >70%.',
+    example:
+      'Tag: Google Ads — Purchase Conversion\nEnhanced Conversions: Enabled, mode = Code\nemail: {{DLV - customer.email}}\nphone_number: {{DLV - customer.phone}}\naddress.first_name: {{DLV - customer.firstName}}\naddress.last_name: {{DLV - customer.lastName}}\naddress.postal_code: {{DLV - customer.postalCode}}\naddress.country: {{DLV - customer.country}}',
+    citationTemplate:
+      'AdLint detected that this container has Enhanced Conversions enabled on one or more Google Ads Conversion Tracking tags, but the user-data fields are unmapped or resolve to empty values. Per Google\'s Enhanced Conversions for web documentation, the feature requires populated first-party user data (email, phone, or address) at conversion time to recover attribution lost to cookie restrictions. Without populated user data, the conversion is reported but no match signal is sent, producing zero match rate and no measurable lift. Recommended remediation: map first-party customer fields from the conversion-page dataLayer into the tag\'s Enhanced Conversions configuration and verify the match rate in Google Ads Diagnostics after deployment. Source: support.google.com/google-ads/answer/9888656.',
+    references: [
+      {
+        label: 'Google Ads — About Enhanced Conversions',
+        url: 'https://support.google.com/google-ads/answer/9888656',
+      },
+      {
+        label: 'Google Ads — Set up Enhanced Conversions for web with Google Tag Manager',
+        url: 'https://support.google.com/google-ads/answer/13262500',
+      },
+      {
+        label: 'Google Tag Manager — Enhanced Conversions user-provided data variable',
+        url: 'https://support.google.com/tagmanager/answer/13438771',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['missing-datalayer-variables', 'ecommerce-datalayer-structure', 'missing-conversion-linker'],
+  },
+  {
+    id: 'naming-conventions',
+    name: 'GTM Naming Convention Violations',
+    source: 'gtm',
+    severity: 'info',
+    summary: 'Tags, triggers, and variables in this container do not follow a consistent, auditable naming convention.',
+    directAnswer:
+      'GTM does not enforce naming conventions, so containers accumulate inconsistent names over time — "GA4 Event," "ga4-purchase," "Purchase (GA4)," "PurchaseEvent_v2" all coexisting. The technical impact is zero. The operational impact is significant: every new audit, handoff, or change requires re-reading every tag to understand what it does, and findings become harder to defend to clients because they cannot tell which tag handles which business event.',
+    why: 'Naming conventions are governance, not configuration — and governance is what separates a container that can be audited in 30 minutes from one that takes a day. The most widely-adopted convention in the GTM community uses prefix-based naming: tags as `<Platform> - <Event>` (e.g. `GA4 - Purchase`, `Google Ads - Lead`), triggers as `<Type> - <Description>` (e.g. `Custom Event - purchase`, `Click - CTA Button`), and variables as `<Type> - <Source>` (e.g. `DLV - ecommerce.value`, `CJS - User Agent`). The benefit is searchability: filtering by `GA4 -` shows every GA4 tag instantly, and the same prefix tells reviewers what platform owns the data. AdLint flags this check when more than 40% of tags, triggers, or variables deviate from a detectable convention — not because the names are "wrong," but because inconsistency is a leading indicator of governance issues that show up later as duplicate tags, conflicting triggers, and audit findings that take longer to remediate than they should.',
+    howToFix:
+      '1. Pick a convention. The default in the GTM community: `<Platform> - <Event>` for tags, `<Type> - <Description>` for triggers, `<Type> - <Source>` for variables. Write it down in a one-page document. 2. Rename existing tags in batches by platform. Start with the most-modified tags (typically GA4 and Google Ads). Renaming is non-destructive in GTM — version history preserves the old name. 3. After renaming, update related triggers and variables to follow the same convention. 4. For larger containers, consider creating a Naming Convention workspace solely for renames so the audit trail is clean. 5. Publish, then re-run AdLint to confirm the finding clears. 6. Document the convention in your team\'s GTM governance doc so new tags follow it by default.',
+    example:
+      'Inconsistent:\n  GA4 Event\n  ga4-purchase\n  Purchase (GA4)\n\nConsistent:\n  GA4 - Page View\n  GA4 - Purchase\n  GA4 - Add to Cart',
+    citationTemplate:
+      'AdLint detected that more than 40% of tags, triggers, or variables in this GTM container do not follow a detectable naming convention. While GTM does not enforce names, inconsistent naming is the highest-correlated indicator of governance debt that produces downstream duplicate tags, conflicting triggers, and prolonged audit cycles. Industry-standard GTM governance recommends prefix-based naming (e.g. `<Platform> - <Event>` for tags). Recommended remediation: adopt and document a naming convention, rename existing assets in batches, and treat naming as a publish-gating governance check. Source: support.google.com/tagmanager/answer/6103693.',
+    references: [
+      {
+        label: 'Google Tag Manager — Help and best practices',
+        url: 'https://support.google.com/tagmanager/answer/6103693',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['missing-descriptions', 'stale-tags', 'duplicate-datalayer-paths'],
+  },
+  {
+    id: 'container-size-score',
+    name: 'GTM Container Size and Tag Count',
+    source: 'gtm',
+    severity: 'warning',
+    summary: 'The container is approaching the documented GTM workspace size limit or has accumulated more tags than is operationally healthy.',
+    directAnswer:
+      'GTM has documented workspace size limits and operational thresholds that this container is approaching or exceeding. A container near the size limit cannot be published once it crosses the threshold, and a container with hundreds of tags becomes slow to audit and increases page-load weight for every site visitor.',
+    why: 'Google publishes two operational ceilings for GTM containers. The first is a hard workspace size limit (currently around 200 KB of compressed container JSON for web containers) — once a container exceeds this, GTM refuses to publish the workspace and the team has to delete or archive assets before any new change can ship. The second is a soft tag-count threshold (200+ tags) where every page load executes the full GTM container script and runtime, so each additional tag adds milliseconds to Time-to-Interactive on every page. Sites that score in the 90s on Lighthouse can drop into the 70s purely from container weight. AdLint scores the container against both thresholds and flags accumulation early enough to act. The practical risk is two-fold: an emergency where a critical change cannot be deployed because the workspace is full, and a slow, invisible CWV regression that compounds with every new pixel or third-party tag.',
+    howToFix:
+      '1. In GTM, open Admin → Container Settings to see current container size relative to the limit. 2. In Workspace → Tags, sort by Last Edited and identify tags that have not changed in 12+ months and have no recent Tag Assistant evidence. These are candidates for archive. 3. Use the AdLint `stale-tags` and `unused-triggers` findings to identify safe-to-archive assets — both ship hints about what is no longer load-bearing. 4. Archive (do not delete) the candidates in a dedicated cleanup workspace, then publish. Container size drops immediately. 5. For ongoing health, add a quarterly governance review where any tag untouched for 12 months is reviewed for archival. 6. If the tag count is high but everything is active, consider migrating high-traffic pixels (Meta, TikTok, LinkedIn) to server-side GTM to reduce client-side weight without losing functionality.',
+    example: 'Container size: 168 KB of 200 KB (84% of limit)\nTag count: 187\nStale tags (last edited > 12 months ago): 41\nRecommended action: archive stale-tags candidates in a dedicated cleanup workspace.',
+    citationTemplate:
+      'AdLint detected that this GTM container is approaching the documented workspace size limit and/or has accumulated a tag count above operational best practice. Per Google\'s Tag Manager limits documentation, web containers have a published workspace size limit and exceeding it blocks all new publishes. High tag counts also contribute to client-side page-load weight that compounds across every visitor. Recommended remediation: audit the container for stale and unused assets, archive candidates in a dedicated cleanup workspace, and consider migrating high-traffic pixels to server-side GTM. Source: support.google.com/tagmanager/answer/2649961.',
+    references: [
+      {
+        label: 'Google Tag Manager — Container size and other limits',
+        url: 'https://support.google.com/tagmanager/answer/2649961',
+      },
+      {
+        label: 'Google Tag Manager — Server-side tagging overview',
+        url: 'https://developers.google.com/tag-platform/tag-manager/server-side',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['stale-tags', 'unused-triggers', 'unused-variables'],
   },
   {
     id: 'conversion-funnel-coverage',
