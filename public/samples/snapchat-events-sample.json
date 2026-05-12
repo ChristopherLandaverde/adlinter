@@ -1,0 +1,62 @@
+[
+  {
+    "pixelId": "123e4567-e89b-12d3-a456-426614174000",
+    "pixelName": "Main Snap Pixel",
+    "name": "PAGE_VIEW",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 11240,
+    "conversionApiEventCount": 0,
+    "deduplicationId": "",
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "pixelId": "123e4567-e89b-12d3-a456-426614174000",
+    "pixelName": "Main Snap Pixel",
+    "name": "VIEW_CONTENT",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 3980,
+    "conversionApiEventCount": 0,
+    "deduplicationId": "",
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "pixelId": "123e4567-e89b-12d3-a456-426614174000",
+    "pixelName": "Main Snap Pixel",
+    "name": "ADD_CART",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 510,
+    "conversionApiEventCount": 0,
+    "deduplicationId": "",
+    "value": 0,
+    "currency": "USD"
+  },
+  {
+    "pixelId": "bad-pixel-id",
+    "pixelName": "Main Snap Pixel",
+    "name": "PURCHASE",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 91,
+    "conversionApiEventCount": 0,
+    "deduplicationId": "",
+    "value": 12490,
+    "currency": "EUR"
+  },
+  {
+    "pixelId": "123e4567-e89b-12d3-a456-426614174000",
+    "pixelName": "Main Snap Pixel",
+    "name": "SIGN_UP",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 0,
+    "conversionApiEventCount": 0,
+    "deduplicationId": "",
+    "value": 0,
+    "currency": "USD"
+  }
+]

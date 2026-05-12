@@ -19,6 +19,9 @@ const sourceConfig: Record<Source, { label: string; badge: string }> = {
   meta: { label: 'Meta', badge: 'bg-surface-2 text-muted' },
   tiktok: { label: 'TikTok', badge: 'bg-surface-2 text-muted' },
   linkedin: { label: 'LinkedIn', badge: 'bg-surface-2 text-muted' },
+  pinterest: { label: 'Pinterest', badge: 'bg-surface-2 text-muted' },
+  twitter: { label: 'Twitter/X', badge: 'bg-surface-2 text-muted' },
+  snapchat: { label: 'Snapchat', badge: 'bg-surface-2 text-muted' },
 };
 
 const severityStyles: Record<Severity, string> = {

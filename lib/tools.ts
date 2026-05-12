@@ -1,11 +1,11 @@
-export type ToolCategory = 'gtm' | 'google-ads' | 'meta' | 'tiktok' | 'linkedin';
+export type ToolCategory = 'gtm' | 'google-ads' | 'meta' | 'tiktok' | 'linkedin' | 'pinterest' | 'twitter' | 'snapchat';
 
 export interface ToolFileSlot {
   key: string;               // sessionStorage key
   label: string;
   accept: string;
   required: boolean;
-  parser: 'gtm' | 'ads' | 'report' | 'meta' | 'tiktok' | 'linkedin';
+  parser: 'gtm' | 'ads' | 'report' | 'meta' | 'tiktok' | 'linkedin' | 'pinterest' | 'twitter' | 'snapchat';
 }
 
 export interface ToolSample {
@@ -136,6 +136,51 @@ export const tools: ToolConfig[] = [
       { slotKey: 'linkedinData', url: '/samples/linkedin-conversions-sample.json', filename: 'sample-linkedin-conversions.json' },
     ],
   },
+  {
+    slug: 'pinterest-auditor',
+    name: 'Pinterest Tag Auditor',
+    description: 'Audit your Pinterest Tag events for missing conversions, value issues, and API parity gaps.',
+    iconName: 'Bookmark',
+    category: 'pinterest',
+    enabled: true,
+    checkCount: 10,
+    fileSlots: [
+      { key: 'pinterestData', label: 'Pinterest Events Export (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'pinterest' },
+    ],
+    samples: [
+      { slotKey: 'pinterestData', url: '/samples/pinterest-events-sample.json', filename: 'sample-pinterest-events.json' },
+    ],
+  },
+  {
+    slug: 'twitter-auditor',
+    name: 'Twitter/X Pixel Auditor',
+    description: 'Audit your Twitter/X website events for ID mismatches, deduplication gaps, and weak conversion setup.',
+    iconName: 'Twitter',
+    category: 'twitter',
+    enabled: true,
+    checkCount: 10,
+    fileSlots: [
+      { key: 'twitterData', label: 'Twitter/X Events Export (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'twitter' },
+    ],
+    samples: [
+      { slotKey: 'twitterData', url: '/samples/twitter-events-sample.json', filename: 'sample-twitter-events.json' },
+    ],
+  },
+  {
+    slug: 'snapchat-auditor',
+    name: 'Snapchat Pixel Auditor',
+    description: 'Audit your Snap Pixel events for missing standard events, CAPI alignment, and currency issues.',
+    iconName: 'Camera',
+    category: 'snapchat',
+    enabled: true,
+    checkCount: 10,
+    fileSlots: [
+      { key: 'snapchatData', label: 'Snapchat Events Export (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'snapchat' },
+    ],
+    samples: [
+      { slotKey: 'snapchatData', url: '/samples/snapchat-events-sample.json', filename: 'sample-snapchat-events.json' },
+    ],
+  },
 ];
 
 export function getToolBySlug(slug: string): ToolConfig | undefined {
@@ -149,4 +194,7 @@ export const categories = [
   { key: 'meta', label: 'Meta' },
   { key: 'tiktok', label: 'TikTok' },
   { key: 'linkedin', label: 'LinkedIn' },
+  { key: 'pinterest', label: 'Pinterest' },
+  { key: 'twitter', label: 'Twitter/X' },
+  { key: 'snapchat', label: 'Snapchat' },
 ] as const;

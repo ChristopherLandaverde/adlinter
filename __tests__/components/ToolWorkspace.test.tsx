@@ -8,6 +8,9 @@ import { parseGTMJSON } from '@/lib/parsers/gtmParser';
 import { parseMetaPixelCSV } from '@/lib/parsers/metaPixelParser';
 import { parseTikTokPixelCSV } from '@/lib/parsers/tiktokPixelParser';
 import { parseLinkedInInsightCSV } from '@/lib/parsers/linkedinInsightParser';
+import { parsePinterestCSV } from '@/lib/parsers/pinterestParser';
+import { parseTwitterCSV } from '@/lib/parsers/twitterParser';
+import { parseSnapchatCSV } from '@/lib/parsers/snapchatParser';
 
 const mockPush = jest.fn();
 
@@ -39,12 +42,27 @@ jest.mock('@/lib/parsers/linkedinInsightParser', () => ({
   parseLinkedInInsightCSV: jest.fn(),
 }));
 
+jest.mock('@/lib/parsers/pinterestParser', () => ({
+  parsePinterestCSV: jest.fn(),
+}));
+
+jest.mock('@/lib/parsers/twitterParser', () => ({
+  parseTwitterCSV: jest.fn(),
+}));
+
+jest.mock('@/lib/parsers/snapchatParser', () => ({
+  parseSnapchatCSV: jest.fn(),
+}));
+
 const mockParseGTMJSON = jest.mocked(parseGTMJSON);
 const mockParseAdsCSV = jest.mocked(parseAdsCSV);
 const mockParseAdsReportCSV = jest.mocked(parseAdsReportCSV);
 const mockParseMetaPixelCSV = jest.mocked(parseMetaPixelCSV);
 const mockParseTikTokPixelCSV = jest.mocked(parseTikTokPixelCSV);
 const mockParseLinkedInInsightCSV = jest.mocked(parseLinkedInInsightCSV);
+const mockParsePinterestCSV = jest.mocked(parsePinterestCSV);
+const mockParseTwitterCSV = jest.mocked(parseTwitterCSV);
+const mockParseSnapchatCSV = jest.mocked(parseSnapchatCSV);
 
 function fileWithText(name: string, text: string, type = 'text/plain') {
   const file = new File([text], name, { type });
@@ -71,6 +89,9 @@ describe('ToolWorkspace', () => {
     mockParseMetaPixelCSV.mockReturnValue({ events: [] });
     mockParseTikTokPixelCSV.mockReturnValue({ events: [] });
     mockParseLinkedInInsightCSV.mockReturnValue({ events: [] });
+    mockParsePinterestCSV.mockReturnValue({ events: [] });
+    mockParseTwitterCSV.mockReturnValue({ events: [] });
+    mockParseSnapchatCSV.mockReturnValue({ events: [] });
   });
 
   it('moves a single-file tool from upload UI to the context step after parsing a file', async () => {
@@ -286,6 +307,45 @@ describe('ToolWorkspace', () => {
     await screen.findByRole('heading', { name: 'Refine your audit' });
     expect(mockParseLinkedInInsightCSV).toHaveBeenCalledWith('conversion,status');
     expect(JSON.parse(sessionStorage.getItem('linkedinData') ?? '{}')).toEqual(parsed);
+  });
+
+  it('uses the Pinterest parser and storage key for the Pinterest auditor', async () => {
+    const user = userEvent.setup();
+    const parsed = { tagName: 'Pinterest Tag', events: [] };
+    mockParsePinterestCSV.mockReturnValue(parsed);
+    const { container } = renderTool('pinterest-auditor');
+
+    await user.upload(container.querySelector('input[type="file"]') as HTMLInputElement, fileWithText('pinterest.csv', 'event,status'));
+
+    await screen.findByRole('heading', { name: 'Refine your audit' });
+    expect(mockParsePinterestCSV).toHaveBeenCalledWith('event,status');
+    expect(JSON.parse(sessionStorage.getItem('pinterestData') ?? '{}')).toEqual(parsed);
+  });
+
+  it('uses the Twitter/X parser and storage key for the Twitter/X auditor', async () => {
+    const user = userEvent.setup();
+    const parsed = { pixelName: 'Twitter/X Pixel', events: [] };
+    mockParseTwitterCSV.mockReturnValue(parsed);
+    const { container } = renderTool('twitter-auditor');
+
+    await user.upload(container.querySelector('input[type="file"]') as HTMLInputElement, fileWithText('twitter.csv', 'event,status'));
+
+    await screen.findByRole('heading', { name: 'Refine your audit' });
+    expect(mockParseTwitterCSV).toHaveBeenCalledWith('event,status');
+    expect(JSON.parse(sessionStorage.getItem('twitterData') ?? '{}')).toEqual(parsed);
+  });
+
+  it('uses the Snapchat parser and storage key for the Snapchat auditor', async () => {
+    const user = userEvent.setup();
+    const parsed = { pixelName: 'Snap Pixel', events: [] };
+    mockParseSnapchatCSV.mockReturnValue(parsed);
+    const { container } = renderTool('snapchat-auditor');
+
+    await user.upload(container.querySelector('input[type="file"]') as HTMLInputElement, fileWithText('snapchat.csv', 'event,status'));
+
+    await screen.findByRole('heading', { name: 'Refine your audit' });
+    expect(mockParseSnapchatCSV).toHaveBeenCalledWith('event,status');
+    expect(JSON.parse(sessionStorage.getItem('snapchatData') ?? '{}')).toEqual(parsed);
   });
 
   it('can recover from a parse error by uploading a valid replacement file', async () => {

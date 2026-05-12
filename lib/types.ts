@@ -26,6 +26,9 @@ export interface AuditResults {
   meta: AuditCheck[];
   tiktok: AuditCheck[];
   linkedin: AuditCheck[];
+  pinterest: AuditCheck[];
+  twitter: AuditCheck[];
+  snapchat: AuditCheck[];
   summary: AuditSummary;
 }
 
@@ -155,6 +158,69 @@ export interface LinkedInInsightData {
   accountId?: string;
   accountName?: string;
   events: LinkedInInsightEvent[];
+}
+
+// Pinterest Tag Data Structures
+export interface PinterestTagEvent {
+  name: string;
+  eventType: 'standard' | 'custom';
+  status: string;
+  eventCount: number;
+  value: number;
+  currency?: string;
+  tagId?: string;
+  tagName?: string;
+  partnerName?: string;
+  attributionWindow?: string;
+  apiEventCount?: number;
+  enhancedMatchConfigured?: boolean;
+}
+
+export interface PinterestTagData {
+  tagId?: string;
+  tagName?: string;
+  partnerName?: string;
+  events: PinterestTagEvent[];
+}
+
+// Twitter/X Pixel Data Structures
+export interface TwitterPixelEvent {
+  name: string;
+  eventId?: string;
+  conversionId?: string;
+  eventType: 'conversion' | 'engagement' | 'custom';
+  status: string;
+  eventCount: number;
+  value: number;
+  currency?: string;
+  attributionWindow?: string;
+  campaignWindow?: string;
+}
+
+export interface TwitterPixelData {
+  pixelId?: string;
+  pixelName?: string;
+  events: TwitterPixelEvent[];
+}
+
+// Snapchat Pixel Data Structures
+export interface SnapchatPixelEvent {
+  name: string;
+  eventType: 'standard' | 'custom';
+  status: string;
+  eventCount: number;
+  value: number;
+  currency?: string;
+  pixelId?: string;
+  attributionWindow?: string;
+  conversionApiEventCount?: number;
+  deduplicationId?: string;
+}
+
+export interface SnapchatPixelData {
+  pixelId?: string;
+  pixelName?: string;
+  events: SnapchatPixelEvent[];
 }
 
 // Contextual Audit Data

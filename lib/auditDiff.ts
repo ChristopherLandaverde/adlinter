@@ -1,7 +1,7 @@
 import type { AuditHistoryEntry } from './auditHistory';
 import type { AuditCheck, AuditResults, Severity } from './types';
 
-type Source = 'gtm' | 'ads' | 'cross' | 'report' | 'meta' | 'tiktok' | 'linkedin';
+type Source = 'gtm' | 'ads' | 'cross' | 'report' | 'meta' | 'tiktok' | 'linkedin' | 'pinterest' | 'twitter' | 'snapchat';
 
 export interface CheckChange {
   id: string;
@@ -33,7 +33,7 @@ interface TaggedCheck extends AuditCheck {
   source: Source;
 }
 
-const sources: Source[] = ['gtm', 'ads', 'cross', 'report', 'meta', 'tiktok', 'linkedin'];
+const sources: Source[] = ['gtm', 'ads', 'cross', 'report', 'meta', 'tiktok', 'linkedin', 'pinterest', 'twitter', 'snapchat'];
 
 const severityRank: Record<Severity, number> = {
   critical: 3,

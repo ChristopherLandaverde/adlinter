@@ -488,6 +488,32 @@ Added a new data source (Google Ads API Performance Reports) with 11 checks that
 
 ---
 
+## v1.24 — Pinterest, Twitter/X, and Snapchat Auditors
+**Commit:** Pending
+
+Rounded out the ad-tech tracking suite from 7 to 10 auditors with three new paid-social platform tools.
+
+### Added
+- `pinterest-auditor` with Pinterest Tag CSV/JSON parser, 10 checks, sample data, homepage registration, audit tab, and explainers
+- `twitter-auditor` with Twitter/X Pixel CSV/JSON parser, 10 checks, sample data, homepage registration, audit tab, and explainers
+- `snapchat-auditor` with Snapchat Pixel CSV/JSON parser, 10 checks, sample data, homepage registration, audit tab, and explainers
+
+### Checks added
+- Pinterest: PageVisit, conversion events, duplicates, similar names, zero volume, standard alternatives, Checkout value, ecommerce funnel, Conversion API parity, tag/enhanced-match/currency quality
+- Twitter/X: event ID format, conversion_id required, conversion_id deduplication, window mismatch, engagements vs conversions, missing conversion events, duplicates, similar names, zero volume, purchase value
+- Snapchat: Pixel ID format, PAGE_VIEW, conversion events, standard event names, duplicates, similar names, zero volume, purchase value, ecommerce funnel, CAPI/dedup/currency alignment
+
+### Modified files
+- `lib/types.ts`, `lib/auditEngine.ts`, `lib/tools.ts`, `components/ToolWorkspace.tsx`, `components/icons.tsx`
+- `app/audit/page.tsx`, `components/PDFExportButton.tsx`, `lib/checks/explainers.ts`
+- `README.md`, `package.json`
+
+### Tests
+- Added parser tests for Pinterest, Twitter/X, and Snapchat
+- Extended audit engine and ToolWorkspace coverage for the new platform sources
+
+---
+
 ## v1.1 — Product README
 **Commit:** `24feb4f`
 

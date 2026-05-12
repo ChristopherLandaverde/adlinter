@@ -41,6 +41,9 @@ function allChecks(results: AuditResults): AuditCheck[] {
     ...results.meta,
     ...results.tiktok,
     ...results.linkedin,
+    ...results.pinterest,
+    ...results.twitter,
+    ...results.snapchat,
   ];
 }
 

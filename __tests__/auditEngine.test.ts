@@ -1,5 +1,5 @@
 import { runAudit } from '@/lib/auditEngine';
-import { GTMContainer, AdsData, AuditContext, TikTokPixelData, LinkedInInsightData } from '@/lib/types';
+import { GTMContainer, AdsData, AuditContext, TikTokPixelData, LinkedInInsightData, PinterestTagData, TwitterPixelData, SnapchatPixelData } from '@/lib/types';
 import { parseGTMJSON } from '@/lib/parsers/gtmParser';
 import { parseAdsCSV } from '@/lib/parsers/adsParser';
 import { readFileSync } from 'fs';
@@ -23,6 +23,9 @@ describe('Audit Engine', () => {
       expect(results).toHaveProperty('meta');
       expect(results).toHaveProperty('tiktok');
       expect(results).toHaveProperty('linkedin');
+      expect(results).toHaveProperty('pinterest');
+      expect(results).toHaveProperty('twitter');
+      expect(results).toHaveProperty('snapchat');
       expect(results).toHaveProperty('summary');
       expect(results.summary).toHaveProperty('critical');
       expect(results.summary).toHaveProperty('warning');
@@ -149,6 +152,84 @@ describe('Audit Engine', () => {
       expect(results.report).toEqual([]);
       expect(results.meta).toEqual([]);
       expect(results.tiktok).toEqual([]);
+    });
+  });
+
+  describe('Pinterest-only audit', () => {
+    it('should run all 10 Pinterest checks when Pinterest data provided', () => {
+      const pinterestData: PinterestTagData = {
+        events: [
+          {
+            name: 'Checkout',
+            eventType: 'standard',
+            status: 'active',
+            eventCount: 100,
+            value: 5000,
+            currency: 'USD',
+            apiEventCount: 100,
+            enhancedMatchConfigured: true,
+          },
+        ],
+      };
+
+      const results = runAudit(null, null, undefined, null, null, null, null, pinterestData);
+
+      expect(results.pinterest.length).toBe(10);
+      expect(results.gtm).toEqual([]);
+      expect(results.ads).toEqual([]);
+      expect(results.meta).toEqual([]);
+    });
+  });
+
+  describe('Twitter/X-only audit', () => {
+    it('should run all 10 Twitter/X checks when Twitter/X data provided', () => {
+      const twitterData: TwitterPixelData = {
+        events: [
+          {
+            name: 'Purchase',
+            eventId: 'tw-abc123-def456',
+            conversionId: 'order-1001',
+            eventType: 'conversion',
+            status: 'active',
+            eventCount: 100,
+            value: 5000,
+          },
+        ],
+      };
+
+      const results = runAudit(null, null, undefined, null, null, null, null, null, twitterData);
+
+      expect(results.twitter.length).toBe(10);
+      expect(results.gtm).toEqual([]);
+      expect(results.ads).toEqual([]);
+      expect(results.meta).toEqual([]);
+    });
+  });
+
+  describe('Snapchat-only audit', () => {
+    it('should run all 10 Snapchat checks when Snapchat data provided', () => {
+      const snapchatData: SnapchatPixelData = {
+        pixelId: '123e4567-e89b-12d3-a456-426614174000',
+        events: [
+          {
+            name: 'PURCHASE',
+            eventType: 'standard',
+            status: 'active',
+            eventCount: 100,
+            value: 5000,
+            currency: 'USD',
+            conversionApiEventCount: 100,
+            deduplicationId: 'order-1001',
+          },
+        ],
+      };
+
+      const results = runAudit(null, null, undefined, null, null, null, null, null, null, snapchatData);
+
+      expect(results.snapchat.length).toBe(10);
+      expect(results.gtm).toEqual([]);
+      expect(results.ads).toEqual([]);
+      expect(results.meta).toEqual([]);
     });
   });
 

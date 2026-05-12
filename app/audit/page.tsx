@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { RotateCcw } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
-import { AuditResults, AuditCheck, AuditSummary, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, LinkedInInsightData, Severity, AuditContext } from '@/lib/types';
+import { AuditResults, AuditCheck, AuditSummary, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, LinkedInInsightData, PinterestTagData, TwitterPixelData, SnapchatPixelData, Severity, AuditContext } from '@/lib/types';
 import { getEntry, getHistory, saveEntry } from '@/lib/auditHistory';
 import { computeHealthScore } from '@/lib/healthScore';
 import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
@@ -22,8 +22,8 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-type Source = 'gtm' | 'ads' | 'cross' | 'report' | 'meta' | 'tiktok' | 'linkedin';
-type Tab = 'gtm' | 'ads' | 'meta' | 'tiktok' | 'linkedin';
+type Source = 'gtm' | 'ads' | 'cross' | 'report' | 'meta' | 'tiktok' | 'linkedin' | 'pinterest' | 'twitter' | 'snapchat';
+type Tab = 'gtm' | 'ads' | 'meta' | 'tiktok' | 'linkedin' | 'pinterest' | 'twitter' | 'snapchat';
 
 const severityConfig: Record<Severity, { label: string; color: string; bg: string; border: string; text: string; badge: string; dot: string }> = {
   critical: {
@@ -63,6 +63,9 @@ const sourceConfig: Record<Source, { label: string; badge: string }> = {
   meta: { label: 'Meta', badge: 'bg-surface-2 text-muted' },
   tiktok: { label: 'TikTok', badge: 'bg-surface-2 text-muted' },
   linkedin: { label: 'LinkedIn', badge: 'bg-surface-2 text-muted' },
+  pinterest: { label: 'Pinterest', badge: 'bg-surface-2 text-muted' },
+  twitter: { label: 'Twitter/X', badge: 'bg-surface-2 text-muted' },
+  snapchat: { label: 'Snapchat', badge: 'bg-surface-2 text-muted' },
 };
 
 const severityOrder: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
@@ -168,6 +171,9 @@ type AuditSourceData = {
   metaData: MetaPixelData | null;
   tiktokData: TikTokPixelData | null;
   linkedinData: LinkedInInsightData | null;
+  pinterestData: PinterestTagData | null;
+  twitterData: TwitterPixelData | null;
+  snapchatData: SnapchatPixelData | null;
 };
 
 function tagChecks(results: AuditResults): TaggedCheck[] {
@@ -181,6 +187,9 @@ function tagChecks(results: AuditResults): TaggedCheck[] {
     ...tag(results.meta, 'meta'),
     ...tag(results.tiktok, 'tiktok'),
     ...tag(results.linkedin, 'linkedin'),
+    ...tag(results.pinterest, 'pinterest'),
+    ...tag(results.twitter, 'twitter'),
+    ...tag(results.snapchat, 'snapchat'),
   ];
 }
 
@@ -208,14 +217,19 @@ function countAffectedItems(check: AuditCheck): number {
 }
 
 function detectToolSlug(sourceData: AuditSourceData) {
-  const { gtmData, adsData, reportData, metaData, tiktokData, linkedinData } = sourceData;
+  const { gtmData, adsData, reportData, metaData, tiktokData, linkedinData, pinterestData, twitterData, snapchatData } = sourceData;
+  const hasOnly = (key: keyof AuditSourceData) =>
+    Object.entries(sourceData).every(([entryKey, value]) => entryKey === key ? !!value : !value);
 
-  if (metaData && !gtmData && !adsData && !reportData && !tiktokData && !linkedinData) return 'meta-auditor';
-  if (tiktokData && !gtmData && !adsData && !reportData && !metaData && !linkedinData) return 'tiktok-auditor';
-  if (linkedinData && !gtmData && !adsData && !reportData && !metaData && !tiktokData) return 'linkedin-auditor';
-  if (gtmData && !adsData && !reportData && !metaData && !tiktokData && !linkedinData) return 'gtm-auditor';
-  if (adsData && !gtmData && !reportData && !metaData && !tiktokData && !linkedinData) return 'google-ads-linter';
-  if (reportData && !gtmData && !adsData && !metaData && !tiktokData && !linkedinData) return 'performance-analyzer';
+  if (hasOnly('metaData')) return 'meta-auditor';
+  if (hasOnly('tiktokData')) return 'tiktok-auditor';
+  if (hasOnly('linkedinData')) return 'linkedin-auditor';
+  if (hasOnly('pinterestData')) return 'pinterest-auditor';
+  if (hasOnly('twitterData')) return 'twitter-auditor';
+  if (hasOnly('snapchatData')) return 'snapchat-auditor';
+  if (gtmData && !adsData && !reportData && !metaData && !tiktokData && !linkedinData && !pinterestData && !twitterData && !snapchatData) return 'gtm-auditor';
+  if (adsData && !gtmData && !reportData && !metaData && !tiktokData && !linkedinData && !pinterestData && !twitterData && !snapchatData) return 'google-ads-linter';
+  if (reportData && !gtmData && !adsData && !metaData && !tiktokData && !linkedinData && !pinterestData && !twitterData && !snapchatData) return 'performance-analyzer';
   return 'full-audit';
 }
 
@@ -238,6 +252,9 @@ function collectFileNames(sourceData: AuditSourceData) {
     sourceData.metaData?.pixelName ?? sourceData.metaData?.pixelId ?? null,
     sourceData.tiktokData?.pixelName ?? sourceData.tiktokData?.pixelCode ?? null,
     sourceData.linkedinData?.accountName ?? sourceData.linkedinData?.accountId ?? null,
+    sourceData.pinterestData?.tagName ?? sourceData.pinterestData?.tagId ?? null,
+    sourceData.twitterData?.pixelName ?? sourceData.twitterData?.pixelId ?? null,
+    sourceData.snapchatData?.pixelName ?? sourceData.snapchatData?.pixelId ?? null,
   ];
 
   return names.filter((name): name is string => !!name);
@@ -268,7 +285,7 @@ function TabIssueBadge({ count, checks }: { count: number; checks: TaggedCheck[]
 }
 
 function restoreSourceData(sourceData: AuditSourceData) {
-  const keys = ['gtmData', 'adsData', 'reportData', 'metaData', 'tiktokData', 'linkedinData'] as const;
+  const keys = ['gtmData', 'adsData', 'reportData', 'metaData', 'tiktokData', 'linkedinData', 'pinterestData', 'twitterData', 'snapchatData'] as const;
 
   for (const key of keys) {
     const value = sourceData[key];
@@ -1106,6 +1123,9 @@ function AuditPageContent() {
     meta: null,
     tiktok: null,
     linkedin: null,
+    pinterest: null,
+    twitter: null,
+    snapchat: null,
   });
 
   // Audit counter for PDF unlock feature
@@ -1137,6 +1157,9 @@ function AuditPageContent() {
           metaData: (entry.sourceData.metaData as MetaPixelData | undefined) ?? null,
           tiktokData: (entry.sourceData.tiktokData as TikTokPixelData | undefined) ?? null,
           linkedinData: (entry.sourceData.linkedinData as LinkedInInsightData | undefined) ?? null,
+          pinterestData: (entry.sourceData.pinterestData as PinterestTagData | undefined) ?? null,
+          twitterData: (entry.sourceData.twitterData as TwitterPixelData | undefined) ?? null,
+          snapchatData: (entry.sourceData.snapchatData as SnapchatPixelData | undefined) ?? null,
         });
 
         if (entry.context) {
@@ -1153,9 +1176,12 @@ function AuditPageContent() {
     const metaDataStr = sessionStorage.getItem('metaData');
     const tiktokDataStr = sessionStorage.getItem('tiktokData');
     const linkedinDataStr = sessionStorage.getItem('linkedinData');
+    const pinterestDataStr = sessionStorage.getItem('pinterestData');
+    const twitterDataStr = sessionStorage.getItem('twitterData');
+    const snapchatDataStr = sessionStorage.getItem('snapchatData');
     const contextStr = sessionStorage.getItem('auditContext');
 
-    if (!gtmDataStr && !adsDataStr && !reportDataStr && !metaDataStr && !tiktokDataStr && !linkedinDataStr) {
+    if (!gtmDataStr && !adsDataStr && !reportDataStr && !metaDataStr && !tiktokDataStr && !linkedinDataStr && !pinterestDataStr && !twitterDataStr && !snapchatDataStr) {
       router.push('/');
       return;
     }
@@ -1167,18 +1193,24 @@ function AuditPageContent() {
       const metaData: MetaPixelData | null = metaDataStr ? JSON.parse(metaDataStr) : null;
       const tiktokData: TikTokPixelData | null = tiktokDataStr ? JSON.parse(tiktokDataStr) : null;
       const linkedinData: LinkedInInsightData | null = linkedinDataStr ? JSON.parse(linkedinDataStr) : null;
+      const pinterestData: PinterestTagData | null = pinterestDataStr ? JSON.parse(pinterestDataStr) : null;
+      const twitterData: TwitterPixelData | null = twitterDataStr ? JSON.parse(twitterDataStr) : null;
+      const snapchatData: SnapchatPixelData | null = snapchatDataStr ? JSON.parse(snapchatDataStr) : null;
       const context: AuditContext | undefined = contextStr ? JSON.parse(contextStr) : undefined;
 
-      sourceSnapshot.current = { gtmData, adsData, reportData, metaData, tiktokData, linkedinData, context };
+      sourceSnapshot.current = { gtmData, adsData, reportData, metaData, tiktokData, linkedinData, pinterestData, twitterData, snapchatData, context };
 
-      const auditResults = runAudit(gtmData, adsData, context, reportData, metaData, tiktokData, linkedinData);
+      const auditResults = runAudit(gtmData, adsData, context, reportData, metaData, tiktokData, linkedinData, pinterestData, twitterData, snapchatData);
       setResults(auditResults);
       setLoading(false);
 
       // Set initial tab based on available data
-      if (linkedinData && !gtmData && !adsData && !metaData && !tiktokData) setActiveTab('linkedin');
-      else if (tiktokData && !gtmData && !adsData && !metaData && !linkedinData) setActiveTab('tiktok');
-      else if (metaData && !gtmData && !adsData && !linkedinData) setActiveTab('meta');
+      if (snapchatData && !gtmData && !adsData && !reportData && !metaData && !tiktokData && !linkedinData && !pinterestData && !twitterData) setActiveTab('snapchat');
+      else if (twitterData && !gtmData && !adsData && !reportData && !metaData && !tiktokData && !linkedinData && !pinterestData && !snapchatData) setActiveTab('twitter');
+      else if (pinterestData && !gtmData && !adsData && !reportData && !metaData && !tiktokData && !linkedinData && !twitterData && !snapchatData) setActiveTab('pinterest');
+      else if (linkedinData && !gtmData && !adsData && !reportData && !metaData && !tiktokData && !pinterestData && !twitterData && !snapchatData) setActiveTab('linkedin');
+      else if (tiktokData && !gtmData && !adsData && !reportData && !metaData && !linkedinData && !pinterestData && !twitterData && !snapchatData) setActiveTab('tiktok');
+      else if (metaData && !gtmData && !adsData && !reportData && !linkedinData && !pinterestData && !twitterData && !snapchatData) setActiveTab('meta');
       else if (gtmData && !adsData) setActiveTab('gtm');
       else if (adsData && !gtmData) setActiveTab('ads');
 
@@ -1223,6 +1255,9 @@ function AuditPageContent() {
         metaData: sourceData.metaData ?? undefined,
         tiktokData: sourceData.tiktokData ?? undefined,
         linkedinData: sourceData.linkedinData ?? undefined,
+        pinterestData: sourceData.pinterestData ?? undefined,
+        twitterData: sourceData.twitterData ?? undefined,
+        snapchatData: sourceData.snapchatData ?? undefined,
       },
     });
 
@@ -1255,6 +1290,9 @@ function AuditPageContent() {
   const metaChecks = useMemo(() => displayed.filter(c => c.source === 'meta'), [displayed]);
   const tiktokChecks = useMemo(() => displayed.filter(c => c.source === 'tiktok'), [displayed]);
   const linkedinChecks = useMemo(() => displayed.filter(c => c.source === 'linkedin'), [displayed]);
+  const pinterestChecks = useMemo(() => displayed.filter(c => c.source === 'pinterest'), [displayed]);
+  const twitterChecks = useMemo(() => displayed.filter(c => c.source === 'twitter'), [displayed]);
+  const snapchatChecks = useMemo(() => displayed.filter(c => c.source === 'snapchat'), [displayed]);
 
   // Tab counts for badges
   const gtmFailedCount = useMemo(() => gtmChecks.filter(c => !c.passed).length, [gtmChecks]);
@@ -1263,6 +1301,9 @@ function AuditPageContent() {
   const metaFailedCount = useMemo(() => metaChecks.filter(c => !c.passed).length, [metaChecks]);
   const tiktokFailedCount = useMemo(() => tiktokChecks.filter(c => !c.passed).length, [tiktokChecks]);
   const linkedinFailedCount = useMemo(() => linkedinChecks.filter(c => !c.passed).length, [linkedinChecks]);
+  const pinterestFailedCount = useMemo(() => pinterestChecks.filter(c => !c.passed).length, [pinterestChecks]);
+  const twitterFailedCount = useMemo(() => twitterChecks.filter(c => !c.passed).length, [twitterChecks]);
+  const snapchatFailedCount = useMemo(() => snapchatChecks.filter(c => !c.passed).length, [snapchatChecks]);
 
   // Check if tabs have data
   const hasGTMData = gtmChecks.length > 0;
@@ -1270,6 +1311,9 @@ function AuditPageContent() {
   const hasMetaData = metaChecks.length > 0;
   const hasTikTokData = tiktokChecks.length > 0;
   const hasLinkedInData = linkedinChecks.length > 0;
+  const hasPinterestData = pinterestChecks.length > 0;
+  const hasTwitterData = twitterChecks.length > 0;
+  const hasSnapchatData = snapchatChecks.length > 0;
 
   // ─── Sort handler ────────────────────────────────────────────────────────
 
@@ -1305,6 +1349,9 @@ function AuditPageContent() {
     if (results.meta.length > 0) parts.push('Meta');
     if (results.tiktok.length > 0) parts.push('TikTok');
     if (results.linkedin.length > 0) parts.push('LinkedIn');
+    if (results.pinterest.length > 0) parts.push('Pinterest');
+    if (results.twitter.length > 0) parts.push('Twitter/X');
+    if (results.snapchat.length > 0) parts.push('Snapchat');
     if (parts.length === 0) return 'Audit';
     if (parts.length === 1) return `${parts[0]} Audit`;
     return `${parts.join(' + ')} Audit`;
@@ -1497,6 +1544,69 @@ function AuditPageContent() {
                 )}
               </button>
             )}
+            {hasPinterestData && (
+              <button
+                ref={(node) => { tabButtonRefs.current.pinterest = node; }}
+                onClick={() => setActiveTab('pinterest')}
+                className={`
+                  relative flex-shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium transition-colors
+                  ${activeTab === 'pinterest'
+                    ? 'text-accent'
+                    : 'text-gray-500 hover:text-gray-900'
+                  }
+                `}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Pinterest Tag</span>
+                  <TabIssueBadge count={pinterestFailedCount} checks={pinterestChecks} />
+                </div>
+                {activeTab === 'pinterest' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+                )}
+              </button>
+            )}
+            {hasTwitterData && (
+              <button
+                ref={(node) => { tabButtonRefs.current.twitter = node; }}
+                onClick={() => setActiveTab('twitter')}
+                className={`
+                  relative flex-shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium transition-colors
+                  ${activeTab === 'twitter'
+                    ? 'text-accent'
+                    : 'text-gray-500 hover:text-gray-900'
+                  }
+                `}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Twitter/X Pixel</span>
+                  <TabIssueBadge count={twitterFailedCount} checks={twitterChecks} />
+                </div>
+                {activeTab === 'twitter' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+                )}
+              </button>
+            )}
+            {hasSnapchatData && (
+              <button
+                ref={(node) => { tabButtonRefs.current.snapchat = node; }}
+                onClick={() => setActiveTab('snapchat')}
+                className={`
+                  relative flex-shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium transition-colors
+                  ${activeTab === 'snapchat'
+                    ? 'text-accent'
+                    : 'text-gray-500 hover:text-gray-900'
+                  }
+                `}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Snapchat Pixel</span>
+                  <TabIssueBadge count={snapchatFailedCount} checks={snapchatChecks} />
+                </div>
+                {activeTab === 'snapchat' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+                )}
+              </button>
+            )}
             {crossChecks.length > 0 && (
               <div className="flex flex-shrink-0 items-center whitespace-nowrap px-5 py-3 text-sm text-accent">
                 <div className="flex items-center gap-2">
@@ -1634,6 +1744,63 @@ function AuditPageContent() {
           />
         )}
 
+        {activeTab === 'pinterest' && hasPinterestData && (
+          <TabSection
+            checks={pinterestChecks}
+            summary={totalSummary}
+            title="Pinterest Tag"
+            icon={<span className="text-accent">Pinterest</span>}
+            color="accent"
+            search={search}
+            onSearchChange={setSearch}
+            severityFilters={severityFilters}
+            onToggleSeverity={toggleSeverityFilter}
+            sortColumn={sortColumn}
+            sortDir={sortDir}
+            onSort={handleSort}
+            selectedCheck={selectedCheck}
+            onSelectCheck={setSelectedCheck}
+          />
+        )}
+
+        {activeTab === 'twitter' && hasTwitterData && (
+          <TabSection
+            checks={twitterChecks}
+            summary={totalSummary}
+            title="Twitter/X Pixel"
+            icon={<span className="text-accent">Twitter/X</span>}
+            color="accent"
+            search={search}
+            onSearchChange={setSearch}
+            severityFilters={severityFilters}
+            onToggleSeverity={toggleSeverityFilter}
+            sortColumn={sortColumn}
+            sortDir={sortDir}
+            onSort={handleSort}
+            selectedCheck={selectedCheck}
+            onSelectCheck={setSelectedCheck}
+          />
+        )}
+
+        {activeTab === 'snapchat' && hasSnapchatData && (
+          <TabSection
+            checks={snapchatChecks}
+            summary={totalSummary}
+            title="Snapchat Pixel"
+            icon={<span className="text-accent">Snapchat</span>}
+            color="accent"
+            search={search}
+            onSearchChange={setSearch}
+            severityFilters={severityFilters}
+            onToggleSeverity={toggleSeverityFilter}
+            sortColumn={sortColumn}
+            sortDir={sortDir}
+            onSort={handleSort}
+            selectedCheck={selectedCheck}
+            onSelectCheck={setSelectedCheck}
+          />
+        )}
+
         {/* Cross-Check Section (Always Visible) */}
         <CrossCheckSection
           checks={crossChecks}
@@ -1651,7 +1818,7 @@ function AuditPageContent() {
                 Still seeing audit issues after reviewing this report? That usually means the problem is upstream.
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted">
-                I debug these stacks daily across GTM, Google Ads, Meta CAPI, Enhanced Conversions, LinkedIn Insight Tag, and CRM validation. If the report surfaced {gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount + tiktokFailedCount + linkedinFailedCount} live issue{gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount + tiktokFailedCount + linkedinFailedCount === 1 ? '' : 's'}, a short review will usually identify what to fix first.
+                I debug these stacks daily across GTM, Google Ads, Meta CAPI, Enhanced Conversions, LinkedIn Insight Tag, Pinterest Tag, Snap Pixel, and CRM validation. If the report surfaced {gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount + tiktokFailedCount + linkedinFailedCount + pinterestFailedCount + twitterFailedCount + snapchatFailedCount} live issue{gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount + tiktokFailedCount + linkedinFailedCount + pinterestFailedCount + twitterFailedCount + snapchatFailedCount === 1 ? '' : 's'}, a short review will usually identify what to fix first.
               </p>
             </div>
             <a

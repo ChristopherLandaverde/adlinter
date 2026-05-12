@@ -1,0 +1,67 @@
+[
+  {
+    "tagId": "2612345678901",
+    "tagName": "Main Pinterest Tag",
+    "partnerName": "Main Pinterest Tag",
+    "name": "PageVisit",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 9800,
+    "apiEventCount": 0,
+    "value": 0,
+    "currency": "USD",
+    "enhancedMatchConfigured": false
+  },
+  {
+    "tagId": "2612345678901",
+    "tagName": "Main Pinterest Tag",
+    "partnerName": "Main Pinterest Tag",
+    "name": "ViewCategory",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 3200,
+    "apiEventCount": 0,
+    "value": 0,
+    "currency": "USD",
+    "enhancedMatchConfigured": false
+  },
+  {
+    "tagId": "2612345678901",
+    "tagName": "Main Pinterest Tag",
+    "partnerName": "Main Pinterest Tag",
+    "name": "AddToCart",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 420,
+    "apiEventCount": 0,
+    "value": 0,
+    "currency": "USD",
+    "enhancedMatchConfigured": false
+  },
+  {
+    "tagId": "2612345678901",
+    "tagName": "Main Pinterest Tag",
+    "partnerName": "Main Pinterest Tag",
+    "name": "Checkout",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 86,
+    "apiEventCount": 0,
+    "value": 0,
+    "currency": "EUR",
+    "enhancedMatchConfigured": false
+  },
+  {
+    "tagId": "2612345678901",
+    "tagName": "Main Pinterest Tag",
+    "partnerName": "Main Pinterest Tag",
+    "name": "Lead",
+    "eventType": "standard",
+    "status": "active",
+    "eventCount": 0,
+    "apiEventCount": 0,
+    "value": 0,
+    "currency": "USD",
+    "enhancedMatchConfigured": false
+  }
+]
