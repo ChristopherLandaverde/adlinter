@@ -6,7 +6,7 @@ import { hasFullExplainer } from '@/lib/checks/explainers';
 
 export function CheckLearnMoreLink({ id }: { id: string }) {
   // Render for any check ID known to the engine. Full explainers get a
-  // direct "Learn more" link; stubs get a softer "Reference →" so users
+  // direct "Learn more" link; stubs get a softer "Reference" so users
   // know what to expect when they land on the page.
   if (!checkRegistryById[id]) return null;
 
@@ -18,7 +18,7 @@ export function CheckLearnMoreLink({ id }: { id: string }) {
       className="text-xs font-medium text-accent hover:text-accent-hover hover:underline"
       onClick={(event) => event.stopPropagation()}
     >
-      {isFull ? 'Learn more →' : 'Reference →'}
+      {isFull ? 'Learn more' : 'Reference'}
     </Link>
   );
 }

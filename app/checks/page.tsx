@@ -36,9 +36,9 @@ export default function ChecksPage() {
           </Link>
           <Link
             href="/"
-            className="flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-ink"
+            className="text-sm font-medium text-muted transition-colors hover:text-ink"
           >
-            <span aria-hidden="true">&larr;</span> Back to Tools
+            Back to Tools
           </Link>
         </div>
       </header>

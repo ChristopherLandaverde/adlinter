@@ -15,6 +15,32 @@ import { GTMTriggerListMock } from '@/components/mockups/GTMTriggerListMock';
 import { CopyButton } from '@/components/check-detail/CopyButton';
 import { PageTOC, type TOCEntry } from '@/components/check-detail/PageTOC';
 
+// Some explainers write howToFix as "1. step. 2. step. 3. step." in a single
+// string. Render those as a real <ol>. Falls back to <p> for prose paragraphs.
+// Match a leading "1." plus subsequent " N." (or "\nN.") to detect a list.
+function parseNumberedList(text: string): string[] | null {
+  const trimmed = text.trim();
+  if (!/^1\.\s/.test(trimmed)) return null;
+  const parts = trimmed.split(/\s+(?=\d+\.\s)/);
+  if (parts.length < 2) return null;
+  return parts.map((p) => p.replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
+}
+
+function ProseOrList({ text, listClassName = '' }: { text: string; listClassName?: string }) {
+  const list = parseNumberedList(text);
+  if (list) {
+    return (
+      <ol className={`list-decimal space-y-2 pl-6 marker:font-mono marker:text-xs marker:text-muted ${listClassName}`}>
+        {list.map((item, i) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ol>
+    );
+  }
+  // Preserve any embedded paragraph breaks (\n\n) and single newlines.
+  return <p className="whitespace-pre-line">{text}</p>;
+}
+
 function renderMockup(spec: CheckMockupSpec, beforeAfter?: 'before' | 'after') {
   if (spec.kind === 'gtm-tag-list') {
     return (
@@ -254,9 +280,9 @@ export default async function CheckDetailPage({ params }: PageProps) {
           </Link>
           <Link
             href="/checks"
-            className="flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-ink"
+            className="text-sm font-medium text-muted transition-colors hover:text-ink"
           >
-            <span aria-hidden="true">&larr;</span> Back to Check Reference
+            Back to Check Reference
           </Link>
         </div>
       </header>
@@ -326,7 +352,7 @@ export default async function CheckDetailPage({ params }: PageProps) {
 
           <div className="space-y-8">
             <Section id="why" title="Why It Matters">
-              <p className="whitespace-pre-line">{explainer.why}</p>
+              <ProseOrList text={explainer.why} />
               {/* F5: Before/After indicator differentiates the two mockups. */}
               {explainer.whyMockup && renderMockup(explainer.whyMockup, 'before')}
               {/* F13: legend explaining color semantics in the mockup. */}
@@ -338,7 +364,7 @@ export default async function CheckDetailPage({ params }: PageProps) {
             </Section>
 
             <Section id="fix" title="How To Fix It">
-              <p className="whitespace-pre-line">{explainer.howToFix}</p>
+              <ProseOrList text={explainer.howToFix} />
               {explainer.fixMockup && renderMockup(explainer.fixMockup, 'after')}
               {explainer.fixMockup && (
                 <p className="mt-2 text-xs text-muted">
@@ -440,10 +466,9 @@ export default async function CheckDetailPage({ params }: PageProps) {
               </p>
               <Link
                 href="/"
-                className="inline-flex items-center gap-1.5 rounded-sm bg-accent px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+                className="inline-flex items-center rounded-sm bg-accent px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
               >
                 Run a free audit
-                <span aria-hidden="true">&rarr;</span>
               </Link>
             </section>
           </div>
