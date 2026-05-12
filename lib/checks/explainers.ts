@@ -1438,9 +1438,30 @@ export const explainers: CheckExplainer[] = [
     source: 'pinterest',
     severity: 'warning',
     summary: 'Pinterest browser events have no matching server-side Conversion API volume.',
-    why: 'Pinterest positions the Conversion API as a way to send conversion events from the server alongside the browser tag. If browser events exist but the server stream is missing, measurement depends on client-side requests that can be blocked by browsers, consent timing, or network conditions. The result is weaker event durability and less defensible attribution when the browser and server sources should be backing each other up.',
-    howToFix: 'Map each important Pinterest Tag event to the equivalent Conversion API event and send the same business action from the server where possible. Include event time, event name, value, currency, and matching identifiers needed for deduplication and enhanced match. Confirm Events Manager shows browser and server volume for the same major events before relying on campaign reporting.',
+    directAnswer:
+      'Your Pinterest Tag is firing Checkout, Lead, and other conversion events in the browser, but Events Manager shows no matching Conversion API volume on the server side. That means Pinterest is hearing one side of the conversation. When a browser hit gets blocked by an extension, dropped by iOS Safari, or deferred by a slow consent banner, there is no server backup carrying the same event_id. Your conversion counts are exactly as durable as the browser channel, which is the channel breaking the fastest.',
+    why: 'Pinterest treats the browser tag and the Conversions API as two paths for the same event. When both fire and share an `event_id`, Pinterest deduplicates and keeps whichever arrives intact. When only the browser fires, you lose everything ad blockers, ITP, network errors, and consent timing take with them. The gap is not theoretical. Pinterest publishes match-quality and event-coverage scores in Events Manager that visibly drop on browser-only accounts.\n\nThe second problem is field parity. Even when the server is configured, partial CAPI payloads (missing `event_time`, `event_name`, hashed email, value, currency) cannot deduplicate against the browser hit. Pinterest then double-counts or drops one side, and the account team cannot tell which without forensic work.\n\nFor agencies, the deliverable line is simple. If browser events exist without Conversion API parity, the attribution shown in the Pinterest dashboard is not the attribution the client is paying for.',
+    howToFix:
+      '1. Open Pinterest Events Manager and list every browser event by name (PageVisit, ViewCategory, AddToCart, Checkout, Search, Signup, Lead, WatchVideo, Custom). 2. For each conversion-class event (Checkout, Lead, Signup, AddToCart), build a Conversion API payload that sends the same event from the server with a shared `event_id`. 3. Include `event_time`, `event_name`, `action_source`, hashed Enhanced Match fields, `value`, `currency`, and `partner_name` on every CAPI hit. 4. Send a test event in Events Manager and confirm Pinterest reports both Browser and Server columns populated for the same `event_id`. 5. Wait 24 hours, then check the deduplication rate; healthy parity sits above 70 percent for major events.',
     example: 'Browser event: Checkout\nServer event: Checkout\nShared fields: event_id, value, currency, order_id, customer match fields',
+    citationTemplate:
+      'This Pinterest Tag is sending conversion events from the browser without matching Conversions API volume on the server. Pinterest documents the Conversions API as a server-side complement to the browser tag, with shared `event_id` used to deduplicate the two streams. When only the browser channel fires, conversion measurement depends entirely on client-side delivery, which is degraded by ad blockers, Safari Intelligent Tracking Prevention, consent banner timing, and network failures. The reported Pinterest conversion counts therefore understate true performance and produce attribution that cannot be defended in a client performance review. Fix: implement the Conversions API for every conversion-class event, share `event_id` between browser and server hits, and confirm deduplication in Events Manager before relying on campaign reporting. Source: developers.pinterest.com/docs/conversions/conversion-management/.',
+    references: [
+      {
+        label: 'Pinterest. Conversions API',
+        url: 'https://developers.pinterest.com/docs/conversions/conversion-management/',
+      },
+      {
+        label: 'Pinterest. Conversions API getting started',
+        url: 'https://developers.pinterest.com/docs/conversions/getting-started/',
+      },
+      {
+        label: 'Pinterest. Track conversions with the Pinterest Tag',
+        url: 'https://help.pinterest.com/en/business/article/track-conversions-with-pinterest-tag',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['pinterest-tag-configuration-quality', 'pinterest-checkout-missing-value'],
   },
   {
@@ -1482,9 +1503,26 @@ export const explainers: CheckExplainer[] = [
     source: 'snapchat',
     severity: 'critical',
     summary: 'The Snap Pixel ID is missing or does not match the expected UUID-style format.',
-    why: 'Snap Pixel events need to be associated with the correct pixel before they can populate audiences, diagnostics, and conversion reporting. A copied-short, malformed, or stale ID can send events into the wrong asset or prevent them from being recognized. The event code may still execute, so the practical risk is silent measurement loss rather than an obvious page error.',
-    howToFix: 'Copy the Pixel ID from Snapchat Events Manager and compare it against every GTM tag, direct site tag, and commerce integration. Keep one canonical ID per property unless there is an intentional multi-pixel setup. Test PAGE_VIEW and PURCHASE after the change and confirm they appear under the expected Snap Pixel.',
-    example: 'Expected shape: 123e4567-e89b-12d3-a456-426614174000',
+    directAnswer:
+      'Your Snap Pixel ID is missing, truncated, or does not match the UUID shape Snapchat issues (e.g. `12345678-1234-1234-1234-123456789012`). Until the ID is correct, your `snaptr(\'init\', ...)` call routes events to nothing. PAGE_VIEW and PURCHASE will appear to fire in the browser, but Snapchat Events Manager will not see them, and the ad account they are supposed to feed will sit empty.',
+    why: 'The Snap Pixel snippet starts with `snaptr(\'init\', \'<PIXEL_ID>\')` and every subsequent `snaptr(\'track\', ...)` call binds to whatever ID that init received. Snapchat issues Pixel IDs in a UUID v4 shape: eight hex, four hex, four hex, four hex, twelve hex, separated by hyphens. Anything else is a copy-paste error or a leftover placeholder from a code sample.\n\nWhen the ID is wrong, the JavaScript still executes. `snaptr` is defined, the queue receives the call, the request leaves the browser. Snapchat just drops the event because no Pixel claims that ID. Events Manager shows zero traffic. Your audiences never populate. CAPI events may still arrive on the server side under a different ID, so the account looks half-broken in a way that is annoying to diagnose.\n\nThe second failure mode is two pixels on one site. A migration leaves the old ID in the GTM tag and the new ID in the Shopify integration. Both fire. Snapchat sees a split account and neither pixel reaches the volume Snap needs for reliable optimisation.',
+    howToFix:
+      '1. Open Snapchat Ads Manager, go to Events Manager, and copy the Pixel ID directly from the pixel detail page. 2. Search the GTM container, hardcoded site tags, and every commerce integration (Shopify, WooCommerce, BigCommerce) for `snaptr(\'init\'` and confirm a single canonical ID is used everywhere. 3. Validate the shape: 36 characters, four hyphens, lowercase hex. 4. Publish, load a page with the Snap Pixel Helper extension active, and confirm PAGE_VIEW reaches the expected pixel. 5. Fire one PURCHASE through a test order and confirm it appears in Events Manager under the right asset.',
+    example: 'Expected shape: 12345678-1234-1234-1234-123456789012\nObserved: 12345678-1234-1234 (truncated)',
+    citationTemplate:
+      'Your Snap Pixel is initialised with an ID that does not match the UUID format Snapchat issues. Per Snapchat\'s Snap Pixel installation documentation, the Pixel ID must be the exact identifier shown on the pixel detail page in Events Manager, formatted as a UUID (eight-four-four-four-twelve hex characters separated by hyphens). When the ID is malformed or stale, `snaptr` continues to execute in the browser but Snapchat drops the events because no pixel asset claims that identifier, leaving Events Manager empty and audiences unable to populate. Fix: copy the Pixel ID from Events Manager, replace every occurrence in GTM, hardcoded site tags, and commerce integrations, then validate with the Snap Pixel Helper. Source: businesshelp.snapchat.com/s/article/snap-pixel-installation.',
+    references: [
+      {
+        label: 'Snapchat. Snap Pixel installation',
+        url: 'https://businesshelp.snapchat.com/s/article/snap-pixel-installation',
+      },
+      {
+        label: 'Snapchat. About the Snap Pixel',
+        url: 'https://businesshelp.snapchat.com/s/article/snap-pixel-about',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['snapchat-missing-page-view', 'snapchat-capi-dedup-currency'],
   },
   {
@@ -1493,9 +1531,30 @@ export const explainers: CheckExplainer[] = [
     source: 'snapchat',
     severity: 'warning',
     summary: 'Snap Pixel and Conversions API events are not aligned on deduplication or currency.',
-    why: 'Snap recommends aligning browser pixel and Conversions API implementations so the same user action can be matched without double-counting. Missing deduplication IDs make browser plus server setups vulnerable to inflated counts, while missing CAPI volume leaves the account dependent on browser-only measurement. Mixed currencies add another reporting risk because conversion value totals no longer describe one economic unit.',
-    howToFix: 'Send the same deduplication ID on matching Snap Pixel and Conversions API events, normally derived from the order ID, lead ID, or event ID. Confirm server-side volume appears for key events such as PURCHASE and SIGN_UP. Standardize currency on the value events and validate a real transaction against the value and currency shown in Events Manager.',
-    example: 'PURCHASE event_id: order-10492\nPixel currency: USD\nCAPI currency: USD',
+    directAnswer:
+      'Your Snap Pixel and Conversions API (CAPI) are sending the same PURCHASE event from both the browser and the server, but they do not share an `event_id` for deduplication, and the currency on the two payloads does not match. Snapchat ends up counting one order as two conversions, and the value column in Events Manager mixes USD with whatever your CAPI integration is sending, so the totals stop describing a single set of orders.',
+    why: 'Snapchat\'s recommended setup runs the browser pixel and CAPI in parallel. The browser is fast and carries client signals (Snap click ID, browser cookies). The server is reliable and carries authoritative order data (true value, hashed PII, transaction ID). To stop them from double-counting the same order, both sides must send a matching `event_id` on each PURCHASE, SIGN_UP, SUBSCRIBE, or START_CHECKOUT. Snapchat deduplicates on that ID inside a short window and keeps one canonical event.\n\nWhen the IDs do not align, PURCHASE volume inflates roughly 1.7x to 2x depending on CAPI delivery rates. ROAS in Snapchat Ads Manager looks better than it is, and the optimisation engine starts bidding against a signal that is partly hallucinated. The cleanup is painful because historical reports keep the inflated numbers.\n\nCurrency drift is the second problem. If the browser sends `currency: \'USD\'` and CAPI sends `currency: \'EUR\'` (or omits it and Snapchat assumes the account default), the value totals in Events Manager describe an exchange-rate average rather than a real currency. ROAS comparisons across markets become meaningless.',
+    howToFix:
+      '1. Derive a stable `event_id` from the order ID (or lead ID for SIGN_UP) and send the exact same string on the Snap Pixel `snaptr(\'track\', \'PURCHASE\', { ..., event_id: \'order-10492\' })` call and the CAPI request body. 2. Confirm CAPI volume is actually arriving for PURCHASE, SIGN_UP, and SUBSCRIBE in Events Manager. Browser-only coverage is the default failure mode. 3. Pick one ISO 4217 currency per pixel and pass it explicitly on every value event. Do not rely on account defaults. 4. Run a real test order, watch Events Manager, and confirm one deduplicated PURCHASE appears with the expected value and currency. 5. After 24 hours, check that the deduplication rate in the CAPI diagnostics is above 70 percent.',
+    example: 'Browser: snaptr(\'track\', \'PURCHASE\', { event_id: \'order-10492\', price: 129.90, currency: \'USD\' })\nCAPI: { event_name: \'PURCHASE\', event_id: \'order-10492\', price: 129.90, currency: \'USD\' }',
+    citationTemplate:
+      'Your Snap Pixel and Conversions API are running in parallel without a shared `event_id`, and the currency on the two payloads is inconsistent. Per Snapchat\'s Conversions API documentation, browser and server events representing the same business action must share an `event_id` so Snapchat can deduplicate, and every value-bearing event must pass an explicit ISO 4217 currency. Without deduplication, PURCHASE volume in Ads Manager inflates by the CAPI delivery rate and biases optimisation. Without consistent currency, value totals mix units and ROAS comparisons stop being meaningful. Fix: derive `event_id` from the order ID, send it identically on both sides, pin one currency per pixel, and confirm a deduplication rate above 70 percent in the CAPI diagnostics. Source: marketingapi.snapchat.com/docs/conversion.html.',
+    references: [
+      {
+        label: 'Snapchat. Conversions API overview',
+        url: 'https://businesshelp.snapchat.com/s/article/capi-overview',
+      },
+      {
+        label: 'Snapchat Marketing API. Conversions API reference',
+        url: 'https://marketingapi.snapchat.com/docs/conversion.html',
+      },
+      {
+        label: 'Snapchat. Standard events',
+        url: 'https://businesshelp.snapchat.com/s/article/standard-events',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['snapchat-pixel-id-format', 'snapchat-purchase-missing-value'],
   },
   {
