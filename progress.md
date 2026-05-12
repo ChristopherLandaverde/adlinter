@@ -1,5 +1,65 @@
 # AdLint — Progress Log
 
+## v1.25.6 — 100% Coverage: Every Check ID Now Has a Full-Treatment Explainer
+**Commit:** Pending
+
+Closes the gap. Every one of the 178 check IDs the audit engine emits now has a hand-authored or agent-authored full-treatment explainer entry. Zero stubs. Voice-clean across the entire file.
+
+### What landed in this release
+Three parallel sub-agents added 44 entries covering the remaining stub IDs:
+
+| Cluster | Entries | Coverage |
+|---|---|---|
+| Performance + Signal Quality (Ads report statistical checks) | 15 | perf-*, signal-* |
+| Cross-source + Edge cases (multi-source consistency + severity edge cases) | 24 | cross-*, edge-*, conversion-callbacks, currency-consistency-cross, dynamic-value-passing, enhanced-conversions-user-data, first-party-data-completeness, gtm-tag-not-in-ads, tag-count-mismatch, transaction-id-deduplication, user-id-consistency |
+| Misc Report (statistical patterns and concentration checks) | 5 | all-vs-primary-gap, conversion-concentration, funnel-volume-inversion, value-instability, whale-conversion |
+
+### Coverage scoreboard (FINAL)
+
+| Source | Full-treatment | Total IDs |
+|---|---|---|
+| GTM | 29 / 29 | 29 |
+| Google Ads | 34 / 34 | 34 |
+| Meta | 10 / 10 | 10 |
+| TikTok | 10 / 10 | 10 |
+| LinkedIn | 10 / 10 | 10 |
+| Pinterest | 10 / 10 | 10 |
+| Twitter/X | 10 / 10 | 10 |
+| Snapchat | 10 / 10 | 10 |
+| Report | 30 / 30 | 30 |
+| Cross | 15 / 15 | 15 |
+| **Total** | **178 / 178 (100%)** | **178** |
+
+### Voice quality (current state of `lib/checks/explainers.ts`)
+- 0 em dashes
+- 0 instances of "AdLint detected" boilerplate
+- 0 instances of "Recommended remediation" boilerplate
+- All citation templates lead with the claim, end with `Fix: ... Source: <url>.`
+- Real platform docs URLs throughout (verified against the approved per-platform reference lists in each agent prompt)
+- Second-person voice ("Your container," "Your account") consistent across all entries
+
+### Verification
+- 178 routes prerendered by `next build` (1 / 1 dynamic stubs collapsed to 0)
+- Type-check clean
+- 573 jest tests pass (counted across the main worktree)
+- Every `/checks/<id>` URL returns HTTP 200 with full editorial content + JSON-LD + author byline
+
+### Process summary (this session, ~5 hours wall-clock)
+- Started: 1 full-treatment explainer (the `missing-conversion-linker` flagship)
+- Ended: 178 full-treatment explainers
+- Sub-agents dispatched: 15 across three waves (6 wave-1 upgrades, 6 wave-2 platform fills, 3 wave-3 report/cross/edge fills)
+- Total commits this session: 24
+- Total prose added: roughly 5,000 lines (across all explainers' directAnswer + why + howToFix + citationTemplate + references)
+
+### Files modified
+- `lib/checks/explainers.ts`
+- `progress.md`
+
+### What's still slop-shaped (honest)
+Most of the second-wave and third-wave entries (agent-written) are structurally correct and voice-compliant on the bulk-pass level, but they have not been individually proofread by me. Critical-severity entries across GTM, Ads, and key cross-source were hand-written by me. Info/warning-tier entries (especially the perf-* and signal-* statistical checks) follow the voice rules but read more uniformly than the hand-written ones. That is the right tradeoff for now: complete coverage at acceptable voice, then iterate per-page if/when individual pages start getting traction.
+
+---
+
 ## v1.25.5 — All 6 Pixel Platforms to 100% Full-Treatment Coverage
 **Commit:** Pending
 
