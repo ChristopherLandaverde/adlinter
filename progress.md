@@ -1,5 +1,71 @@
 # AdLint — Progress Log
 
+## v1.25.5 — All 6 Pixel Platforms to 100% Full-Treatment Coverage
+**Commit:** Pending
+
+Two parallel waves of sub-agents (one per platform, each in an isolated git worktree) brought every pixel platform to 100% full-treatment editorial coverage. 60 explainer entries written or upgraded in roughly an hour of wall-clock time.
+
+### Wave 1 — upgrade existing entries to voice (16 entries)
+Each agent: rewrote the platform's existing legacy explainers to match the `missing-conversion-linker` voice prototype. Added `directAnswer`, `citationTemplate`, real platform-docs `references`, `lastUpdated`, `status: 'full'`.
+
+| Platform | Entries upgraded |
+|---|---|
+| Meta | 4 (`meta-missing-pageview`, `meta-missing-conversion-events`, `meta-purchase-missing-value`, `meta-ecommerce-funnel`) |
+| TikTok | 3 (`tiktok-base-events-active`, `tiktok-completepayment-missing-value`, `tiktok-ecommerce-funnel`) |
+| LinkedIn | 3 (`linkedin-other-category-overuse`, `linkedin-unattached-conversions`, `linkedin-conversion-window-too-short`) |
+| Pinterest | 2 (`pinterest-conversion-api-parity`, `pinterest-tag-configuration-quality`) |
+| Twitter/X | 2 (`twitter-event-id-format`, `twitter-deduplication-conversion-id`) |
+| Snapchat | 2 (`snapchat-pixel-id-format`, `snapchat-capi-dedup-currency`) |
+
+### Wave 2 — write new entries for stub-only IDs (44 entries)
+Each agent: read the platform's `lib/checks/<platform>Checks.ts` source to understand what each missing-explainer check actually flags, then wrote a full-treatment entry from scratch. Strict voice rules enforced via the prompt (no em dashes, no banlist vocabulary, no "AdLint detected" / "Recommended remediation" boilerplate, second-person, varied rhythm, concrete platform-specific terminology).
+
+| Platform | Entries written |
+|---|---|
+| Meta | 6 (custom-event-standard-alternative, disabled-conversions, duplicate-events, event-concentration, similar-event-names, zero-volume-events) |
+| TikTok | 7 (same six plus missing-conversion-events) |
+| LinkedIn | 7 (disabled-key-conversions, duplicate-conversions, missing-key-conversions, no-active-conversions, purchase-missing-value, similar-conversion-names, zero-volume-conversions) |
+| Pinterest | 8 (checkout-missing-value, duplicate-events, ecommerce-funnel, missing-conversion-events, missing-pagevisit, similar-event-names, standard-event-names, zero-volume-events) |
+| Twitter/X | 8 (conversion-id-required, conversion-window-mismatch, duplicate-events, engagements-vs-conversions, missing-conversion-events, purchase-missing-value, similar-event-names, zero-volume-events) |
+| Snapchat | 8 (duplicate-events, ecommerce-funnel, missing-conversion-events, missing-page-view, purchase-missing-value, similar-event-names, standard-event-names, zero-volume-events) |
+
+### Post-merge voice fixes
+3 em dashes had leaked through (one in a Twitter agent's `example` field, two in my own hand-written `no-primary-conversion` entry that I missed during de-slop). Manually fixed.
+
+### Coverage scoreboard
+
+| Source | Full-treatment | Total IDs |
+|---|---|---|
+| GTM | 29 / 29 (100%) | 29 |
+| Google Ads | 34 / 34 (100%) | 34 |
+| Meta | 10 / 10 (100%) | 10 |
+| TikTok | 10 / 10 (100%) | 10 |
+| LinkedIn | 10 / 10 (100%) | 10 |
+| Pinterest | 10 / 10 (100%) | 10 |
+| Twitter/X | 10 / 10 (100%) | 10 |
+| Snapchat | 10 / 10 (100%) | 10 |
+| **Subtotal: GTM + Ads + 6 pixel platforms** | **123 / 123 (100%)** | 123 |
+| Report | 9 / 15 (60%) | 15 |
+| Cross | 6 / 15 (40%) | 15 |
+| **Total** | **123 / 178 (69%)** | 178 |
+
+### Process notes
+- Parallel sub-agents in isolated git worktrees worked well. Two waves of 6 agents each, total wall-clock ~30 min per wave.
+- Agents could not run `npx tsc --noEmit` or commit reliably from inside the sandbox (about half hit permission denials). I manually ran `tsc` and committed on their behalf where needed.
+- Voice quality landed mostly correct. Em-dash leakage was minimal (3 total across 60 entries) and easy to spot-grep.
+- Worktree concurrency was clean. Cherry-picking each agent's single commit onto main produced no conflicts since each agent edits its own platform's section of `lib/checks/explainers.ts`.
+
+### Files modified
+- `lib/checks/explainers.ts` (+1300 lines roughly, 12 cherry-picked commits + em-dash fix)
+- `progress.md`
+
+### Remaining work
+- Report source: 6 IDs need entries (info/warning-tier statistical/diagnostic checks)
+- Cross source: 9 IDs need entries (cross-source consistency checks; harder to write because they integrate GTM + Ads + Report)
+- Both are best handled by me directly since they overlap conceptually with the GTM/Ads content already shipped.
+
+---
+
 ## v1.25.4 — De-slop Pass + /checks Page Template Overhaul
 **Commit:** Pending
 
