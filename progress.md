@@ -1,5 +1,76 @@
 # AdLint — Progress Log
 
+## v1.25.3 — Google Ads Sprint Complete: All 34 Ads Explainers
+**Commit:** Pending
+
+The Google Ads pass to flagship quality. Every Google Ads check ID the audit engine emits (34 total) now has a full-treatment explainer: directAnswer, citationTemplate, references to real Google docs, lastUpdated, JSON-LD Article + FAQPage schema, byline. Combined with v1.25–v1.25.2, both GTM (29/29) and Google Ads (34/34) are now at 100% flagship coverage.
+
+### Upgraded to full treatment (8)
+- `duplicate-conversions` (critical, cross-source) — duplicate tag + duplicate action consolidation
+- `zero-value-purchases` (critical) — value-based bidding requires non-zero values
+- `missing-primary-conversion` (warning) — Primary action requirement for Smart Bidding
+- `smart-bidding-volume` (warning) — 15-30 conversions per portfolio per month threshold
+- `short-attribution-windows` (warning) — time-lag-distribution-driven sizing
+- `attribution-window-mismatch` (warning) — sales-cycle alignment
+- `currency-consistency` (critical) — mixed-currency reporting corruption
+- `data-driven-eligibility` (info) — DDA volume thresholds
+
+### Written from scratch (26)
+**Critical (1):** `no-primary-conversion`
+
+**Warning (14):**
+- `wrong-counting-method` — Lead-style "One" vs sale-style "Every"
+- `disabled-high-value-conversions` — disabled actions with historical value
+- `inconsistent-attribution-models` — model mismatch within Primary set
+- `lead-conversions-with-values` — accidental purchase-style values on lead actions
+- `fixed-value-dynamic-revenue` — fixed value on variable-revenue events
+- `zero-value-with-count` — action fires but pipeline sends zero values
+- `roas-feasibility` — Target ROAS vs historical-achieved divergence
+- `value-outliers` — extreme value outliers distorting Smart Bidding
+- `struct-semantic-duplicates` — same-event different-name action pairs
+- `struct-counting-category-mismatch` — counting method vs category misalignment
+- `struct-all-last-click` — account-wide Last-Click despite DDA eligibility
+- `struct-attribution-chaos` — many models in one account without rationale
+- `long-attribution-windows` (info) — windows longer than realistic causal window
+- (plus the 8 upgrades counted above)
+
+**Info (11):**
+- `conversion-delay-impact` — high lag impact on Smart Bidding learning
+- `conversion-name-quality` — non-descriptive action names
+- `conversion-source-consistency` — same-event mixed-source actions
+- `unusual-categories` — high share of "Other"-category actions
+- `many-inactive-conversions` — accumulation of zero-volume actions
+- `suboptimal-attribution-model` — eligible-but-not-using DDA
+- `view-through-window-analysis` — VTC window appropriateness
+- `value-consistency-by-category` — within-category value variance
+- `struct-naming-convention` — `<Event> — <Source>` pattern
+- `struct-category-name-mismatch` — Category field vs name disagreement
+- `struct-duplicate-static-values` — copy-paste value patterns
+- `struct-window-asymmetry` — VTC vs click-through window pair issues
+
+### Coverage scoreboard
+- **Google Ads full-treatment explainers: 8 → 34 (100%)**
+- GTM full-treatment: 29 / 29 (unchanged, 100%)
+- Total full-treatment, all sources: 47 → 63
+- Total explainer entries: 64 → 90
+- All 178 check IDs still resolve to a renderable page
+
+### Verification
+- 573 tests pass
+- Type-check clean
+- `npx next build` green (189 routes, 178 check pages prerendered)
+
+### Sprint state
+- ✅ GTM: 29 / 29 full-treatment
+- ✅ Ads: 34 / 34 full-treatment
+- Remaining sources at legacy-quality only: Report (15 IDs), Cross (15), Meta (10), TikTok (10), LinkedIn (10), Pinterest (10), Twitter (10), Snapchat (10) — 90 IDs total
+
+### Files modified
+- `lib/checks/explainers.ts` (8 upgrades + 26 inserts, +~1300 lines)
+- `progress.md`
+
+---
+
 ## v1.25.2 — GTM Flagship Complete: All 17 Remaining GTM Explainers
 **Commit:** Pending
 

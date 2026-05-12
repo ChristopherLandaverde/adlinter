@@ -265,9 +265,26 @@ export const explainers: CheckExplainer[] = [
     source: 'cross',
     severity: 'critical',
     summary: 'Duplicate conversion tags or conversion actions can double-count the same business event.',
-    why: 'This ID is emitted by both GTM duplicate tag checks and Google Ads duplicate conversion action checks. Either failure can inflate conversion volume, conversion value, and Smart Bidding signals. The advertiser sees better-looking CPA or ROAS than reality, while bidding algorithms learn from repeated copies of the same event.',
-    howToFix: 'In GTM, compare Google Ads conversion tags by conversion ID, conversion label, and trigger; remove duplicates or narrow triggers so one business event fires one tag. In Google Ads, consolidate duplicate conversion actions, keep the canonical action Primary, and mark test or backup actions Secondary or remove them. Re-run the audit after one full conversion cycle to confirm counts return to expected levels.',
+    directAnswer:
+      'AdLint detected duplicate conversion tracking — either two GTM tags firing the same Google Ads conversion ID and label on the same trigger, or two Google Ads conversion actions configured to count the same business event. Every legitimate conversion is now being reported twice, which inflates conversion volume, doubles conversion value, and feeds Smart Bidding a corrupted signal.',
+    why: 'This is one of the highest-impact measurement failures because it makes everything downstream look better than reality. Reported CPA halves, reported ROAS doubles, Smart Bidding learns from the inflated signal and pushes budget toward campaigns that look high-performing. The team sees green dashboards and increased spend until someone reconciles against the e-commerce backend or CRM and discovers the actual conversion rate is half what Google reports. The duplicate can live in two places — GTM, where two conversion tags share the same conversion ID + label and the same firing trigger, or Google Ads, where two conversion actions point at the same business outcome. AdLint identifies both; the fix path differs depending on which layer is duplicated.',
+    howToFix:
+      '1. AdLint\'s finding details list each duplicate pair and where it lives (GTM, Google Ads, or both). 2. For GTM duplicates: open Workspace → Tags, find each pair sharing the same Conversion ID + label + trigger, and decide which is canonical. Pause or delete the duplicate. 3. For Google Ads duplicates: open Tools & Settings → Measurement → Conversions, identify the duplicate actions, mark the canonical action Primary and demote the others to Secondary or remove them entirely. 4. After the cleanup, wait one full conversion-window cycle (typically 30 days) before judging restored performance — historical data still contains the duplicates. 5. Annotate the change date in Google Ads so period-over-period reports do not mistake the volume drop for performance regression.',
     example: 'Duplicate pattern: two Ads conversion tags with the same AW-123456789 / abcDEF_label firing on purchase_success',
+    citationTemplate:
+      'AdLint detected duplicate conversion tracking — either GTM tags or Google Ads conversion actions counting the same business event more than once. Per Google\'s conversion tracking documentation, each business event should map to exactly one enabled, Primary conversion action. Duplicate tracking doubles reported conversion volume and value, corrupts Smart Bidding signal, and produces dashboards that diverge materially from backend reality. Recommended remediation: identify duplicate pairs, consolidate to a single canonical conversion action per event, and annotate the change for historical reporting context. Source: support.google.com/google-ads/answer/6386790.',
+    references: [
+      {
+        label: 'Google Ads — About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+      {
+        label: 'Google Ads — Troubleshoot duplicate conversions',
+        url: 'https://support.google.com/google-ads/answer/6386790',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['volume-weighted-duplicates', 'conversion-label-matching', 'tag-count-mismatch'],
   },
   {
@@ -337,9 +354,26 @@ export const explainers: CheckExplainer[] = [
     source: 'ads',
     severity: 'critical',
     summary: 'Purchase or sale conversion actions are configured with no revenue value.',
-    why: 'Zero-value purchases make revenue reporting and ROAS bidding unusable. Google Ads can still count conversions, but it cannot distinguish a $10 order from a $1,000 order. That pushes optimization toward volume instead of profit and can make high-revenue campaigns look no better than low-revenue ones.',
-    howToFix: 'For e-commerce, set the Google Ads conversion action to use different values for each conversion and pass the transaction value from GTM or your site tag. For lead generation, assign realistic lead values if you use value-based bidding, or keep these actions out of ROAS workflows. Verify that recent conversions show non-zero conversion value in Google Ads reports.',
+    directAnswer:
+      'One or more Google Ads purchase or sale conversion actions are configured with "Don\'t use a value" or with a fixed value of zero. The conversions count but carry no revenue signal, which means Smart Bidding cannot distinguish a $10 order from a $1,000 order — every conversion gets weighted equally regardless of business impact.',
+    why: 'Value-based bidding (tROAS, Maximize Conversion Value) is the dominant Google Ads bidding strategy for e-commerce because it lets the algorithm trade conversions for revenue: skip the $10 customer to win the $1,000 customer. The strategy only works if conversion actions carry their actual transaction value. When the value is zero, the algorithm has no information about which conversions to prioritise, falls back to count-based optimisation, and pushes budget toward whatever campaign produces the most cheap conversions — often at the expense of high-revenue traffic. The check is critical because the failure pattern is widespread (a 2024 industry survey found this in ~30% of audited e-commerce accounts) and the fix is straightforward but blocked on the data pipeline: the value has to flow from the site to GTM to the conversion tag to Google Ads.',
+    howToFix:
+      '1. In Google Ads, open Tools & Settings → Measurement → Conversions and select each flagged action. 2. Under "Value," change the setting to "Use different values for each conversion" (not a fixed value, not "Don\'t use a value"). 3. Verify the conversion tag in GTM passes a value parameter — typically `{{DLV - ecommerce.value}}` from a Data Layer Variable. If it doesn\'t, see the `missing-datalayer-variables` and `ecommerce-datalayer-structure` checks. 4. Set the default value field as a fallback for the rare case where the value cannot be resolved (e.g. average order value). 5. Verify in the next 7 days that the Google Ads report shows non-zero conversion values for the flagged actions before assuming the fix is complete.',
     example: 'Google Ads conversion value setting: Use different values for each conversion\nGTM value parameter: {{DLV - ecommerce.value}}',
+    citationTemplate:
+      'AdLint detected Google Ads purchase or sale conversion actions configured with zero conversion value. Per Google\'s value-based bidding documentation, automated bidding strategies (tROAS, Maximize Conversion Value) require non-zero per-conversion value to optimise toward revenue rather than volume. Zero-value purchases reduce these strategies to count-based optimisation, which can push budget toward low-revenue traffic. Recommended remediation: configure "Use different values for each conversion" and verify the value parameter flows from GTM to Google Ads in the next reporting cycle. Source: support.google.com/google-ads/answer/13064107.',
+    references: [
+      {
+        label: 'Google Ads — Set up conversion values',
+        url: 'https://support.google.com/google-ads/answer/13064107',
+      },
+      {
+        label: 'Google Ads — About value-based bidding',
+        url: 'https://support.google.com/google-ads/answer/7335652',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['roas-feasibility', 'roas-sanity', 'value-mismatch'],
   },
   {
@@ -348,10 +382,27 @@ export const explainers: CheckExplainer[] = [
     source: 'ads',
     severity: 'warning',
     summary: 'Google Ads has no enabled purchase or sale conversion action suitable as the primary bidding goal.',
-    why: 'Smart Bidding optimizes toward Primary conversions. If the actual business outcome is missing, disabled, or treated as Secondary, campaigns may optimize toward weaker actions such as page views, signups, or add-to-cart events. The account can look active while bidding is pointed at the wrong goal.',
-    howToFix: 'In Google Ads, choose the main business outcome and mark it Primary in the conversion goal settings. Keep diagnostic, micro, and imported backup actions as Secondary unless they should directly influence bidding. Confirm campaign goals include the selected primary action and exclude unrelated account-default goals.',
+    directAnswer:
+      'No enabled Google Ads conversion action in this account is suitable to serve as a Primary bidding goal — either nothing is marked Primary, or the actions marked Primary are micro-conversions (signups, page views, add-to-carts) rather than the macro business outcome. Smart Bidding optimises toward Primary actions, so campaigns are currently optimising toward the wrong target.',
+    why: 'Google Ads splits conversion actions into Primary (counted in the "Conversions" column, drives Smart Bidding) and Secondary (recorded for analysis, not bidding). When the macro action — usually Purchase for e-commerce, Lead for B2B — is absent, disabled, or set to Secondary, Smart Bidding finds no signal to optimise against and falls back to whichever Primary action exists, even if that action is a weak indicator of business value. The most common failure mode: a team enables "Add to Cart" as Primary "to give the algorithm more signal" and the campaigns proceed to drive cart-additions that never check out. The account looks active in reports but is not generating revenue proportional to spend.',
+    howToFix:
+      '1. In Google Ads, open Tools & Settings → Measurement → Conversion goals. 2. Identify the single business outcome that defines campaign success — Purchase for e-commerce, Lead/Form Submission for B2B, App Install + In-App Purchase for app campaigns. 3. Ensure that action is enabled and marked Primary in the Conversion goal settings. 4. Demote micro-actions (page view, scroll, add-to-cart, video-watch) to Secondary. They still report for analysis but do not influence Smart Bidding. 5. Open each active campaign\'s goal settings and confirm it inherits the account-default Primary goal — campaigns occasionally have their own goal overrides that bypass account-level changes.',
     example: 'Primary: Purchase\nSecondary: Add to cart, Begin checkout, Newsletter signup',
-    relatedChecks: ['micro-conversion-pollution', 'smart-bidding-volume'],
+    citationTemplate:
+      'AdLint detected that this Google Ads account has no enabled Primary conversion action suitable for value- or volume-based Smart Bidding. Per Google\'s conversion goal documentation, Smart Bidding optimises exclusively toward Primary conversions; the absence of a macro Primary action causes campaigns to optimise toward weaker proxies or to fall back to count-only strategies. Recommended remediation: identify the single macro business outcome, mark it Primary, and demote micro-conversions to Secondary. Source: support.google.com/google-ads/answer/12727548.',
+    references: [
+      {
+        label: 'Google Ads — About conversion goals',
+        url: 'https://support.google.com/google-ads/answer/12727548',
+      },
+      {
+        label: 'Google Ads — Primary vs Secondary conversion actions',
+        url: 'https://support.google.com/google-ads/answer/9143218',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['micro-conversion-pollution', 'smart-bidding-volume', 'no-primary-conversion'],
   },
   {
     id: 'smart-bidding-volume',
@@ -359,9 +410,26 @@ export const explainers: CheckExplainer[] = [
     source: 'ads',
     severity: 'warning',
     summary: 'The account may not have enough enabled primary conversion volume for stable Smart Bidding.',
-    why: 'Smart Bidding needs enough recent, consistent conversion signal to learn. Very low volume or no primary conversions forces the model to optimize from sparse data, delayed feedback, or secondary goals. That can create volatile CPA, slow learning periods, and budget movement based on noise.',
-    howToFix: 'Check the last 30 days of conversion volume for each primary action used by campaigns. Use Maximize Conversions or tCPA only when the primary action has enough regular volume, and avoid splitting the same event across many duplicate actions. If volume is low, consolidate goals or start with a broader but still meaningful conversion until the macro event has enough data.',
+    directAnswer:
+      'This account\'s Primary conversion volume is below the threshold Google recommends for stable Smart Bidding (~15-30 conversions per bidding portfolio per month). With sparse signal, automated bidding strategies like Target CPA and Target ROAS optimise from noise, produce volatile CPA, and enter extended learning periods after every change.',
+    why: 'Google\'s Smart Bidding algorithms learn from conversion patterns. With high volume (50+ per portfolio per month) the model converges quickly and bidding is stable. With low volume (under 15-30 per month) the model has too few data points to distinguish signal from noise, so every conversion is treated as evidence for a pattern that may not generalise. Symptoms: CPA swings wildly week-to-week, the "Learning" status sticks for 7-14 days after any change, and apparent campaign performance is dominated by which conversions happened to fire rather than what the campaign actually did. The recommended response is rarely "more aggressive bidding" — it is consolidation of conversion goals or a temporary switch to Maximize Clicks or a simpler bidding strategy until volume grows.',
+    howToFix:
+      '1. In Google Ads, open Tools & Settings → Measurement → Conversions and check the All conversions (last 30 days) for each Primary action. 2. If any Primary action has < 15 conversions per month per bidding portfolio: (a) consolidate duplicate actions (one canonical Primary per business event), (b) widen the conversion definition (e.g. count both "submitted lead" and "qualified lead" as one Primary if both are valuable), or (c) switch the campaign to Maximize Clicks or a non-Smart-Bidding strategy until volume builds. 3. If volume is healthy: this check is informational; no action needed. 4. Re-run after 30 days to see if the consolidation moved the account above the threshold.',
     example: 'Healthy target: 15-30+ primary conversions per month per bidding portfolio before aggressive tCPA or tROAS constraints',
+    citationTemplate:
+      'AdLint detected that this Google Ads account\'s Primary conversion volume is below the Google-recommended threshold for stable Smart Bidding (~15-30 conversions per bidding portfolio per month). Per Google\'s Smart Bidding learning documentation, sparse conversion data produces unstable CPA and prolonged learning periods. Recommended remediation: consolidate Primary actions, widen the conversion definition where appropriate, or use a simpler bidding strategy until volume builds. Source: support.google.com/google-ads/answer/7065882.',
+    references: [
+      {
+        label: 'Google Ads — About Smart Bidding',
+        url: 'https://support.google.com/google-ads/answer/7065882',
+      },
+      {
+        label: 'Google Ads — About the learning period for Smart Bidding',
+        url: 'https://support.google.com/google-ads/answer/12047999',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['missing-primary-conversion', 'micro-conversion-pollution'],
   },
   {
@@ -370,10 +438,27 @@ export const explainers: CheckExplainer[] = [
     source: 'ads',
     severity: 'warning',
     summary: 'Conversion click windows are shorter than the likely sales cycle.',
-    why: 'A window that is too short drops legitimate conversions that happen days or weeks after the click. This underreports campaigns with longer consideration cycles and makes upper-funnel or remarketing traffic look weaker than it is. Bidding then learns from incomplete feedback and can over-favor immediate converters.',
-    howToFix: 'Compare the click-through conversion window to the actual time from ad click to purchase or lead. In Google Ads conversion settings, extend the window for conversions with medium or long sales cycles, commonly to 14, 30, or 60 days depending on the business. Keep short windows only when purchases are genuinely immediate.',
+    directAnswer:
+      'One or more Google Ads conversion actions use a click-through window shorter than the typical click-to-conversion delay for this business. Conversions that happen after the window closes are not attributed to the ad click, which silently underreports campaign performance — especially for upper-funnel and remarketing traffic where delay is normal.',
+    why: 'Google Ads attribution windows define how long after an ad interaction a conversion can be credited to that interaction. The default click-through window varies by conversion type (90 days for most goals, shorter for some). When a team has manually shortened the window — usually during a previous "let\'s only count immediate conversions" initiative — the practical effect is that any conversion taking longer than that window simply doesn\'t exist in Google Ads reports. The campaign appears to perform worse than it does, Smart Bidding learns from incomplete feedback, and budget shifts away from campaigns whose real value shows up after the window expires. This is most damaging for B2B (long sales cycles), considered purchases (cars, mortgages, furniture), and any flow where the conversion involves a non-immediate decision.',
+    howToFix:
+      '1. Determine the real click-to-conversion delay for each conversion action — Google Ads → Reports → Predefined → Time → Time lag shows the distribution. 2. Pick a window that captures the 90th percentile of historical conversion lag. Typical values: 7-14 days for immediate direct-response purchases, 30 days for medium-cycle considered goods, 60-90 days for B2B leads and SaaS trials. 3. In Tools & Settings → Measurement → Conversions, edit each flagged action and update Click-through conversion window. 4. Annotate the change date — historical conversion counts will retroactively increase as previously-uncounted conversions enter the new window. 5. Wait one full cycle (60-90 days) before judging restored campaign performance against the new baseline.',
     example: 'Problem: B2B demo request uses a 3-day click window while the median click-to-lead delay is 12 days',
-    relatedChecks: ['model-attribution-drift', 'long-attribution-windows'],
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions with click-through attribution windows shorter than the typical click-to-conversion delay for this business. Per Google\'s attribution window documentation, conversions occurring after the window closes are not attributed to the ad click — producing systematic underreporting for any traffic source where conversion delay is normal. Recommended remediation: review historical conversion lag distribution in the Time Lag report and extend the click-through window to capture the 90th percentile of real conversion delay. Source: support.google.com/google-ads/answer/7065882.',
+    references: [
+      {
+        label: 'Google Ads — About conversion windows',
+        url: 'https://support.google.com/google-ads/answer/3123169',
+      },
+      {
+        label: 'Google Ads — About attribution reports',
+        url: 'https://support.google.com/google-ads/answer/6394265',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['model-attribution-drift', 'long-attribution-windows', 'attribution-window-mismatch'],
   },
   {
     id: 'vtc-click-ratio',
@@ -618,10 +703,23 @@ export const explainers: CheckExplainer[] = [
     source: 'ads',
     severity: 'warning',
     summary: 'Enabled conversion actions use click-through windows that do not match the selected sales cycle context.',
-    why: 'Google Ads uses the conversion window to decide how long after an ad interaction a conversion can still be attributed to that interaction. A short window on a long-consideration purchase drops legitimate conversions before they can be reported, which makes upper-funnel and remarketing campaigns look weaker than they are. A long window on an immediate purchase can pull in delayed activity that is less likely to be caused by the click. Either mismatch changes the conversion data used by automated bidding and makes period-over-period reporting harder to defend.',
-    howToFix: 'In Google Ads, open Tools & Settings -> Measurement -> Conversions, then select each flagged conversion action. Edit the click-through conversion window to match the real buying cycle: short direct-response actions often fit 7 to 14 days, medium cycles often need 30 days, and long B2B or considered purchases may need 60 to 90 days. Keep related conversion actions on comparable windows so campaign and goal reporting do not mix incompatible assumptions. After the change, annotate the date and review conversion lag before judging performance.',
+    directAnswer:
+      'One or more Google Ads conversion actions use click-through windows misaligned with the sales-cycle context configured in the audit (short window on a long-consideration purchase, or vice versa). Either direction degrades data quality: a window too short drops valid conversions; a window too long pulls in delayed activity that is unlikely to be ad-attributable.',
+    why: 'A conversion window is a tradeoff between completeness and causal cleanliness. Short windows are tighter on causality (the click probably caused this conversion) but lose late conversions. Long windows recover late conversions but increasingly include conversions that would have happened anyway. The right window depends on the actual click-to-conversion delay for the business — not on a default, and not on what feels intuitive. AdLint compares each conversion action\'s window against the sales-cycle context the user set during audit configuration (short / medium / long) and flags mismatches. The damage is bidirectional: short windows on B2B campaigns make remarketing look bad; long windows on impulse-purchase categories inflate apparent campaign effectiveness with conversions that would have happened anyway.',
+    howToFix:
+      '1. AdLint\'s details show each flagged action and the mismatch direction. 2. For short-on-long mismatches: extend the click-through window using the time-lag distribution in Google Ads Reports as the guide (target the 90th percentile). 3. For long-on-short mismatches: shorten the window so it captures the realistic causal window — for an impulse purchase that almost always converts within 24 hours, a 90-day window is mostly noise. 4. Update click-through windows in Tools & Settings → Measurement → Conversions. 5. Annotate the change date and wait one full cycle before judging performance against the new baseline.',
     example: 'Problem: Demo Request uses a 7-day click window with a long sales cycle\nBetter: Demo Request click-through conversion window = 60 days',
-    relatedChecks: ['short-attribution-windows', 'model-attribution-drift', 'smart-bidding-volume'],
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions with click-through windows misaligned to the sales cycle. Per Google\'s attribution window documentation, the window should reflect the real click-to-conversion delay distribution; mismatches systematically distort campaign performance reporting and Smart Bidding signal. Recommended remediation: align click-through windows to the 90th percentile of historical conversion lag and re-baseline campaigns after one full cycle. Source: support.google.com/google-ads/answer/3123169.',
+    references: [
+      {
+        label: 'Google Ads — About conversion windows',
+        url: 'https://support.google.com/google-ads/answer/3123169',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['short-attribution-windows', 'long-attribution-windows', 'model-attribution-drift', 'smart-bidding-volume'],
   },
   {
     id: 'cross-domain-tracking',
@@ -657,10 +755,27 @@ export const explainers: CheckExplainer[] = [
     source: 'ads',
     severity: 'critical',
     summary: 'Google Ads conversion actions are reporting values in more than one currency code.',
-    why: 'Google conversion tags and imports support currency values, but value-based reporting assumes the account team knows what unit each value represents. Mixing USD, CAD, EUR, or blank currencies inside the same conversion set can make ROAS and conversion value totals impossible to reconcile against the store or CRM. It can also make automated bidding compare revenue signals that are not economically equivalent. This is a critical measurement issue because the conversion count may look fine while the value column is no longer a dependable business metric.',
-    howToFix: 'In Google Ads, open Tools & Settings -> Measurement -> Conversions and inspect the value settings for each flagged action. For GTM-managed website conversions, open GTM -> Workspace -> Tags -> the Google Ads Conversion Tracking tag and set Currency Code to the same ISO code used by the site revenue system, usually through a Data Layer Variable such as ecommerce.currency. For imports, standardize the Conversion Currency column before upload. Re-test one purchase or import row per currency path and confirm Google Ads reports the expected currency code.',
+    directAnswer:
+      'Conversion actions in this account are reporting values in more than one currency — USD, EUR, CAD, or blank currencies mixed within the same conversion set. Google Ads does not normalise across currencies for bidding, so Smart Bidding is treating a €100 conversion as equivalent to a $100 conversion, and aggregate ROAS reports are economically meaningless.',
+    why: 'Google Ads supports per-conversion currency codes, but the system assumes the account team configures them consistently. When mixed currencies appear within the same conversion action, two things break. First, value-based bidding (tROAS) compares values directly — €100 and $100 are summed as 200 — corrupting the optimisation signal. Second, dashboards that report "conversion value" become impossible to reconcile against the e-commerce backend, because the displayed total mixes currencies. This is most common in three patterns: multi-region e-commerce sites that send the local currency without normalising, GTM containers where the currency code is hardcoded but the value passes through, and Google Ads conversion imports where the Currency column was forgotten or filled inconsistently. The check is critical because the failure undermines every value-based report and bidding decision until fixed.',
+    howToFix:
+      '1. Decide the account-level reporting currency (usually the company\'s reporting currency, not the customer\'s). 2. For GTM-managed conversions: open the Google Ads Conversion Tracking tag and set Currency Code to a Data Layer Variable that resolves to the correct ISO code (typically `{{DLV - ecommerce.currency}}`). 3. For multi-region sites: either (a) pass the local currency consistently and let Google Ads convert at the daily exchange rate, or (b) normalise to the reporting currency on the site before pushing to dataLayer. Document which approach you chose. 4. For Google Ads conversion imports: standardise the Currency column before every upload — empty currency defaults can be inconsistent across import sessions. 5. Verify a test conversion in Google Ads → Conversions and confirm the Currency column shows the expected code.',
     example: 'Expected currency code: USD\nGTM Currency Code field: {{DLV - ecommerce.currency}}\ndataLayer value: ecommerce.currency = "USD"',
-    relatedChecks: ['zero-value-purchases', 'mismatched-values', 'roas-sanity'],
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions reporting values in more than one currency code. Per Google\'s conversion value documentation, value-based bidding and reporting assume consistent currency within each conversion action; mixed currencies corrupt aggregate ROAS calculations and Smart Bidding signal. Recommended remediation: standardise on the account reporting currency or pass per-conversion currency consistently and verify in Google Ads reports. Source: support.google.com/google-ads/answer/2998565.',
+    references: [
+      {
+        label: 'Google Ads — Set up conversion values',
+        url: 'https://support.google.com/google-ads/answer/13064107',
+      },
+      {
+        label: 'Google Ads — Currency conversion in conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/2998565',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['zero-value-purchases', 'value-mismatch', 'roas-sanity'],
   },
   {
     id: 'debug-tags-in-production',
@@ -724,10 +839,27 @@ export const explainers: CheckExplainer[] = [
     source: 'ads',
     severity: 'info',
     summary: 'One or more enabled conversion actions use data-driven attribution and need volume review in Google Ads.',
-    why: 'Google Ads data-driven attribution assigns credit based on observed paths rather than a fixed rule, and Google positions it as a model that uses account performance data when enough signal is available. If a low-volume action is set to data-driven attribution, the model may be noisy or unavailable for the decision the team is trying to make. The practical risk is interpretation: bidding and reporting can be discussed as if the model is precise when the underlying conversion action has too little recent activity. This check is informational because eligibility and modeling status must be confirmed in the Google Ads UI.',
-    howToFix: 'In Google Ads, open Tools & Settings -> Measurement -> Attribution, then review conversion actions on the Switch to DDA or attribution model screens. For each flagged action, confirm Google Ads marks it eligible and that recent conversion volume is sufficient for the business decision being made. If volume is weak, consolidate duplicate actions, keep the macro action Primary, or use a simpler attribution model until the action has steadier data. Document the selected model so reporting, bidding, and client-facing decks use the same attribution assumption.',
+    directAnswer:
+      'One or more conversion actions in this account use Data-Driven Attribution (DDA), which assigns credit using machine-learned path analysis. DDA requires enough recent conversion volume to produce stable credit assignment; below that threshold, the model is noisy or falls back to last-click, making attribution-based decisions unreliable.',
+    why: 'Data-Driven Attribution is Google\'s ML-based alternative to fixed rules like last-click or linear. It learns from observed conversion paths in the account and assigns fractional credit to each touchpoint. The model is powerful when given enough data — Google has historically required several hundred conversions and several thousand ad interactions within 30 days for DDA to fully activate, though the exact thresholds have evolved. Below threshold, DDA either falls back to a simpler model behind the scenes or produces unstable credit assignments that swing between reporting periods. The risk is interpretation: teams discuss DDA-attributed credit as if it is precise ("Campaign X gets 35% credit") when the underlying model may be running on too little signal to support that precision. This check is info-level because eligibility status is only visible in the Google Ads UI itself; AdLint can flag the configuration but not verify the model state.',
+    howToFix:
+      '1. In Google Ads, open Tools & Settings → Measurement → Attribution. 2. For each flagged conversion action, check the model status and recent volume. DDA-eligible actions show a green status; ineligible or low-volume actions show a warning. 3. If a flagged action is showing insufficient volume: (a) consolidate duplicate conversion actions (one canonical Primary per business event), or (b) temporarily switch to a simpler attribution model (Position-based, Linear, or Last-click) while volume builds. 4. Document the attribution model chosen for each action — reporting, bidding, and client-facing decks should all use the same attribution assumption to avoid confusion.',
     example: 'Review target: Purchase\nAttribution model: Data-driven\nRecent volume: confirm eligibility and stability in Google Ads Attribution before relying on the model',
-    relatedChecks: ['model-attribution-drift', 'attribution-window-mismatch', 'smart-bidding-volume'],
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions configured with Data-Driven Attribution. Per Google\'s attribution model documentation, DDA requires sustained conversion volume to produce stable credit assignment; low-volume actions may fall back to simpler models behind the scenes, making attribution-based reporting unreliable. Recommended remediation: verify eligibility status in Google Ads Attribution, consolidate duplicate actions if volume is insufficient, and document the chosen model in team reporting materials. Source: support.google.com/google-ads/answer/6394265.',
+    references: [
+      {
+        label: 'Google Ads — About attribution models',
+        url: 'https://support.google.com/google-ads/answer/6394265',
+      },
+      {
+        label: 'Google Ads — About Data-driven attribution',
+        url: 'https://support.google.com/google-ads/answer/6394265#dda',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['model-attribution-drift', 'attribution-window-mismatch', 'smart-bidding-volume', 'inconsistent-attribution-models'],
   },
   {
     id: 'conversion-naming-alignment',
@@ -1365,6 +1497,553 @@ export const explainers: CheckExplainer[] = [
     howToFix: 'Send the same deduplication ID on matching Snap Pixel and Conversions API events, normally derived from the order ID, lead ID, or event ID. Confirm server-side volume appears for key events such as PURCHASE and SIGN_UP. Standardize currency on the value events and validate a real transaction against the value and currency shown in Events Manager.',
     example: 'PURCHASE event_id: order-10492\nPixel currency: USD\nCAPI currency: USD',
     relatedChecks: ['snapchat-pixel-id-format', 'snapchat-purchase-missing-value'],
+  },
+  {
+    id: 'wrong-counting-method',
+    name: 'Wrong Conversion Counting Method',
+    source: 'ads',
+    severity: 'warning',
+    summary: 'A conversion action uses a counting method that does not match its business intent.',
+    directAnswer:
+      'One or more Google Ads conversion actions use a counting method that does not match the underlying business event. Lead-style actions (form submits, signups) should typically use "One" — count one conversion per click no matter how many times the user submits. Sale-style actions (purchases, transactions) should use "Every" — count every transaction. AdLint flags this when the configured counting method is the opposite of what the category implies.',
+    why: 'Google Ads offers two counting methods: "Every conversion" counts every event (the right choice for sales, where a customer who buys twice should be counted twice), and "One conversion" counts at most one per click (the right choice for leads, where a user submitting the form three times is still one lead). Misconfigured counting inflates or deflates conversion volume in ways that look like real performance change. A lead form set to "Every" doubles or triples lead counts when users retry submissions; a sale set to "One" undercounts repeat purchases from the same click path. Smart Bidding then optimises against the wrong volume signal.',
+    howToFix:
+      '1. AdLint flags each action and the recommended counting method. 2. In Google Ads, open Tools & Settings → Measurement → Conversions and edit each flagged action. 3. Under Counting, set "One" for lead-style actions and "Every" for sale-style actions. 4. Annotate the change date — historical volume will retroactively adjust under the new counting method in some reports. 5. Re-baseline campaign performance after one full conversion cycle.',
+    example: 'Lead - Demo Request\nRecommended counting: One\nCurrent: Every (counts every form submit even if same user submits 3 times)',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions with counting methods misaligned to the business event type. Per Google\'s conversion counting documentation, "One conversion" is recommended for lead-style actions and "Every conversion" for sale-style actions. Misconfigured counting produces systematically inflated or deflated volume that corrupts campaign performance reporting and Smart Bidding signal. Recommended remediation: align counting method to the conversion category and re-baseline after one full cycle. Source: support.google.com/google-ads/answer/3438531.',
+    references: [
+      { label: 'Google Ads — Choose a counting setting for your conversions', url: 'https://support.google.com/google-ads/answer/3438531' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['duplicate-conversions', 'struct-counting-category-mismatch'],
+  },
+  {
+    id: 'long-attribution-windows',
+    name: 'Attribution Window Too Long',
+    source: 'ads',
+    severity: 'info',
+    summary: 'Conversion click windows are longer than the realistic causal window for the business.',
+    directAnswer:
+      'One or more conversion actions use click-through windows longer than the realistic causal window for this business. Long windows recover late conversions but increasingly attribute conversions to clicks that may have had no influence — a user who clicked an ad 87 days ago and bought today probably would have bought anyway. The result: inflated reported campaign value and weaker correlation between ad spend and revenue.',
+    why: 'Attribution windows are a tradeoff between recovering delayed conversions and maintaining causal cleanliness. A 90-day window is appropriate for B2B SaaS sales cycles where the click really might still be influencing the eventual decision. For an impulse purchase where the median conversion lag is two hours, a 90-day window means most of the credit is going to clicks that have no causal relationship to the conversion — they happen to fall in the window. This inflates campaign performance reports and biases attribution toward channels that show up earlier in the path, regardless of whether they actually drove the outcome. The check is info-level because "too long" is harder to defend than "too short" — but worth reviewing when the time-lag distribution shows most conversions happen within hours or days.',
+    howToFix:
+      '1. In Google Ads → Reports → Predefined → Time → Time lag, check the conversion-lag distribution. 2. If 95% of conversions happen within N days, consider tightening the click-through window to roughly 2× that figure to capture realistic outliers while excluding likely-coincidental late attributions. 3. Update the click-through window in Tools & Settings → Measurement → Conversions. 4. Annotate the change date and re-baseline campaign reports.',
+    example: 'Problem: Impulse-purchase e-commerce uses 90-day click window. 95% of conversions occur within 3 days.\nBetter: 7-day click-through window captures realistic outliers without over-attributing.',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions with click-through windows materially longer than the realistic causal window for the business. Per Google\'s attribution window documentation, the appropriate window depends on the actual time-lag distribution; windows that exceed it inflate reported campaign value through coincidental late attributions. Recommended remediation: review time-lag distribution and tighten click-through windows to roughly 2× the 95th percentile of historical conversion delay. Source: support.google.com/google-ads/answer/3123169.',
+    references: [
+      { label: 'Google Ads — About conversion windows', url: 'https://support.google.com/google-ads/answer/3123169' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['short-attribution-windows', 'attribution-window-mismatch'],
+  },
+  {
+    id: 'disabled-high-value-conversions',
+    name: 'Disabled High-Value Conversion Actions',
+    source: 'ads',
+    severity: 'warning',
+    summary: 'High-value conversion actions are disabled even though they have recent volume.',
+    directAnswer:
+      'One or more Google Ads conversion actions are currently disabled despite having significant historical conversion value. The disabled actions are not feeding Smart Bidding, and the underlying business outcome is invisible to optimisation. Either re-enable them or move the value capture to a different active action.',
+    why: 'Conversion actions get disabled for legitimate reasons — a deprecated event, a discontinued lead form, a tracking method being phased out. But disabled actions sometimes get left in that state long after they should have been replaced, particularly when the replacement was set up under a new conversion ID but the old one captured the historically-significant volume. The damage: bidding strategies no longer see signal from a real revenue stream, and campaign reports that filter by conversion goal silently exclude meaningful activity. The check flags actions that were disabled but show enough historical value to suggest they are still load-bearing.',
+    howToFix:
+      '1. AdLint\'s details list each disabled action and its historical conversion value. 2. For each one: is the action genuinely retired (and is a replacement live)? Re-enable if not. 3. If a replacement exists: confirm it is configured Primary, configured with values, and present in the active campaign goal lists. 4. If the action is truly deprecated: add a note to the Description field explaining when and why, and consider archiving the historical data. 5. Re-run AdLint after the cleanup to confirm the finding clears.',
+    example: 'Disabled action: Purchase (legacy)\nHistorical conversion value (last 90 days while enabled): $480,000\nStatus: disabled 60 days ago, no replacement configured.\nRecommended action: re-enable or verify replacement.',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions in disabled state despite materially significant historical conversion value. Per Google\'s conversion action documentation, disabled actions do not contribute to Smart Bidding or current reporting; high-value disabled actions usually indicate an incomplete migration to a replacement. Recommended remediation: confirm a replacement action is active and capturing equivalent value, or re-enable the disabled action and document its current purpose. Source: support.google.com/google-ads/answer/1722054.',
+    references: [
+      { label: 'Google Ads — Edit your conversion actions', url: 'https://support.google.com/google-ads/answer/1722054' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['missing-primary-conversion', 'many-inactive-conversions'],
+  },
+  {
+    id: 'inconsistent-attribution-models',
+    name: 'Inconsistent Attribution Models',
+    source: 'ads',
+    severity: 'warning',
+    summary: 'Conversion actions across the account use mixed attribution models in ways that confuse reporting.',
+    directAnswer:
+      'Different conversion actions in this account use different attribution models — some Data-Driven, some Last-Click, some Position-Based. When these actions roll up into the same campaign or goal report, the displayed conversion value mixes attribution logic in ways that make period-over-period comparison and bidding decisions unreliable.',
+    why: 'Google Ads lets each conversion action pick its attribution model independently. This flexibility is useful (DDA for high-volume actions, simpler models for low-volume ones) but produces silent reporting inconsistency: a "total conversion value" that is the sum of values calculated under different attribution logics is not a meaningful number. Campaigns reporting against mixed-attribution goals show metrics that move not because performance changed, but because the relative volume of differently-attributed actions shifted. Bidding strategies optimise against the mixed signal and produce inconsistent CPA across similar campaigns.',
+    howToFix:
+      '1. List every enabled Primary conversion action and its current attribution model (Tools & Settings → Measurement → Conversions → Attribution column). 2. Decide the account-level attribution philosophy: either standardise on Data-Driven (preferred when every Primary has sufficient volume), Position-Based (a reasonable middle ground), or Last-Click (simplest, most rule-based). 3. Update each Primary action to use the chosen model. 4. Document the chosen model in the team\'s measurement playbook so future conversion actions inherit it by default. 5. Annotate the change date for period-over-period reporting clarity.',
+    example: 'Problem:\n  Purchase: Data-Driven\n  Lead: Last-Click\n  Demo Request: Position-Based\nFix: standardise on Data-Driven (or document why each is different).',
+    citationTemplate:
+      'AdLint detected Google Ads Primary conversion actions configured with mixed attribution models. Per Google\'s attribution documentation, mixed models produce report-level totals that combine attribution logics in ways that cannot be meaningfully compared period-over-period or used by Smart Bidding without distortion. Recommended remediation: standardise Primary actions on a single attribution model (preferably Data-Driven where volume supports it) and document the choice in team materials. Source: support.google.com/google-ads/answer/6394265.',
+    references: [
+      { label: 'Google Ads — About attribution models', url: 'https://support.google.com/google-ads/answer/6394265' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['data-driven-eligibility', 'suboptimal-attribution-model', 'struct-attribution-chaos'],
+  },
+  {
+    id: 'lead-conversions-with-values',
+    name: 'Lead Conversions Assigned Revenue Values',
+    source: 'ads',
+    severity: 'warning',
+    summary: 'Lead-style conversion actions (form submits, signups) have monetary values configured.',
+    directAnswer:
+      'One or more lead-style conversion actions (form submits, demo requests, signups) are configured with monetary values. Unless the team has consciously assigned a "lead value" for value-based bidding, this is almost always accidental: a sale-conversion template was copy-pasted and the value field was forgotten. The result is Smart Bidding treating leads as direct revenue and over-prioritising lead campaigns against actual sales.',
+    why: 'Value-based bidding (tROAS, Maximize Conversion Value) sums conversion values across all Primary actions when optimising. If a lead action carries a $100 value alongside a $129 purchase, the algorithm sees both as comparable revenue events. The lead is almost always less valuable than the purchase — the actual closing rate is usually 5-20% — so treating them as equal pushes budget toward lead campaigns at the expense of sales campaigns. The intended pattern for lead-value-based bidding is to assign a calculated value (lead × closing rate × average sale) so the lead value approximates the revenue contribution, not the eventual sale revenue. AdLint flags lead-style categories with unexpected values; the team should either remove the value or document the calculation behind it.',
+    howToFix:
+      '1. AdLint\'s details list each lead-style action with values and the value range. 2. Decide for each: is this an intentional "lead value" set to a calculated approximation (lead × closing rate × ARPU)? If yes, document the calculation. 3. If accidental: in Tools & Settings → Measurement → Conversions, edit the action and change Value to "Don\'t use a value" or set a default that reflects expected lead revenue (typically $5-$50 per lead, not full-purchase amounts). 4. Re-test conversion imports and bidding behaviour after the change.',
+    example: 'Problem: Lead - Demo Request configured with value = $129 (copied from purchase template)\nFix: change to "Don\'t use a value," OR calculate lead value (e.g. 10% close rate × $129 = $12.90 lead value).',
+    citationTemplate:
+      'AdLint detected Google Ads lead-style conversion actions configured with monetary values inconsistent with typical lead-value methodology. Per Google\'s value-based bidding documentation, lead values should approximate the revenue contribution of a lead (closing rate × average sale), not the full sale amount. Misconfigured lead values cause Smart Bidding to over-prioritise lead campaigns against actual sales campaigns. Recommended remediation: remove values from lead actions or document a clearly-calculated lead-value methodology. Source: support.google.com/google-ads/answer/13064107.',
+    references: [
+      { label: 'Google Ads — Set up conversion values', url: 'https://support.google.com/google-ads/answer/13064107' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['zero-value-purchases', 'fixed-value-dynamic-revenue', 'value-consistency-by-category'],
+  },
+  {
+    id: 'unusual-categories',
+    name: 'Unusual or Other-Category Conversion Actions',
+    source: 'ads',
+    severity: 'info',
+    summary: 'A high share of conversion actions use the "Other" category rather than a specific, documented type.',
+    directAnswer:
+      'A meaningful share of this account\'s conversion actions are categorised as "Other" rather than a specific Google Ads category (Purchase, Lead, Submit Lead Form, Sign-up, etc.). The "Other" category disables several Google Ads features — including the per-category bidding optimisations, automatic value-based recommendations, and category-aware reporting filters.',
+    why: 'Google Ads uses the Category field to apply category-specific bidding intelligence and reporting features. "Lead" actions get lead-form ad integration; "Purchase" actions get e-commerce reporting layouts and ROAS bidding optimisations. "Other" exists as a fallback when no specific category applies, but it gets none of the category-specific features. When teams use "Other" reflexively because they are not sure which specific category fits, the account loses meaningful optimisation surface. The check is info-level because the right category sometimes genuinely is "Other" — but a high share of Other usually indicates conversion-action setup happened quickly without considering category implications.',
+    howToFix:
+      '1. In Tools & Settings → Measurement → Conversions, review each "Other" action. 2. For each, ask: does a more specific category fit? Most "Other" actions are really Purchases, Leads, Sign-ups, Page views, or Engagement actions. 3. Update the Category field to the more specific value. 4. Re-check campaign goal settings — some category changes alter how the action rolls into Conversion goals.',
+    example: 'Problem: 8 of 12 Primary conversion actions are categorised "Other"\nBetter: re-categorise to Purchase (5), Lead (2), Page view (1), leaving 4 truly-other.',
+    citationTemplate:
+      'AdLint detected a high share of Google Ads conversion actions categorised as "Other" rather than specific categories. Per Google\'s conversion category documentation, the "Other" category disables category-specific bidding optimisations, value recommendations, and reporting features. Recommended remediation: review each "Other" action and re-categorise to the most specific applicable category. Source: support.google.com/google-ads/answer/2425971.',
+    references: [
+      { label: 'Google Ads — Set up your conversion action', url: 'https://support.google.com/google-ads/answer/6095821' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['struct-category-name-mismatch', 'conversion-name-quality'],
+  },
+  {
+    id: 'many-inactive-conversions',
+    name: 'Many Inactive Conversion Actions',
+    source: 'ads',
+    severity: 'info',
+    summary: 'The account has accumulated a large number of inactive or zero-volume conversion actions.',
+    directAnswer:
+      'This account has accumulated many conversion actions that show no recent volume — they exist in Tools & Settings → Measurement → Conversions but have not fired in 30+ days. Inactive actions clutter campaign goal selection, slow down audits, and create the risk that a future engineer wires a new campaign to a long-dead action by mistake.',
+    why: 'Conversion actions accumulate in mature accounts the same way unused variables accumulate in mature GTM containers — from migrations, A/B tests, replaced tracking methods, and abandoned campaigns. The runtime cost is zero, but the operational cost compounds: every new campaign\'s goal-selection dialog includes the dead actions, every audit takes longer to reason about, and the chance that someone selects a defunct action increases with each one left in place. The check is info-level, but well-governed accounts run quarterly cleanups to keep the list manageable.',
+    howToFix:
+      '1. AdLint\'s details list inactive actions with their last-fired date. 2. For each: confirm no upcoming campaign depends on it. 3. Archive (do not delete) — archiving preserves historical reporting context and is reversible. 4. Make quarterly review of inactive actions part of the team\'s measurement governance cycle. 5. Re-run AdLint after the cleanup to confirm the count drops.',
+    example: 'Inactive conversion actions (no fires in 30+ days): 18 of 47 total\nRecommended action: archive 18 after confirming no campaign dependencies.',
+    citationTemplate:
+      'AdLint detected many inactive Google Ads conversion actions in this account. Per Google\'s conversion management documentation, inactive actions add operational friction to campaign goal selection and audit cycles without contributing to current measurement. Recommended remediation: archive (not delete) inactive actions after confirming no campaign dependencies, and adopt a quarterly review cadence. Source: support.google.com/google-ads/answer/1722054.',
+    references: [
+      { label: 'Google Ads — Edit your conversion actions', url: 'https://support.google.com/google-ads/answer/1722054' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['disabled-high-value-conversions', 'stale-tags'],
+  },
+  {
+    id: 'no-primary-conversion',
+    name: 'No Primary Conversion Action',
+    source: 'ads',
+    severity: 'critical',
+    summary: 'The account has no enabled Primary conversion action — Smart Bidding has nothing to optimise toward.',
+    directAnswer:
+      'This Google Ads account currently has no enabled Primary conversion action at all. Every conversion action is either disabled or set to Secondary, which means Smart Bidding has zero signal to optimise toward. Campaigns using Maximize Conversions, Target CPA, or Target ROAS are effectively bidding blind.',
+    why: 'Google Ads requires at least one enabled Primary conversion action for value- or volume-based Smart Bidding to function. When none exists — usually because all Primary actions were demoted to Secondary during a measurement migration that did not finish — Smart Bidding strategies cannot learn or optimise. The account often appears to be bidding normally because the spend goes out and clicks come in, but conversion-aware optimisation is not happening. This is the most severe configuration failure in this audit class because it is invisible from any standard report and silently makes every automated bidding decision arbitrary.',
+    howToFix:
+      '1. In Tools & Settings → Measurement → Conversions, mark at least one enabled conversion action as Primary — the macro business outcome (Purchase, Lead, etc.). 2. Verify every active campaign\'s goal settings include the newly-Primary action. 3. Allow 7-14 days for Smart Bidding to re-enter normal learning before judging performance. 4. This is critical: address this finding before making any other changes from this audit, since they all depend on Smart Bidding having signal to work with.',
+    example: 'All conversion actions: Secondary\nPrimary actions: 0\nFix: mark the canonical macro action (Purchase or Lead) as Primary.',
+    citationTemplate:
+      'AdLint detected that this Google Ads account has no enabled Primary conversion action. Per Google\'s Smart Bidding documentation, value- and volume-based bidding strategies require at least one Primary action to function; without one, automated bidding cannot learn from conversion signal. Recommended remediation: immediately mark the canonical macro business outcome as Primary and verify campaign-level goal inheritance. Source: support.google.com/google-ads/answer/12727548.',
+    references: [
+      { label: 'Google Ads — About conversion goals', url: 'https://support.google.com/google-ads/answer/12727548' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['missing-primary-conversion', 'smart-bidding-volume', 'struct-attribution-chaos'],
+  },
+  {
+    id: 'conversion-name-quality',
+    name: 'Conversion Name Quality',
+    source: 'ads',
+    severity: 'info',
+    summary: 'Conversion action names are non-descriptive or do not encode their source and category.',
+    directAnswer:
+      'Several conversion action names in this account are non-descriptive — generic strings like "Conversion 1," "Lead," or "Website Lead Action 2025-03." These names make audits harder because a reviewer cannot tell from the name alone what business event the action represents or which source it pulls from.',
+    why: 'Conversion action names are the primary signal a reviewer uses to understand the measurement layer of an account. Names like "Conversion 1" force the reviewer to open each action and inspect the source, category, and configuration before they can reason about anything else. Well-named actions encode the business event, the source, and where relevant the category — "Purchase — Website" or "Lead — HubSpot Import" tells the auditor everything they need in five words. The check is info-level governance, but consistently-named accounts audit 3-4× faster than inconsistently-named ones.',
+    howToFix:
+      '1. Adopt a naming convention. Recommended pattern: `<Event> — <Source>` (e.g. "Purchase — Website," "Lead — Salesforce Import," "Sign-up — App"). 2. Rename existing actions. Renaming is non-destructive — it does not affect historical reporting or campaign wiring. 3. Document the convention so new actions follow it by default. 4. Treat naming as a publish-gating governance check at the team level.',
+    example: 'Inconsistent: Conversion 1, Lead, Website Lead Action 2025-03\nBetter: Purchase — Website, Lead — Salesforce, Sign-up — App',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions with non-descriptive names that do not encode the business event, source, or category. Per industry-standard measurement governance, conversion action names are the primary auditor signal for understanding the measurement layer; non-descriptive names slow every audit and increase the risk of campaigns being wired to the wrong action. Recommended remediation: adopt a `<Event> — <Source>` naming convention and rename existing actions. Source: support.google.com/google-ads/answer/6095821.',
+    references: [
+      { label: 'Google Ads — Set up your conversion action', url: 'https://support.google.com/google-ads/answer/6095821' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['struct-naming-convention', 'unusual-categories'],
+  },
+  {
+    id: 'conversion-source-consistency',
+    name: 'Conversion Source Consistency',
+    source: 'ads',
+    severity: 'info',
+    summary: 'Conversion actions for the same business event are configured with inconsistent sources (website vs import vs phone).',
+    directAnswer:
+      'Multiple conversion actions in this account track what appears to be the same business event but report different sources — some Website (tag-fired), some Import (offline upload), some Phone Calls. Without explicit deduplication, the same conversion can be counted across sources and inflate measurement.',
+    why: 'A purchase tracked via the website conversion tag AND uploaded via offline conversion import is the same conversion counted twice. Google Ads does not automatically deduplicate across sources — that is the team\'s responsibility. The most common pattern is a website-tag-based conversion that is also enriched via offline import for value updates (legitimate, but the import should update, not duplicate). When two source-distinct actions exist for the same event, every Smart Bidding cycle and every report doubles the affected event. The check identifies same-event-different-source patterns; the team must decide whether the duplication is intentional value enrichment or accidental double-counting.',
+    howToFix:
+      '1. AdLint\'s details list same-event candidates and their sources. 2. For each pair, decide: is the import enriching the website tag with offline updates (legitimate, configure import to update existing conversions not create new ones), or is it a separate accidental action? 3. Where accidental: archive the redundant action and consolidate on the canonical one. 4. Where intentional enrichment: ensure the import is configured with "Update conversions" mode rather than "Create new conversions" — Google Ads → Tools & Settings → Conversions → Imports.',
+    example: 'Same-event candidates:\n  Purchase — Website (tag-based)\n  Purchase — Offline Import (CRM upload)\nDecision: ensure the import updates the existing Website conversion rather than creating a new one.',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions for the same business event configured with inconsistent sources (Website, Import, Phone Calls). Per Google\'s offline conversion import documentation, multiple sources for the same event must be explicitly configured to update existing conversions rather than create new ones, or they will count the same event multiple times. Recommended remediation: identify same-event-different-source pairs and either consolidate or configure the import in Update mode. Source: support.google.com/google-ads/answer/2998031.',
+    references: [
+      { label: 'Google Ads — Import offline conversions', url: 'https://support.google.com/google-ads/answer/2998031' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['duplicate-conversions', 'struct-semantic-duplicates'],
+  },
+  {
+    id: 'conversion-delay-impact',
+    name: 'Conversion Reporting Delay',
+    source: 'ads',
+    severity: 'info',
+    summary: 'A meaningful share of conversions are imported with significant delay after the click, affecting Smart Bidding learning speed.',
+    directAnswer:
+      'A significant share of conversions in this account are reported with substantial delay after the click — typically because they come from offline imports or attribution windows that allow late conversions. Smart Bidding\'s learning speed is gated on how fresh the feedback signal is; high reporting lag means the algorithm is making decisions based on a stale picture.',
+    why: 'Smart Bidding learns from observed click → conversion outcomes. When conversions are reported within minutes of the click (typical for direct-response e-commerce), the algorithm adjusts quickly and converges on stable performance within days. When conversions take weeks to report (typical for B2B with offline conversion imports from CRM), the algorithm cannot react to recent campaign changes for weeks at a time — adjustments made today are scored against conversions whose corresponding clicks happened a month ago. The check is info-level because the lag is often unavoidable for the business type, but flagging it helps the team set realistic expectations about how fast bidding can respond to changes.',
+    howToFix:
+      '1. Review the time-lag distribution in Google Ads → Reports → Time → Time lag. 2. If most conversions are imported via CRM with high lag: consider feeding qualified-lead signals earlier in the funnel (e.g. lead-quality-score updates the day after the lead is captured, rather than waiting for the deal to close 30 days later). 3. Use conversion modelling features where available — Google\'s modelled conversions fill in gaps for users who declined consent or where attribution paths are missing. 4. Set realistic learning-period expectations: a high-lag account may take 30-60 days to stabilise after every bidding change, vs 7-14 for low-lag accounts.',
+    example: 'Median click → conversion lag: 28 days\nImpact: Smart Bidding learning period extends to ~45 days post-change. Plan changes accordingly.',
+    citationTemplate:
+      'AdLint detected substantial conversion-reporting delay in this Google Ads account. Per Google\'s Smart Bidding learning documentation, conversion feedback latency directly extends the learning period after bidding changes; high-lag accounts have longer learning cycles and slower response to campaign adjustments. Recommended remediation: report earlier funnel signals where possible, leverage modelled conversions, and set realistic learning-period expectations in team planning. Source: support.google.com/google-ads/answer/12047999.',
+    references: [
+      { label: 'Google Ads — About the learning period for Smart Bidding', url: 'https://support.google.com/google-ads/answer/12047999' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['smart-bidding-volume', 'data-driven-eligibility'],
+  },
+  {
+    id: 'fixed-value-dynamic-revenue',
+    name: 'Fixed Value on Variable-Revenue Conversion',
+    source: 'ads',
+    severity: 'warning',
+    summary: 'A purchase or sale conversion action uses a fixed value when the underlying revenue varies meaningfully.',
+    directAnswer:
+      'A Google Ads purchase or sale conversion action is configured with a fixed value (e.g. $50 per conversion) even though the underlying transaction value varies meaningfully across customers. Smart Bidding cannot distinguish high-value from low-value customers and optimises for volume of conversions rather than revenue.',
+    why: 'Fixed-value conversion configuration is appropriate for events where every conversion is genuinely worth the same amount — subscription signups for a single-price product, fixed-fee bookings. For variable-revenue businesses (e-commerce with a wide AOV range, B2B with deal-size variance), a fixed value collapses every conversion to the same weight and discards the most important optimisation signal Google Ads can use. Symptoms: tROAS appears to work but does not actually drive revenue; campaigns optimise toward volume of cheap conversions; high-revenue traffic is not prioritised. The fix is dynamic-value conversion configuration where the actual transaction value flows from GTM or the import.',
+    howToFix:
+      '1. In Tools & Settings → Measurement → Conversions, edit the flagged action. 2. Under Value, change from "Use the same value for each conversion" to "Use different values for each conversion." 3. Verify the conversion tag in GTM passes a Data Layer Variable with the actual transaction value (`{{DLV - ecommerce.value}}`). 4. Set a default value as a fallback for the rare case where the value cannot be resolved. 5. Verify after 7 days that Google Ads → Conversions reports show variable conversion values.',
+    example: 'Problem: Purchase conversion uses fixed value of $50\nReality: actual order values range from $15 to $1,200 (AOV $89)\nFix: configure dynamic value sourced from {{DLV - ecommerce.value}}',
+    citationTemplate:
+      'AdLint detected Google Ads purchase or sale conversion actions configured with fixed values despite variable underlying transaction values. Per Google\'s value-based bidding documentation, dynamic per-conversion values are required for Smart Bidding to optimise toward revenue rather than volume. Recommended remediation: switch to "Use different values for each conversion" and verify the value parameter flows from GTM. Source: support.google.com/google-ads/answer/13064107.',
+    references: [
+      { label: 'Google Ads — Set up conversion values', url: 'https://support.google.com/google-ads/answer/13064107' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['zero-value-purchases', 'lead-conversions-with-values', 'value-outliers'],
+  },
+  {
+    id: 'suboptimal-attribution-model',
+    name: 'Suboptimal Attribution Model',
+    source: 'ads',
+    severity: 'info',
+    summary: 'High-volume conversion actions still use Last-Click attribution when Data-Driven would be eligible and more accurate.',
+    directAnswer:
+      'One or more high-volume conversion actions in this account use Last-Click attribution despite having enough conversion volume to qualify for Data-Driven Attribution (DDA). Last-Click systematically over-credits the closing-touch and under-credits assist touches, which biases bidding toward bottom-of-funnel campaigns and away from upper-funnel traffic that actually drove demand.',
+    why: 'Last-Click was the default attribution model for most of Google Ads\' history, but it has a known limitation: it assigns 100% of conversion credit to the last touchpoint, treating every assist touch as worthless. This systematically under-credits brand awareness, prospecting, and display campaigns even when they materially drove the eventual conversion. Data-Driven Attribution uses observed account-level path data to assign fractional credit and is generally more accurate for accounts with sufficient volume. The check fires when AdLint sees a Last-Click action that has enough recent volume to be DDA-eligible — the team is leaving optimisation accuracy on the table.',
+    howToFix:
+      '1. In Tools & Settings → Measurement → Conversions, identify each Last-Click action with sufficient volume. 2. Edit the action and change Attribution Model to Data-Driven. Google Ads will indicate eligibility status — if marked eligible, the change takes effect at the next attribution refresh. 3. Annotate the date — Smart Bidding will re-baseline around the new attribution signal over 7-14 days. 4. Compare campaign reports before and after to understand which campaigns gain credit under DDA (typically upper-funnel) and which lose (typically brand and remarketing).',
+    example: 'Action: Purchase\nCurrent model: Last-Click\nVolume (30d): 412 conversions (DDA-eligible)\nRecommended: Data-Driven Attribution',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions with sufficient volume to qualify for Data-Driven Attribution but still configured for Last-Click. Per Google\'s attribution documentation, DDA produces more accurate credit assignment for accounts with sufficient volume and is recommended for Primary high-volume actions. Last-Click systematically under-credits assist touchpoints. Recommended remediation: switch eligible actions to Data-Driven Attribution and re-baseline campaign reports over the following 14 days. Source: support.google.com/google-ads/answer/6394265.',
+    references: [
+      { label: 'Google Ads — About attribution models', url: 'https://support.google.com/google-ads/answer/6394265' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['data-driven-eligibility', 'inconsistent-attribution-models', 'struct-all-last-click'],
+  },
+  {
+    id: 'view-through-window-analysis',
+    name: 'View-Through Conversion Window Analysis',
+    source: 'ads',
+    severity: 'info',
+    summary: 'View-through conversion (VTC) windows are configured in ways that may inflate or deflate display and YouTube measurement.',
+    directAnswer:
+      'View-through conversion windows determine how long after an ad impression — not a click — a conversion can still be attributed to that impression. AdLint flags configurations where the VTC window is either too long (likely over-attributing) or too short (likely missing genuine display- and YouTube-driven conversions).',
+    why: 'View-through attribution is inherently weaker evidence than click-through attribution — the user saw the ad but did not engage with it, so the causal chain is more speculative. Google Ads defaults VTC windows to 1 day for most actions, which is conservative. Some accounts extend this to 7 or 30 days to capture more display-driven activity, but the longer the window, the more likely the attributed conversion would have happened anyway. The right setting depends on the role display and YouTube play in the funnel: brand campaigns benefit from a longer view-through window because their measurable impact is delayed; direct-response display benefits from a shorter window because the causality should be near-immediate.',
+    howToFix:
+      '1. In Tools & Settings → Measurement → Conversions, review the View-through window for each action. 2. If the account is heavy on display or YouTube and uses the default 1-day window: consider extending to 7 days for awareness-stage actions, but never to 30+ unless you have a documented reason. 3. If the account is search-heavy with display as a small share: the default 1-day window is appropriate. 4. Annotate the change date — view-through-attributed conversion volume will adjust under the new window.',
+    example: 'Action: Purchase\nView-through window: 30 days (likely over-attributing)\nRecommended: 7 days if display campaigns are awareness-focused, 1 day otherwise.',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions with view-through conversion windows that may misalign with the role display and YouTube play in the funnel. Per Google\'s view-through conversion documentation, VTC windows should reflect the realistic causal window for impression-driven conversions; over-long windows inflate display-attributed conversions through coincidental late attributions. Recommended remediation: align VTC windows to the campaign mix and document the choice in team materials. Source: support.google.com/google-ads/answer/2998563.',
+    references: [
+      { label: 'Google Ads — About view-through conversions', url: 'https://support.google.com/google-ads/answer/2998563' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['struct-window-asymmetry', 'attribution-window-mismatch'],
+  },
+  {
+    id: 'roas-feasibility',
+    name: 'ROAS Target Feasibility',
+    source: 'ads',
+    severity: 'warning',
+    summary: 'Configured Target ROAS values are unrealistic given historical account performance.',
+    directAnswer:
+      'One or more campaigns use Target ROAS values that diverge materially from the account\'s historical ROAS performance. Targets set well above achieved ROAS will cause Smart Bidding to suppress spend; targets set well below will leave revenue on the table by over-spending on marginal traffic.',
+    why: 'Target ROAS tells Smart Bidding "I want X dollars of conversion value per dollar of spend." The algorithm achieves this by being more selective about which auctions to enter. When the target is set above the historical achieved ROAS, Smart Bidding cannot meet it without dramatically reducing spend — the campaign chokes itself trying to find auctions it can win at the required efficiency. When the target is set well below, the algorithm leaves performance on the table by bidding into auctions that produce mediocre returns. The right tROAS is generally set near the historical achieved ROAS, then incrementally tightened (5-10% at a time) over multiple weeks. AdLint flags targets > 50% above or below the trailing-90-day actual.',
+    howToFix:
+      '1. Calculate trailing-90-day actual ROAS by campaign or campaign group. 2. Compare to the current Target ROAS setting. 3. If target > 1.5× actual: reduce the target to within 10-15% of actual; this allows Smart Bidding to maintain spend volume while improving efficiency. 4. If target < 0.5× actual: raise the target gradually (10% per week) to capture available efficiency without forcing a learning-period reset. 5. Track week-over-week ROAS and conversion volume after each change.',
+    example: 'Campaign: Brand Search\nHistorical ROAS (90d): 580%\nCurrent Target ROAS: 1200% (2× actual — campaign will throttle spend)\nRecommended target: 650% with weekly 10% tightening.',
+    citationTemplate:
+      'AdLint detected Google Ads campaigns using Target ROAS values materially divergent from historical achieved ROAS. Per Google\'s Target ROAS documentation, targets that diverge significantly from historical performance produce either spend suppression (target too high) or inefficient bidding (target too low). Recommended remediation: set targets near historical actuals and tighten incrementally. Source: support.google.com/google-ads/answer/6268637.',
+    references: [
+      { label: 'Google Ads — About Target ROAS bidding', url: 'https://support.google.com/google-ads/answer/6268637' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['smart-bidding-volume', 'zero-value-purchases', 'value-outliers'],
+  },
+  {
+    id: 'value-outliers',
+    name: 'Conversion Value Outliers',
+    source: 'ads',
+    severity: 'warning',
+    summary: 'Some conversion actions have extreme value outliers that distort Smart Bidding signal.',
+    directAnswer:
+      'One or more conversion actions in this account have extreme value outliers — individual conversions reporting values 10×, 100×, or more above the median. Outliers can corrupt Smart Bidding when the algorithm treats a single $50,000 conversion as evidence for a pattern that will not repeat. The fix is to investigate the outliers, fix the data pipeline if they are bugs, or cap conversion values if they are real-but-misleading.',
+    why: 'Smart Bidding learns from observed conversion values. A normal $129 e-commerce purchase teaches the algorithm what the average customer is worth; a single $250,000 enterprise contract that fired the same conversion action tells the algorithm an entirely different story. The algorithm cannot distinguish "this is a real but rare outcome" from "this is a data pipeline bug," so it weighs the outlier into its learned distribution. The result: bidding pushes spend toward audiences and contexts that resemble the outlier, even when the outlier is not reproducible. The check identifies extreme value distributions; the team must decide whether to investigate, cap, or filter.',
+    howToFix:
+      '1. AdLint\'s details list each conversion action and the magnitude of the outliers. 2. For each, investigate the source: are the outliers genuine large transactions, or data pipeline bugs (currency mismatch, decimal-point error, sum of multiple transactions)? 3. If bugs: fix the pipeline so future values are correct. 4. If genuine but rare: consider a max-value cap on the conversion action (Google Ads supports this via offline import scripts) or move enterprise-scale transactions to a separate conversion action that does not feed automated bidding. 5. Re-run Smart Bidding with cleaner signal.',
+    example: 'Action: Purchase\nMedian value: $129\nMax value (30d): $48,720 (likely enterprise contract, not typical e-commerce)\nRecommended action: investigate; cap or segregate enterprise-scale conversions.',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions with extreme value outliers (individual conversions reporting values orders of magnitude above the median). Per Google\'s value-based bidding documentation, Smart Bidding weighs outliers into its learned distribution, which can push bidding toward irreproducible scenarios. Recommended remediation: investigate the source, fix data-pipeline bugs, and consider capping or segregating extreme-value conversions. Source: support.google.com/google-ads/answer/7335652.',
+    references: [
+      { label: 'Google Ads — About value-based bidding', url: 'https://support.google.com/google-ads/answer/7335652' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['fixed-value-dynamic-revenue', 'value-consistency-by-category', 'roas-feasibility'],
+  },
+  {
+    id: 'value-consistency-by-category',
+    name: 'Value Consistency Within Category',
+    source: 'ads',
+    severity: 'info',
+    summary: 'Conversion actions within the same category report values that vary in ways the category does not explain.',
+    directAnswer:
+      'Within a single Google Ads conversion category (e.g. "Lead" or "Sign-up"), individual actions report values that vary materially. This may be intentional (different lead types have different qualified-revenue contributions) or a sign of inconsistent value methodology across actions.',
+    why: 'A consistent value methodology across actions within a category is what makes category-level reporting interpretable. When "Lead — Demo" reports $200 and "Lead — Whitepaper" reports $10, the category-aggregate "Lead value" is dominated by whichever lead type fires most often — usually the cheaper one — and obscures the contribution of higher-value leads. The check is info-level because mixed values are sometimes intentional (genuinely different lead types), but they should be documented if so. When the variation is unintentional (one team set the value, another did not, a third copied from a sale template), the category-level reports become misleading.',
+    howToFix:
+      '1. AdLint\'s details list each category with high value variance and the contributing actions. 2. For each, document the intended value methodology: is each lead type genuinely worth a different amount (then keep the variance and document the per-action calculation), or should they all be normalised to a category-level standard? 3. Where normalisation is appropriate, update each action\'s value to the agreed methodology. 4. Document the per-category value methodology in team measurement materials.',
+    example: 'Category: Lead\nActions:\n  Lead — Demo: $200\n  Lead — Whitepaper: $10\n  Lead — Newsletter: $1\nDecision: keep variance (documented) — each lead type has materially different close rate.',
+    citationTemplate:
+      'AdLint detected high value variance within Google Ads conversion categories. Per Google\'s value-based bidding documentation, within-category value variance should reflect an intentional and documented methodology, not accidental inconsistency. Variance without documented intent makes category-aggregate reports misleading. Recommended remediation: document per-category value methodology or normalise actions within categories. Source: support.google.com/google-ads/answer/13064107.',
+    references: [
+      { label: 'Google Ads — Set up conversion values', url: 'https://support.google.com/google-ads/answer/13064107' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['value-outliers', 'lead-conversions-with-values', 'fixed-value-dynamic-revenue'],
+  },
+  {
+    id: 'zero-value-with-count',
+    name: 'Zero-Value Conversions with Volume',
+    source: 'ads',
+    severity: 'warning',
+    summary: 'A conversion action is firing regularly but every conversion reports a value of zero.',
+    directAnswer:
+      'A conversion action in this account is firing regularly (count > 0) but every conversion reports a value of zero. The action is configured to accept dynamic values, but the upstream pipeline (GTM or import) is sending zero — likely because a Data Layer Variable is unresolved or the import column is missing.',
+    why: 'This is a specific, common failure pattern that is distinct from `zero-value-purchases` (where the action is configured for no value). Here the action is configured for dynamic value and the pipeline is broken. The conversions count, dashboards populate, but Smart Bidding receives no value signal. The action looks healthy in the conversions list (recent volume, recent fires) but is silently equivalent to "Don\'t use a value." The fix is at the upstream layer — either the GTM tag\'s value parameter is unresolved, the dataLayer push is missing the value field, or the offline import column is empty.',
+    howToFix:
+      '1. In Google Ads, confirm the action is configured for dynamic value ("Use different values for each conversion"). 2. For website tags: check the GTM Google Ads Conversion Tag\'s value parameter — verify the Data Layer Variable resolves to a non-zero value in Preview mode. Cross-reference with the `missing-datalayer-variables` check. 3. For offline imports: verify the import file\'s Conversion Value column is populated and not empty/zero on the rows being imported. 4. Re-test a real conversion and verify the next-day Google Ads report shows non-zero values for the action.',
+    example: 'Action: Purchase\nConversion count (30d): 412\nReported value (30d): $0.00\nLikely cause: GTM value parameter unresolved or import column missing.',
+    citationTemplate:
+      'AdLint detected a Google Ads conversion action firing with volume but reporting zero values across all conversions. Per Google\'s conversion value documentation, this pattern indicates an upstream pipeline failure — typically an unresolved GTM Data Layer Variable or an empty import column — rather than a Google Ads configuration issue. Recommended remediation: verify the GTM value parameter in Preview mode or the import file column, then re-test a conversion. Source: support.google.com/google-ads/answer/13064107.',
+    references: [
+      { label: 'Google Ads — Set up conversion values', url: 'https://support.google.com/google-ads/answer/13064107' },
+      { label: 'Google Ads — Troubleshoot conversion tracking', url: 'https://support.google.com/google-ads/answer/6307083' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['zero-value-purchases', 'missing-datalayer-variables', 'fixed-value-dynamic-revenue'],
+  },
+  {
+    id: 'struct-naming-convention',
+    name: 'Conversion Action Naming Convention',
+    source: 'ads',
+    severity: 'info',
+    summary: 'Conversion action names do not follow a consistent convention across the account.',
+    directAnswer:
+      'Conversion actions in this account use inconsistent naming patterns. The runtime cost is zero, but inconsistent names slow every audit and increase the risk that a campaign gets wired to the wrong action because two similarly-named actions are hard to distinguish at a glance.',
+    why: 'Naming conventions for conversion actions follow the same logic as the `naming-conventions` check for GTM tags: the name is the primary auditor signal, and consistency speeds every governance cycle. The recommended pattern in measurement teams is `<Event> — <Source>` (e.g. "Purchase — Website," "Lead — Salesforce Import"). When the same account mixes "Purchase," "purchase-web," "Website Purchase," and "purchase_web_v2," every audit costs more time than it should, and similarly-named actions get confused with each other in campaign goal setup.',
+    howToFix:
+      '1. Adopt and document the `<Event> — <Source>` convention. 2. Rename existing actions in batches. Renaming is non-destructive and preserves all historical data. 3. Treat naming as a publish-gating governance check at the team level. 4. New conversion actions should follow the convention by default.',
+    example: 'Inconsistent: Purchase, purchase-web, Website Purchase, purchase_v2\nConsistent: Purchase — Website, Purchase — Offline, Purchase — App',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions with inconsistent naming patterns. Per measurement-governance best practice, conversion action names should follow a consistent `<Event> — <Source>` pattern to speed audits and reduce campaign-goal-misassignment risk. Recommended remediation: adopt the convention, rename existing actions, and treat naming as a governance gating check. Source: support.google.com/google-ads/answer/6095821.',
+    references: [
+      { label: 'Google Ads — Set up your conversion action', url: 'https://support.google.com/google-ads/answer/6095821' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['conversion-name-quality', 'struct-semantic-duplicates'],
+  },
+  {
+    id: 'struct-semantic-duplicates',
+    name: 'Semantic Duplicate Conversion Actions',
+    source: 'ads',
+    severity: 'warning',
+    summary: 'Conversion actions exist with different names but identical or near-identical semantic intent.',
+    directAnswer:
+      'Two or more conversion actions in this account have different names but appear to track the same business event ("Purchase," "purchase-web," "Website Purchase"). Unless explicitly de-duplicated, these inflate measurement and confuse campaign-goal selection.',
+    why: 'Semantic duplicates are the harder cousin of strict duplicates. Two actions with literally the same configuration are easy to spot; two actions with near-identical configuration but different names slip past most reviews. They arise from team rotations (each new owner creates "their" version), tracking migrations (the old action stays alongside the new one), or template propagation (a sample action gets copied without being renamed properly). The damage: campaign goal setup includes ambiguous duplicates, conversion counts double when both are selected, and Smart Bidding learns from a signal split across redundant actions. AdLint identifies these by comparing categories, sources, and value methodology across same-event candidates.',
+    howToFix:
+      '1. AdLint\'s details list semantic-duplicate candidates. 2. For each set, pick the canonical action (usually the most recently maintained one). 3. In each active campaign\'s goal settings, switch from the duplicates to the canonical action. 4. Archive (do not delete) the duplicates so historical data is preserved. 5. Document the canonical action in team materials so future setup uses it by default.',
+    example: 'Semantic duplicates:\n  Purchase\n  Purchase - Website\n  Website Purchase\n  purchase-web-2024\n\nFix: standardise on "Purchase — Website" (per naming convention), rewire campaigns, archive duplicates.',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions with different names but identical or near-identical semantic intent. Per Google\'s conversion-tracking documentation, multiple actions for the same business event must be explicitly deduplicated or they will double-count conversions when included in the same campaign goals. Recommended remediation: standardise on a canonical action per business event, rewire campaigns, and archive duplicates. Source: support.google.com/google-ads/answer/6386790.',
+    references: [
+      { label: 'Google Ads — Troubleshoot duplicate conversions', url: 'https://support.google.com/google-ads/answer/6386790' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['duplicate-conversions', 'struct-naming-convention', 'conversion-source-consistency'],
+  },
+  {
+    id: 'struct-category-name-mismatch',
+    name: 'Conversion Category vs Name Mismatch',
+    source: 'ads',
+    severity: 'info',
+    summary: 'A conversion action\'s category does not match what its name implies.',
+    directAnswer:
+      'One or more conversion actions have categories that contradict their names — an action named "Purchase — Website" categorised as "Lead," or "Lead — Salesforce" categorised as "Other." Either the category is wrong, the name is wrong, or the action genuinely represents something the team has not been clear about.',
+    why: 'Category and name should agree. Disagreement usually indicates a setup mistake — someone changed one but not the other, or copied a template without updating both fields. The damage is subtle: campaign goal selection, category-aware reporting, and external integrations all key off the Category field, so a misclassified action shows up in the wrong places and produces confusing reports. Auditors and new team members trust the name first and the category second, which means misalignment leads to slow-cooked mistakes that surface as quarterly-report discrepancies.',
+    howToFix:
+      '1. AdLint\'s details list each mismatch and the recommended category based on the name. 2. For each, decide: is the name correct (then change the category to match) or is the category correct (then rename to match)? 3. Update in Tools & Settings → Measurement → Conversions. 4. Verify campaign goal settings still include the action correctly after the change.',
+    example: 'Action name: Lead — Salesforce Import\nCurrent category: Other\nRecommended category: Submit lead form (matches the name)',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions where the Category field disagrees with the action name. Per Google\'s conversion category documentation, category determines which Google Ads features (lead-form integration, e-commerce reporting, category-aware bidding) apply to the action. Mismatches between name and category produce confusing reports and disable applicable features. Recommended remediation: align category and name explicitly. Source: support.google.com/google-ads/answer/6095821.',
+    references: [
+      { label: 'Google Ads — Set up your conversion action', url: 'https://support.google.com/google-ads/answer/6095821' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['unusual-categories', 'conversion-name-quality'],
+  },
+  {
+    id: 'struct-counting-category-mismatch',
+    name: 'Counting Method vs Category Mismatch',
+    source: 'ads',
+    severity: 'warning',
+    summary: 'Counting method (One vs Every) does not match the configured conversion category.',
+    directAnswer:
+      'A conversion action has a counting method that does not match its category — a Lead action set to "Every" (inflates lead counts when users retry submissions), or a Purchase action set to "One" (undercounts repeat purchases in the same click session). Whichever way it is misaligned, the action systematically misrepresents volume.',
+    why: 'This is a more specific version of the `wrong-counting-method` finding, anchored to the explicit Category field. Google Ads recommends "One" for Lead, Sign-up, Submit lead form, and similar lead-style categories, and "Every" for Purchase, Sale, and transaction-style categories. When the configured counting contradicts the category, the action systematically miscounts — either by inflating lead volume through retries or by underreporting repeat purchases.',
+    howToFix:
+      '1. AdLint\'s details list each mismatched action. 2. For lead-style categories (Lead, Sign-up, Submit lead form, Phone Call): change counting to "One." 3. For sale-style categories (Purchase, Sale, Begin Checkout used as a conversion): change counting to "Every." 4. Annotate the change date — historical volume will retroactively adjust under the new counting method.',
+    example: 'Action: Lead — Demo Request\nCategory: Submit lead form\nCurrent counting: Every\nRecommended counting: One (matches the lead category)',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions where the counting method does not match the recommended counting for the action\'s category. Per Google\'s counting documentation, lead-style categories should use "One" and sale-style categories should use "Every." Misaligned counting systematically miscounts conversion volume. Recommended remediation: align counting to category and re-baseline campaign performance after one cycle. Source: support.google.com/google-ads/answer/3438531.',
+    references: [
+      { label: 'Google Ads — Choose a counting setting', url: 'https://support.google.com/google-ads/answer/3438531' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['wrong-counting-method', 'duplicate-conversions'],
+  },
+  {
+    id: 'struct-duplicate-static-values',
+    name: 'Duplicate Static Values Across Actions',
+    source: 'ads',
+    severity: 'info',
+    summary: 'Multiple conversion actions use the same fixed value, which can indicate copy-paste setup without per-action review.',
+    directAnswer:
+      'Multiple conversion actions in this account use identical fixed values (e.g. three different lead actions all set to $50). The pattern usually indicates each action was created by copying a template and the value field was not customised per the actual business meaning. Even if the values happen to be the right amount, the lack of per-action calibration is a governance smell.',
+    why: 'Different business events have different revenue contributions. A demo request lead is not worth the same as a newsletter signup; a Premium-tier purchase is not worth the same as a Basic-tier purchase. When multiple actions share the same fixed value, it usually means nobody calibrated the values for each action\'s specific economic role. The check is info-level because the values may happen to be correct, but the pattern is a leading indicator that the value methodology was not thought through. Review and document the per-action value or recalibrate.',
+    howToFix:
+      '1. AdLint\'s details list groups of actions sharing identical fixed values. 2. For each group, decide: is the shared value correct for each action, or was it copy-pasted? 3. Where copy-paste: calculate the per-action value (lead × close rate × ARPU, or tier-specific revenue) and update. 4. Document the value methodology per action in the Description field.',
+    example: 'Identical $50 value:\n  Lead — Demo Request: $50\n  Lead — Whitepaper: $50\n  Lead — Newsletter: $50\nReview: are these really worth the same, or was it copy-paste?',
+    citationTemplate:
+      'AdLint detected groups of Google Ads conversion actions using identical fixed values. Per measurement governance best practice, per-action values should reflect the specific economic contribution of each business event; identical values across semantically-different actions usually indicate uncalibrated copy-paste setup. Recommended remediation: review and calibrate per-action values, and document the methodology in the action description. Source: support.google.com/google-ads/answer/13064107.',
+    references: [
+      { label: 'Google Ads — Set up conversion values', url: 'https://support.google.com/google-ads/answer/13064107' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['lead-conversions-with-values', 'fixed-value-dynamic-revenue', 'value-consistency-by-category'],
+  },
+  {
+    id: 'struct-window-asymmetry',
+    name: 'Click vs View-Through Window Asymmetry',
+    source: 'ads',
+    severity: 'info',
+    summary: 'Click-through and view-through windows are set in ways that produce inconsistent attribution logic.',
+    directAnswer:
+      'A conversion action\'s click-through and view-through windows are set in a relative configuration that does not follow the typical pattern. View-through windows are normally shorter than click-through windows because view-through evidence is weaker, but some actions in this account configure them inverted or near-identical, which produces inconsistent attribution treatment.',
+    why: 'A view-through is a less reliable causal signal than a click — the user saw the ad but did not engage. So Google\'s recommended practice is to use shorter view-through windows than click-through windows (e.g. 1-day view-through, 30-day click-through). When an account inverts this — say, 30-day view-through with 7-day click-through — the view-through signal can dominate the click-through signal in attribution reports, which inverts the relative weighting of impression-vs-click evidence in ways that are usually unintentional.',
+    howToFix:
+      '1. AdLint\'s details list each action with asymmetric windows and the recommended adjustment. 2. Open each action in Tools & Settings → Measurement → Conversions and review the window pair. 3. Standardise: VTC window ≤ click-through window, typically by a factor of 4-30×. 4. Document the chosen pair in team measurement materials.',
+    example: 'Action: Purchase\nClick-through window: 7 days\nView-through window: 30 days (inverted relationship — VTC dominates click attribution)\nFix: VTC = 1 or 7 days; click-through = 30+ days.',
+    citationTemplate:
+      'AdLint detected Google Ads conversion actions with click-through and view-through window pairs configured in inverted or near-identical relationships. Per Google\'s attribution documentation, view-through windows should typically be shorter than click-through windows because view-through evidence is causally weaker. Inverted pairs produce attribution reports where view-through signal dominates click-through signal in unintended ways. Recommended remediation: standardise so VTC ≤ click-through window by a factor of 4-30×. Source: support.google.com/google-ads/answer/2998563.',
+    references: [
+      { label: 'Google Ads — About view-through conversions', url: 'https://support.google.com/google-ads/answer/2998563' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['view-through-window-analysis', 'attribution-window-mismatch'],
+  },
+  {
+    id: 'struct-all-last-click',
+    name: 'All Conversions Use Last-Click Attribution',
+    source: 'ads',
+    severity: 'warning',
+    summary: 'Every enabled conversion action in this account uses Last-Click attribution despite many being DDA-eligible.',
+    directAnswer:
+      'Every enabled conversion action in this account uses Last-Click attribution. Several high-volume actions would qualify for Data-Driven Attribution (DDA), which is generally more accurate. The account is leaving attribution accuracy on the table.',
+    why: 'Last-Click is the simplest attribution model — 100% of credit to the last touchpoint. It has the advantage of being deterministic and easy to explain to stakeholders, but the disadvantage of systematically under-crediting assist touches. When every action uses Last-Click, the account\'s entire attribution lens defaults to "credit only the closing touch," which biases campaign-level reports toward bottom-of-funnel campaigns and away from prospecting/awareness. DDA is generally more accurate for high-volume accounts, and at this point in Google Ads\' evolution (post-2023) it is the recommended default for accounts with sufficient signal. The check is more severe than `suboptimal-attribution-model` because every action is Last-Click — not just some — indicating an account-wide methodology choice that may not have been revisited recently.',
+    howToFix:
+      '1. Identify which Primary actions are DDA-eligible (volume threshold; check Tools & Settings → Measurement → Attribution). 2. Update eligible Primary actions to Data-Driven Attribution. 3. Document the attribution methodology change in team materials and stakeholder reports — campaign-level credit allocations will shift. 4. Re-baseline campaigns over 14-30 days under the new attribution.',
+    example: 'All 12 enabled conversion actions: Last-Click\nDDA-eligible (volume): 5\nRecommended: switch eligible Primary actions to Data-Driven.',
+    citationTemplate:
+      'AdLint detected that every enabled Google Ads conversion action in this account uses Last-Click attribution. Per Google\'s attribution documentation, Data-Driven Attribution is the recommended default for accounts with sufficient conversion volume and produces more accurate credit assignment than Last-Click. Recommended remediation: switch eligible Primary actions to Data-Driven Attribution and re-baseline campaign reports. Source: support.google.com/google-ads/answer/6394265.',
+    references: [
+      { label: 'Google Ads — About attribution models', url: 'https://support.google.com/google-ads/answer/6394265' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['suboptimal-attribution-model', 'data-driven-eligibility', 'inconsistent-attribution-models'],
+  },
+  {
+    id: 'struct-attribution-chaos',
+    name: 'Account-Wide Attribution Chaos',
+    source: 'ads',
+    severity: 'warning',
+    summary: 'The account uses many different attribution models across actions in ways that make portfolio-level reporting incoherent.',
+    directAnswer:
+      'This account uses many different attribution models across its conversion actions — Last-Click, Position-Based, Data-Driven, Linear, Time-Decay — without a discernible governance pattern. Account-level reports that mix these are not interpretable; campaign decisions made against the mixed signal are unreliable.',
+    why: 'A single account using multiple attribution models can be intentional (Data-Driven for the high-volume macro action, simpler models for low-volume diagnostics). But when more than three models appear with no apparent rationale, the account has accumulated attribution debt — every team member added a model that made sense to them, none cleaned up. The downstream effects are real: campaign reports rolling up multiple actions blend their attribution logic, period-over-period comparisons are unreliable, and Smart Bidding learns from a signal whose model assumptions are inconsistent.',
+    howToFix:
+      '1. Audit each enabled Primary action and its current attribution model. 2. Decide an account-level attribution philosophy: Data-Driven for all eligible actions, with a documented fallback (Position-Based or Linear) for actions that do not yet qualify. 3. Update every action to either the chosen primary model or the documented fallback. 4. Archive or document any actions that need a non-standard model with a written justification in the Description field. 5. Add attribution-model auditing to the team\'s quarterly governance cycle.',
+    example: 'Current account models:\n  Purchase: Data-Driven\n  Lead: Last-Click\n  Demo Request: Position-Based\n  Sign-up: Linear\n  Phone Call: Time-Decay\nFix: standardise on Data-Driven, fall back to Position-Based for low-volume actions, document any exceptions.',
+    citationTemplate:
+      'AdLint detected Google Ads accounts using multiple attribution models across conversion actions without a discernible governance pattern. Per Google\'s attribution documentation, mixed-model accounts produce incoherent portfolio-level reports and unreliable Smart Bidding signal. Recommended remediation: standardise on a single primary attribution model with a documented fallback, update each action, and add attribution to quarterly governance review. Source: support.google.com/google-ads/answer/6394265.',
+    references: [
+      { label: 'Google Ads — About attribution models', url: 'https://support.google.com/google-ads/answer/6394265' },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['inconsistent-attribution-models', 'suboptimal-attribution-model', 'struct-all-last-click'],
   },
 ];
 
