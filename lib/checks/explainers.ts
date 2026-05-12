@@ -75,14 +75,14 @@ export const explainers: CheckExplainer[] = [
     severity: 'critical',
     summary: 'The GTM container does not have a Google Ads Conversion Linker firing on the site.',
     directAnswer:
-      'The Conversion Linker is a GTM tag that captures Google Ads click identifiers (GCLID and friends) and writes them to a first-party cookie so later conversion tags can attribute the sale back to the ad click. If it is missing, every Google Ads conversion the site reports is at risk of being credited to the wrong source — or not credited at all.',
-    why: 'When a user clicks a Google Ads ad, Google appends a GCLID parameter to the landing-page URL. Conversion tags fired hours or days later need that GCLID to tie the conversion back to the ad. The Conversion Linker is the tag that reads the GCLID from the URL once and stores it in a first-party _gcl_aw cookie. Without it, downstream Google Ads conversion tags fall back to last-touch attribution inside Google\'s ecosystem — meaning conversions get assigned to the wrong campaign, ROAS reports lie, and Smart Bidding optimizes against noise. The damage is silent: tags still fire, dashboards still populate, but the signal feeding bidding is corrupted. Underreported conversions usually push budget toward campaigns that are easy to attribute (branded search, remarketing) and away from upper-funnel campaigns that actually drove the click.',
+      'Your GTM container is missing the Conversion Linker. That means Google Ads conversions on this site are firing without the GCLID handshake. Any time the conversion happens on a different pageview than the ad click (which is most conversions), the click context is lost. Google still counts the conversion. It just has no idea which ad caused it.',
+    why: 'The chain looks like this. Someone clicks a Google Ads ad. Google appends `?gclid=abc123...` to the landing URL. They land on your homepage. The Conversion Linker reads `gclid` out of the URL and writes it to a first-party cookie called `_gcl_aw`. They browse around, add to cart, eventually buy. The Google Ads conversion tag fires on the order-confirmation page. It reads `_gcl_aw`, finds the GCLID, and sends the conversion with that ID attached. Google matches it back to the original click.\n\nNo Conversion Linker, step three never happens. The cookie is never written. The conversion tag still fires on the confirmation page, but the GCLID is gone, so Google reports the conversion with no click context. Your dashboards still populate. Smart Bidding still operates. The signal feeding everything is just wrong.\n\nWhere this bites: any flow where the conversion is not on the landing page. So almost every flow. The bigger the gap between click and purchase, the more conversions get misattributed. B2B accounts with a 30-day sales cycle lose almost all attribution. E-commerce sites with multi-page checkouts lose a chunk on every order. The dashboard never tells you, because the conversion tag itself is healthy. The damage shows up months later when reported ROAS does not match what the bank account does.',
     howToFix:
-      '1. In Google Tag Manager, click "New Tag" and choose the "Google Ads Conversion Linker" tag type. 2. Set the trigger to "All Pages." 3. If your funnel spans multiple domains (e.g. checkout on a separate Shopify or payment domain), open the Linker Settings and enable auto-link domains across every domain in the funnel. 4. Enter Preview mode, load any page on the site, and confirm the tag fires on every navigation. 5. Publish the workspace. After deploy, run an AdLint audit again — the finding should clear within one container version.',
+      '1. In GTM, hit New Tag, pick "Google Ads Conversion Linker."\n2. Trigger: All Pages.\n3. Multi-domain funnel (payment processor on a different domain, Shopify checkout, anything cross-host)? Open Linker Settings, turn on auto-link domains, paste every domain that appears in a real conversion path. Yes, the payment processor counts.\n4. Hit Preview. Load any page. Confirm the linker shows up in the Tags Fired panel.\n5. Publish. The finding clears on the next AdLint run.',
     example:
-      'Tag type: Google Ads Conversion Linker\nTrigger: All Pages\nCross-domain domains: example.com, checkout.example-payments.com',
+      'Tag type: Google Ads Conversion Linker\nTrigger: All Pages\nAuto-link domains: example.com, checkout.example-payments.com',
     citationTemplate:
-      'AdLint detected that the Google Ads Conversion Linker tag is not present in this GTM container. Per Google\'s documentation on the Conversion Linker, conversion tags require the GCLID to be captured into a first-party cookie within the user\'s session for accurate cross-page and cross-domain attribution. Without this tag, downstream Google Ads conversion measurements are at material risk of misattribution and Smart Bidding decisions are made against incomplete signal. Recommended remediation: add the Conversion Linker tag with an "All Pages" trigger and verify cross-domain configuration before re-publishing. Source: support.google.com/tagmanager/answer/7549390.',
+      'This GTM container is missing the Google Ads Conversion Linker tag. Google\'s Tag Manager documentation states that the Conversion Linker is required for Google Ads conversion tags to retain ad click identifiers across pageviews. Without it, Google Ads conversions on this site report without the GCLID that ties them back to the originating ad click, which degrades Smart Bidding signal and produces ROAS reports that diverge from actual revenue performance. Fix: add the Conversion Linker tag on the All Pages trigger and confirm it fires before any downstream conversion tag. Source: support.google.com/tagmanager/answer/7549390.',
     references: [
       {
         label: 'Google Tag Manager — Conversion Linker tag',
@@ -103,7 +103,7 @@ export const explainers: CheckExplainer[] = [
       kind: 'gtm-tag-list',
       containerLabel: 'GTM-AB12CDE · Workspace: Default',
       caption:
-        'A container with Google Ads conversion tags but no Conversion Linker. The conversion tags fire, but downstream attribution relies on a GCLID that was never captured into a first-party cookie — so reported conversions are at risk of misattribution.',
+        'Conversion tags are firing. The Conversion Linker is not. The GCLID never makes it into _gcl_aw, so every conversion tag below ships without click context.',
       rows: [
         {
           name: 'GA4 Configuration',
@@ -116,21 +116,21 @@ export const explainers: CheckExplainer[] = [
           type: 'Google Ads Conversion Tracking',
           firing: 'purchase_success',
           highlight: 'critical',
-          note: 'Fires without an upstream Conversion Linker — GCLID is not captured.',
+          note: 'Fires without _gcl_aw set. GCLID lost.',
         },
         {
           name: 'Google Ads — Lead Conversion',
           type: 'Google Ads Conversion Tracking',
           firing: 'form_submit',
           highlight: 'critical',
-          note: 'Same problem — attribution is at risk.',
+          note: 'Same. Lead reported without source attribution.',
         },
         {
           name: 'Google Ads — Remarketing',
           type: 'Google Ads Remarketing',
           firing: 'All Pages',
           highlight: 'warning',
-          note: 'Also benefits from the Conversion Linker for first-party identifiers.',
+          note: 'Audience builds, but on degraded identifiers.',
         },
       ],
     },
@@ -138,14 +138,14 @@ export const explainers: CheckExplainer[] = [
       kind: 'gtm-tag-list',
       containerLabel: 'GTM-AB12CDE · Workspace: Default',
       caption:
-        'Fixed: a Conversion Linker tag fires on All Pages, ahead of the conversion tags in the trigger sequence. GCLID is now captured into the _gcl_aw cookie and available to every downstream Google Ads tag.',
+        'Conversion Linker added on All Pages. It writes _gcl_aw on the landing page. Every downstream conversion tag now has the GCLID to send.',
       rows: [
         {
           name: 'Google Ads — Conversion Linker',
           type: 'Conversion Linker',
           firing: 'All Pages',
           highlight: 'pass',
-          note: 'New tag — captures GCLID into the first-party _gcl_aw cookie.',
+          note: 'New tag. Writes _gcl_aw before any conversion fires.',
         },
         {
           name: 'GA4 Configuration',
