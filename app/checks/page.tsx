@@ -49,22 +49,21 @@ export default function ChecksPage() {
         </div>
       </header>
 
-      <div className="container mx-auto max-w-5xl flex-1 px-4 py-12">
-        <div className="mb-10 max-w-3xl">
-          <p className="mb-3 text-sm font-semibold uppercase text-accent">Check reference</p>
-          <h1 className="mb-4 font-display text-3xl font-semibold leading-tight text-ink sm:text-4xl">
-            Every check the audit engine emits, in one place
-          </h1>
-          <p className="text-base leading-relaxed text-muted">
-            Searchable index of every finding AdLint can produce. Each check links to a page
-            explaining what it means and how to fix it — full editorial treatment where it exists,
-            a reference stub everywhere else.
+      <div className="container mx-auto max-w-3xl flex-1 px-4 py-16">
+        <div className="mb-8 text-center">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-accent">
+            Check reference
           </p>
+          <h1 className="font-display text-2xl font-semibold leading-tight text-ink sm:text-3xl">
+            Search 178 ad-tracking audit findings
+          </h1>
         </div>
 
-        <section aria-labelledby="browse-by-source" className="mb-10">
-          <h2 id="browse-by-source" className="mb-4 font-display text-base font-semibold text-ink">
-            Browse by source
+        <ChecksIndexClient explainers={all} documented={documented} total={total} />
+
+        <section aria-labelledby="browse-by-source" className="mt-14 border-t border-border pt-10">
+          <h2 id="browse-by-source" className="mb-4 text-[10px] font-semibold uppercase tracking-wider text-muted">
+            Or browse by source
           </h2>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
             {countsBySource.map((src) => (
@@ -81,8 +80,6 @@ export default function ChecksPage() {
             ))}
           </div>
         </section>
-
-        <ChecksIndexClient explainers={all} documented={documented} total={total} />
       </div>
 
       <footer className="border-t border-border py-6">
