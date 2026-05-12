@@ -1,0 +1,63 @@
+# AdLint
+
+> Privacy-respecting ad-tracking auditor for agencies and freelancers. Audits GTM containers, Google Ads accounts, Performance reports, and pixel exports from Meta, TikTok, LinkedIn, Pinterest, Twitter/X, and Snapchat. 178 checks across 10 sources. 100% client-side: no uploads, no accounts, no data leaves the browser.
+
+AdLint is built for ad-tech consultants who need defensible, citable findings to put in client deliverables. The `/checks/<id>` library is the editorial source-of-truth for every finding the audit engine can emit. Each page explains what the finding means, why it matters, how to fix it, and includes a copy-pasteable citation paragraph for client reports.
+
+## Core
+
+- [Homepage](https://adlint.dev/): overview of the tool, free audit entry point, 100% client-side privacy posture
+- [Check reference index](https://adlint.dev/checks): searchable index of all 178 audit findings, filterable by severity and source
+- [Audit results](https://adlint.dev/audit): the audit dashboard agencies hand off to clients (only reachable after running an audit)
+
+## Audit tools
+
+- [GTM Container Auditor](https://adlint.dev/tools/gtm-auditor): 29 checks across Google Tag Manager containers
+- [Google Ads Linter](https://adlint.dev/tools/google-ads-linter): 34 checks across Google Ads conversion settings
+- [Performance Report Analyzer](https://adlint.dev/tools/performance-report-analyzer): 30 checks on Google Ads Performance reports
+- [Full-Stack Audit](https://adlint.dev/tools/full-audit): all three Google sources together, plus cross-source consistency
+- [Meta Pixel Auditor](https://adlint.dev/tools/meta-auditor): 10 checks across Meta Pixel and Conversions API
+- [TikTok Pixel Auditor](https://adlint.dev/tools/tiktok-auditor): 10 checks across TikTok Pixel and Events API
+- [LinkedIn Insight Tag Auditor](https://adlint.dev/tools/linkedin-auditor): 10 checks across LinkedIn Insight Tag
+- [Pinterest Tag Auditor](https://adlint.dev/tools/pinterest-auditor): 10 checks across Pinterest Tag and Conversions API
+- [Twitter/X Pixel Auditor](https://adlint.dev/tools/twitter-auditor): 10 checks across X Pixel
+- [Snapchat Pixel Auditor](https://adlint.dev/tools/snapchat-auditor): 10 checks across Snap Pixel and CAPI
+
+## Flagship checks (critical-severity, hand-written editorial)
+
+- [Missing Google Ads Conversion Linker](https://adlint.dev/checks/missing-conversion-linker): the foundational tag every GTM container needs for Google Ads attribution
+- [Google Ads Tags May Fire Without Consent](https://adlint.dev/checks/consent-violations): Consent Mode v2 compliance and measurement modelling
+- [Duplicate Conversion Tracking](https://adlint.dev/checks/duplicate-conversions): the failure mode that looks good while it is happening; cross-source
+- [E-commerce Data Layer Structure](https://adlint.dev/checks/ecommerce-datalayer-structure): the GA4 canonical `purchase` event shape
+- [Purchase Conversions with Zero Value](https://adlint.dev/checks/zero-value-purchases): value-based bidding requires real revenue signal
+- [Conversion Linker Sequencing](https://adlint.dev/checks/conversion-linker-sequencing): explicit Tag Sequencing prevents the race condition the linker exists to solve
+- [Inconsistent Currency Codes](https://adlint.dev/checks/currency-consistency): the silent killer of cross-region ROAS reports
+- [Enhanced Conversions Missing User Data](https://adlint.dev/checks/enhanced-conversions-missing-data): how to actually populate the user_data parameter so the match rate is not zero
+- [Conversion Tags Missing Error Handling](https://adlint.dev/checks/conversion-error-handling): Wait-for-Tags configuration prevents conversion loss on slow connections
+- [No Primary Conversion Action](https://adlint.dev/checks/no-primary-conversion): Smart Bidding cannot work without a Primary target
+
+## Audit infrastructure & governance
+
+- [GTM Container Size and Tag Count](https://adlint.dev/checks/container-size-score): GTM's hard workspace size limit and the soft tag-count threshold
+- [GTM Naming Convention Violations](https://adlint.dev/checks/naming-conventions): the prefix-based naming convention that speeds every audit
+- [Documentation Completeness](https://adlint.dev/checks/missing-descriptions): the Notes/Description field as code comments for GTM
+- [Potentially Stale Tags](https://adlint.dev/checks/stale-tags): tags with "old," "legacy," "backup," "deprecated," "temp," or "test" in their names
+
+## Attribution and Smart Bidding
+
+- [Smart Bidding Readiness](https://adlint.dev/checks/smart-bidding-volume): the 15-30 conversions/portfolio/month threshold
+- [Attribution Window vs Sales Cycle Mismatch](https://adlint.dev/checks/attribution-window-mismatch): time-lag-distribution-driven window sizing
+- [All Conversions Use Last-Click Attribution](https://adlint.dev/checks/struct-all-last-click): the case for Data-Driven Attribution
+- [Account-Wide Attribution Chaos](https://adlint.dev/checks/struct-attribution-chaos): when an account uses too many attribution models without rationale
+- [Greedy Impression Index](https://adlint.dev/checks/vtc-click-ratio): the view-through-conversion-to-click-conversion ratio diagnostic
+- [ROAS Target Feasibility](https://adlint.dev/checks/roas-feasibility): tROAS targets vs historical achieved ROAS
+
+## About
+
+AdLint is created by Christopher Landaverde, an ad-tech tracking specialist. Every check page carries the author byline plus a `lastUpdated` date. The editorial voice is direct, second-person, concrete, and citation-ready. Citation templates on each page are designed to be pasted verbatim into client deliverables.
+
+Privacy posture: AdLint never uploads files. Audits run in the browser using a static JavaScript engine. There is no backend, no account system, no logging of uploaded data. Source code at https://github.com/ChristopherLandaverde/adlinter.
+
+## License & reuse
+
+The AdLint check engine and editorial content are written for citation in agency client deliverables. The citation templates on each `/checks/<id>` page are explicitly designed for paste-and-attribute use; source attribution back to AdLint is requested but not enforced.

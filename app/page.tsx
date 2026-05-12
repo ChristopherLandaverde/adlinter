@@ -6,27 +6,83 @@ import { AuditHistoryLink } from '@/components/AuditHistoryLink';
 import { getToolIcon } from '@/components/icons';
 import { tools, categories, type ToolConfig, type ToolCategory } from '@/lib/tools';
 
-const websiteSchema = {
+const siteUrl = 'https://adlint.dev';
+const authorName = 'Christopher Landaverde';
+
+// SoftwareApplication is the canonical Schema.org type for browser-based
+// utility apps, and is what Google, Bing, and LLM crawlers map to "tool"
+// entities in their knowledge graphs. WebApplication is a sub-type but
+// less specific; we promote to SoftwareApplication and keep the audit
+// suite enumerated as featureList for AEO grounding.
+const softwareSchema = {
   '@context': 'https://schema.org',
-  '@type': 'WebApplication',
+  '@type': 'SoftwareApplication',
+  '@id': `${siteUrl}/#software`,
   name: 'AdLint',
-  url: 'https://adlint.dev',
-  applicationCategory: 'DeveloperApplication',
-  operatingSystem: 'Web',
+  url: siteUrl,
+  applicationCategory: 'BusinessApplication',
+  applicationSubCategory: 'Ad-tech tracking audit tool',
+  operatingSystem: 'Web Browser',
   description:
-    'Free, privacy-first audit suite for ad-tech tracking. Analyze GTM, Google Ads, Meta Pixel, and TikTok Pixel in 60 seconds.',
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    'Privacy-respecting ad-tracking auditor. Audits Google Tag Manager containers, Google Ads accounts, Performance reports, and pixel exports from Meta, TikTok, LinkedIn, Pinterest, Twitter/X, and Snapchat. 178 checks across 10 sources. 100% client-side: nothing is uploaded.',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
   featureList: [
-    'Google Tag Manager Container Auditor',
-    'Google Ads Linter',
-    'Performance Report Analyzer',
-    'Full-Stack Audit',
-    'Meta Pixel Auditor',
-    'TikTok Pixel Auditor',
-    'LinkedIn Insight Tag Auditor',
+    'Google Tag Manager Container Auditor (29 checks)',
+    'Google Ads Linter (34 checks)',
+    'Performance Report Analyzer (30 checks)',
+    'Full-Stack Audit (all Google sources + cross-source consistency)',
+    'Meta Pixel Auditor (10 checks)',
+    'TikTok Pixel Auditor (10 checks)',
+    'LinkedIn Insight Tag Auditor (10 checks)',
+    'Pinterest Tag Auditor (10 checks)',
+    'Twitter/X Pixel Auditor (10 checks)',
+    'Snapchat Pixel Auditor (10 checks)',
+    'Tracking Health Score (0-100)',
+    'Audit history with diff view',
+    'Per-finding citation templates for client deliverables',
   ],
   browserRequirements: 'Requires JavaScript. Modern browser.',
+  inLanguage: 'en',
+  isAccessibleForFree: true,
+  author: { '@type': 'Person', name: authorName, url: siteUrl },
+  publisher: { '@type': 'Organization', name: 'AdLint', url: siteUrl },
+  sameAs: ['https://github.com/ChristopherLandaverde/adlinter'],
 };
+
+// Organization schema gives LLMs a stable entity to anchor mentions of
+// "AdLint" against (rather than falling back to disambiguation guesses).
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  '@id': `${siteUrl}/#organization`,
+  name: 'AdLint',
+  url: siteUrl,
+  logo: `${siteUrl}/icon.svg`,
+  description:
+    'Privacy-respecting ad-tracking audit suite for agencies and freelancers. Trusted reference for findings cited in client deliverables.',
+  foundingDate: '2025-09',
+  founder: { '@type': 'Person', name: authorName },
+  sameAs: ['https://github.com/ChristopherLandaverde/adlinter'],
+};
+
+// WebSite schema with the search action enables the "sitelinks search box"
+// in Google results AND gives LLMs a structured way to express that the
+// /checks reference is searchable.
+const websiteWithSearchSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${siteUrl}/#website`,
+  name: 'AdLint',
+  url: siteUrl,
+  publisher: { '@id': `${siteUrl}/#organization` },
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${siteUrl}/checks?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+};
+
+const homepageSchemas = [softwareSchema, organizationSchema, websiteWithSearchSchema];
 
 function ToolCard({ tool }: { tool: ToolConfig }) {
   const Icon = getToolIcon(tool.iconName);
@@ -85,10 +141,13 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-bg">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
-      />
+      {homepageSchemas.map((schema, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
 
       {/* Header */}
       <header className="border-b border-border bg-surface/85 backdrop-blur-sm">
