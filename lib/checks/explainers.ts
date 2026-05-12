@@ -626,9 +626,25 @@ export const explainers: CheckExplainer[] = [
     source: 'report',
     severity: 'warning',
     summary: 'View-through conversions are more than 3x click-driven conversions for one or more actions.',
+    directAnswer:
+      'One or more Google Ads conversion actions show view-through conversions exceeding click-driven conversions by more than 3x. A high VTC-to-click ratio means impression-based credit is doing most of the reporting work, which inflates the apparent performance of display, video, and remarketing campaigns and skews bidding decisions away from incremental media.',
     why: 'A high view-through to click ratio can make display, video, or remarketing campaigns appear to drive more incremental performance than they really do. View-through conversions are impression-based, so long windows can claim credit for users who would have converted anyway. The advertiser may overfund prospecting or remarketing that is mostly harvesting post-impression credit.',
     howToFix: 'Review the view-through conversion window for flagged actions in Google Ads. Shorten the VTC window, separate VTC-heavy actions from bidding decisions, and compare performance using click conversions or experiments. For high-stakes budget decisions, evaluate incrementality instead of treating VTC and click conversions as equivalent.',
     example: 'Conversions: 40 total\nView-through conversions: 32\nClick conversions: 8\nVTC/click ratio: 4.0x',
+    citationTemplate:
+      'This account shows a view-through to click conversion ratio exceeding 3:1 on one or more enabled Google Ads conversion actions. Per Google Ads attribution documentation, view-through conversions credit users who saw but did not click a display or video ad, and large VTC-to-click ratios typically indicate that impression-based credit is harvesting users who would have converted anyway rather than measuring incremental media. The optimisation risk is overspending on display and remarketing whose apparent performance evaporates under incrementality testing. Fix: shorten the view-through window on flagged conversion actions, separate VTC-heavy actions from bidding-eligible goals (mark them Secondary), and use experiments or geo-holdouts to measure incrementality before treating VTC and click conversions as equivalent. Source: support.google.com/google-ads/answer/2375431.',
+    references: [
+      {
+        label: 'Google Ads. About view-through conversions',
+        url: 'https://support.google.com/google-ads/answer/2375431',
+      },
+      {
+        label: 'Google Ads. About attribution models',
+        url: 'https://support.google.com/google-ads/answer/6259715',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['model-attribution-drift', 'roas-sanity'],
   },
   {
@@ -637,9 +653,25 @@ export const explainers: CheckExplainer[] = [
     source: 'report',
     severity: 'warning',
     summary: 'Reported ROAS is suspiciously high or low for conversion actions with meaningful volume.',
+    directAnswer:
+      'Your Google Ads performance report contains conversion actions with implausible ROAS values: either extremely high (50x+) or near-zero with meaningful conversion volume. Extreme ROAS is almost always a broken value pipeline rather than genuine performance: cents passed as dollars, fixed values on dynamic revenue, currency mismatches, or missing value pass-through.',
     why: 'Extreme ROAS values usually mean the value pipeline is broken, not that performance is extraordinary. Common causes include currency mismatches, cents passed as dollars, fixed values on dynamic revenue, or missing value pass-through. If ignored, budget and bidding decisions are made from fake profitability.',
     howToFix: 'Audit the flagged conversion actions from report row back to Google Ads settings and the GTM value parameter. Confirm value units, currency, and whether the value is dynamic or fixed. Compare a sample order total in your backend with the value recorded in Google Ads for the same time window.',
     example: 'Suspicious: 26 purchases, conversion value / cost = 87.4x\nLikely issue: value is passed in cents or duplicated',
+    citationTemplate:
+      'One or more Google Ads conversion actions in this report show ROAS values inconsistent with reasonable business performance (either extreme highs or near-zero with significant conversion volume). Per Google Ads value-based bidding documentation, conversion value must be passed in the account currency as a numeric, transaction-specific value for ROAS reporting and tROAS bidding to be meaningful. Implausible ROAS almost always indicates a broken value pipeline: cents passed as dollars, a fixed value overriding dynamic revenue, a currency mismatch between site and account, or no value parameter at all. The optimisation risk is budget decisions made from fake profitability. Fix: trace each flagged action from report row back to Google Ads settings and the GTM value parameter, confirm units and currency, and reconcile one sample order between the backend and the conversion row before trusting tROAS or value-based bidding. Source: support.google.com/google-ads/answer/7501826.',
+    references: [
+      {
+        label: 'Google Ads. About value-based bidding',
+        url: 'https://support.google.com/google-ads/answer/7501826',
+      },
+      {
+        label: 'Google Ads. Set up conversion value',
+        url: 'https://support.google.com/google-ads/answer/9888879',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['zero-value-purchases', 'value-mismatch', 'roas-feasibility'],
   },
   {
@@ -648,9 +680,25 @@ export const explainers: CheckExplainer[] = [
     source: 'report',
     severity: 'critical',
     summary: 'Enabled Google Ads conversion actions have no matching volume in the performance report.',
+    directAnswer:
+      'One or more enabled Google Ads conversion actions on this account show zero conversions in the performance report. An "enabled" action that records nothing means the tracking pipeline is silently broken: a missing GTM tag, a wrong conversion label, a renamed action, or a trigger that no longer fires. If the action is set Primary, Smart Bidding is optimising against feedback it never receives.',
     why: 'A conversion can be enabled and still be effectively dead. Broken tags, wrong triggers, renamed actions, or label mismatches leave Google Ads bidding toward actions that produce no signal. This is especially dangerous when the action is Primary because campaigns may enter learning with missing feedback.',
     howToFix: 'For each ghost action, check whether the Google Ads conversion label exists in GTM or the site tag and whether the trigger still fires. Use Tag Assistant, GTM Preview, and a real test conversion to verify the hit reaches Google Ads. Disable stale actions or mark them Secondary if they are intentionally retained for history.',
     example: 'Settings: Purchase - Primary - Enabled\nReport: Purchase has 0 conversions across the selected period',
+    citationTemplate:
+      'This account contains enabled Google Ads conversion actions that record zero conversion volume across the reporting period. Per Google Ads conversion tracking documentation, an enabled conversion action is expected to receive hits via a website tag, GA4 import, or offline conversion upload, and a sustained zero count indicates the tracking pipeline is broken: a missing GTM tag, a mismatched conversion label, a renamed action whose tag was never updated, or a trigger that no longer fires. The risk is highest when the ghost action is set Primary, because Smart Bidding optimises against feedback it never receives. Fix: trace each flagged action to its expected source, verify conversion ID and label in GTM or the site tag, confirm with Tag Assistant that a real test conversion reaches Google Ads, and either repair the tag or move the action to Removed or Secondary. Source: support.google.com/google-ads/answer/6095821.',
+    references: [
+      {
+        label: 'Google Ads. Verify conversion tracking is working',
+        url: 'https://support.google.com/google-ads/answer/6095821',
+      },
+      {
+        label: 'Google Tag Manager. Google Ads Conversion Tracking tag',
+        url: 'https://support.google.com/tagmanager/answer/6105160',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['conversion-label-matching', 'ads-conversion-missing-gtm-tag'],
   },
   {
@@ -659,9 +707,25 @@ export const explainers: CheckExplainer[] = [
     source: 'report',
     severity: 'warning',
     summary: 'Micro-conversion volume is more than 100x macro-conversion volume.',
+    directAnswer:
+      'Lightweight events (page views, scrolls, micro-signups) are recording more than 100x the volume of your real business outcomes (purchases, qualified leads). When micro-conversions dominate the goal set, Smart Bidding learns to chase easy actions instead of revenue, and reporting drifts from pipeline reality even as conversion totals climb.',
     why: 'When page views, signups, or other lightweight events dominate the conversion set, Smart Bidding can learn to chase easy actions instead of revenue or qualified leads. The account may show rising conversion volume while pipeline or sales do not improve. Analysts also lose a clear read on whether campaigns are moving real business outcomes.',
     howToFix: 'Mark micro-conversions as Secondary unless they are intentionally used for bidding. Keep the primary goal set focused on purchases, qualified leads, or another downstream action. If you need micro events for learning, isolate them in separate experiments or campaigns instead of mixing them with macro goals.',
     example: 'Macro purchases: 42\nMicro signups/page events: 7,800\nMicro/macro ratio: 185x',
+    citationTemplate:
+      'This account has a micro to macro conversion volume ratio exceeding 100:1, meaning lightweight events such as page views, scrolls, or non-qualified signups are reporting at least 100x the volume of true business outcomes. Per Google Ads conversion goals documentation, Primary conversion actions are the actions Smart Bidding optimises toward, and concentrating Primary status on macro outcomes prevents the bidder from learning to chase easy events at the expense of revenue or qualified leads. The optimisation risk is rising conversion totals with flat or declining pipeline. Fix: mark micro-conversions as Secondary unless they are intentionally used for bidding, keep Primary goals focused on purchases or qualified leads, and isolate any micro-event learning in separate experiments or campaigns rather than mixing with macro goals. Source: support.google.com/google-ads/answer/12727548.',
+    references: [
+      {
+        label: 'Google Ads. About conversion goals',
+        url: 'https://support.google.com/google-ads/answer/12727548',
+      },
+      {
+        label: 'Google Ads. Primary and secondary actions',
+        url: 'https://support.google.com/google-ads/answer/10812308',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['missing-primary-conversion', 'smart-bidding-volume'],
   },
   {
@@ -670,9 +734,25 @@ export const explainers: CheckExplainer[] = [
     source: 'report',
     severity: 'info',
     summary: 'Model-attributed conversions differ sharply from standard conversion counts.',
+    directAnswer:
+      'The conversions column and the model-attributed conversions column on this account differ by more than a tolerable margin. Large drift means the selected attribution model is redistributing credit across touchpoints enough to change optimisation and reporting conclusions. Drift can be valid, but it has to be intentional and documented so finance, media, and analytics are not arguing from different numbers.',
     why: 'Large drift means the selected attribution model is redistributing credit enough to change optimization and reporting conclusions. That can be valid, but it needs to be intentional and understood by the team. Otherwise finance, media buyers, and analytics will argue from different numbers for the same conversion action.',
     howToFix: 'Compare the conversion action attribution model, reporting columns, and business sales cycle. If drift is expected, document which column is used for budget decisions and why. If it is not expected, standardize attribution models across similar actions and inspect whether view-through or cross-device conversions are driving the gap.',
     example: 'Standard conversions: 120\nCurrent model attributed conversions: 43\nDrift: 64%',
+    citationTemplate:
+      'This account shows a significant gap between standard conversion counts and model-attributed conversion counts on one or more conversion actions. Per Google Ads attribution documentation, model-attributed conversions redistribute credit across the user path based on the selected model (data-driven, position-based, time-decay, linear, last-click, or first-click), and large drift between this column and the standard conversions column indicates the model is materially reshaping reported performance. The risk is reporting inconsistency: finance, media, and analytics teams arguing from different numbers for the same action. Fix: review each flagged conversion action attribution model against the business sales cycle, document which column drives budget decisions and why, standardise attribution models across similar actions, and inspect whether view-through or cross-device conversions are the source of the drift. Source: support.google.com/google-ads/answer/6259715.',
+    references: [
+      {
+        label: 'Google Ads. About attribution models',
+        url: 'https://support.google.com/google-ads/answer/6259715',
+      },
+      {
+        label: 'Google Ads. About data-driven attribution',
+        url: 'https://support.google.com/google-ads/answer/9133479',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['vtc-click-ratio', 'short-attribution-windows'],
   },
   {
@@ -681,9 +761,25 @@ export const explainers: CheckExplainer[] = [
     source: 'report',
     severity: 'critical',
     summary: 'Similar conversion names both have active volume, which suggests live double-counting.',
+    directAnswer:
+      'Two or more similarly named Google Ads conversion actions are both recording live volume. Settings-level duplicates are risky in theory; active duplicates prove the problem is affecting reports right now. The usual cause is one event firing under two action names, a renamed action whose tag still runs, or a GA4 import that mirrors a site-tag action. Totals are inflated and Smart Bidding is training on duplicated outcomes.',
     why: 'Settings duplicates are risky, but active duplicates prove the problem is affecting reports now. Similar actions with volume can represent the same event firing under two names, a renamed conversion that still receives traffic, or an import plus tag pair counting together. This inflates totals and trains bidding on duplicated outcomes.',
     howToFix: 'Compare the flagged pairs by name, source, category, and recent timestamps. Keep one canonical conversion action, merge reporting expectations around it, and mark the duplicate Secondary or remove its tag/import. After changing it, watch both conversion count and conversion value for the next reporting period.',
     example: 'Purchase - Website: 312 conversions\nPurchase Website: 298 conversions\nLikely same event counted twice',
+    citationTemplate:
+      'This Google Ads account contains pairs of conversion actions with very similar names that both record active volume across the reporting period. Per Google Ads conversion tracking documentation, each conversion action is intended to represent a distinct user outcome, and active volume on near-duplicate actions strongly indicates the same event being counted through two paths (for example, a website tag plus a GA4 import for the same purchase, or two GTM tags listening to the same dataLayer event). The downstream effects are inflated conversion totals, Smart Bidding optimising against duplicated volume, and ROAS that diverges from backend revenue. Fix: compare the flagged pairs by source, category, and timestamps, keep one canonical conversion action per outcome, mark the duplicate Removed or Secondary, and verify in Tag Assistant that only one conversion request fires per real user outcome before publishing. Source: support.google.com/google-ads/answer/3438531.',
+    references: [
+      {
+        label: 'Google Ads. Troubleshoot conversion counts',
+        url: 'https://support.google.com/google-ads/answer/3438531',
+      },
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['duplicate-conversions', 'conversion-label-matching'],
   },
   {
@@ -1164,9 +1260,25 @@ export const explainers: CheckExplainer[] = [
     source: 'cross',
     severity: 'critical',
     summary: 'An enabled Google Ads conversion action has no corresponding conversion tag in GTM.',
+    directAnswer:
+      'An enabled Google Ads conversion action exists with no matching Google Ads Conversion Tracking tag in the GTM container. Google Ads will continue to list the action as live, but the site never fires it. Volume will be zero or incomplete, and if the orphaned action is set Primary, Smart Bidding is learning from feedback that does not exist.',
     why: 'Google Ads can list an action as enabled even when the site never sends it. If the matching GTM tag is absent, renamed, or never deployed, conversion volume will be zero or incomplete. Primary actions in this state give Smart Bidding no usable feedback.',
     howToFix: 'Match every enabled Google Ads conversion action to a GTM Google Ads conversion tag or a deliberate non-GTM source such as an offline import. For GTM-managed actions, verify conversion ID, label, trigger, and publication status. Disable or mark Secondary any actions that are no longer supposed to receive traffic.',
     example: 'Google Ads: Lead Submit enabled\nGTM: no AW conversion tag or tag name containing Lead Submit',
+    citationTemplate:
+      'This account has one or more enabled Google Ads conversion actions with no corresponding Google Ads Conversion Tracking tag in the connected GTM container. Per Google Tag Manager Google Ads Conversion Tracking documentation, each enabled conversion action requires a tag with the matching AW conversion ID and label, plus a working trigger, in order to receive volume from the website. An orphaned enabled action will continue to appear live in Google Ads while silently recording zero conversions; if it is Primary, Smart Bidding optimises against absent feedback. Fix: pair every enabled action to either a published GTM conversion tag (verified conversion ID, label, trigger, and publication status) or a deliberate non-GTM source such as an offline import, and mark unmatched actions Removed or Secondary. Source: support.google.com/tagmanager/answer/6105160.',
+    references: [
+      {
+        label: 'Google Tag Manager. Google Ads Conversion Tracking tag',
+        url: 'https://support.google.com/tagmanager/answer/6105160',
+      },
+      {
+        label: 'Google Ads. Verify conversion tracking is working',
+        url: 'https://support.google.com/google-ads/answer/6095821',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['ghost-conversions', 'conversion-label-matching'],
   },
   {
@@ -1175,9 +1287,25 @@ export const explainers: CheckExplainer[] = [
     source: 'cross',
     severity: 'critical',
     summary: 'GTM conversion values do not match the values configured or expected in Google Ads.',
+    directAnswer:
+      'The conversion value sent by your GTM tag does not match the value Google Ads is configured to accept (or expects from the business model). A fixed value of 1 on a purchase tag, a dataLayer variable that resolves empty, or a currency mismatch between site and account all produce wrong values in the report while the conversion count still looks correct. ROAS, tROAS, and any value-based bidding strategy break the moment values are wrong.',
     why: 'Value mismatches make revenue reports unreliable even when conversion counts look correct. A fixed GTM value can override dynamic purchase revenue, or Google Ads settings can imply a different value strategy than the tag actually sends. This breaks ROAS, value-based bidding, and finance reconciliation.',
     howToFix: 'Trace the value from the site dataLayer into the GTM tag and then into Google Ads. If the business uses dynamic revenue, the GTM value parameter should reference a transaction value variable and Google Ads should accept transaction-specific values. If fixed values are intentional, document the model and make sure every platform uses the same assumptions.',
     example: 'GTM value parameter: 1\nGoogle Ads purchase value: 129.99\nExpected: {{DLV - ecommerce.value}}',
+    citationTemplate:
+      'This account contains a value mismatch between the conversion value sent by GTM and the value Google Ads is configured to receive on one or more enabled conversion actions. Per Google Ads value-based bidding documentation, the value parameter on the Google Ads Conversion Tracking tag must reference a transaction-specific value variable (typically a Data Layer Variable reading the e-commerce purchase value) and be denominated in the account currency for ROAS reporting and tROAS bidding to function. A fixed value of 1, a dataLayer variable that resolves empty, or a currency mismatch produces ROAS figures that diverge from backend revenue while conversion counts appear correct. Fix: trace the value from site dataLayer to GTM tag to Google Ads action, confirm dynamic values use a transaction value variable, verify the account currency matches, and reconcile one sample order between backend and Google Ads before trusting value-based bidding. Source: support.google.com/google-ads/answer/9888879.',
+    references: [
+      {
+        label: 'Google Ads. Set up conversion value',
+        url: 'https://support.google.com/google-ads/answer/9888879',
+      },
+      {
+        label: 'Google Ads. About value-based bidding',
+        url: 'https://support.google.com/google-ads/answer/7501826',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['zero-value-purchases', 'roas-sanity'],
   },
   {
@@ -1186,9 +1314,25 @@ export const explainers: CheckExplainer[] = [
     source: 'cross',
     severity: 'critical',
     summary: 'GTM conversion IDs or labels may not match the intended Google Ads conversion actions.',
+    directAnswer:
+      'One or more Google Ads conversion tags in your GTM container may be sending a conversion ID or label that does not match the intended Google Ads conversion action. The conversion ID and label are the only signals Google uses to route a hit to an action: if either is wrong, the tag fires successfully and the conversion lands in the wrong action or vanishes entirely.',
     why: 'The conversion ID and label determine which Google Ads action receives the hit. If either value is wrong, the tag can fire successfully while credit lands in the wrong action or nowhere useful. This creates ghost conversions, orphaned actions, and bidding signals attached to the wrong goal.',
     howToFix: 'Open the Google Ads conversion action and copy the AW conversion ID and conversion label directly into the GTM tag. Avoid variable labels unless you have a controlled lookup table and tests for every output. Preview a test conversion and confirm the fired request contains the expected send_to value.',
     example: 'Expected send_to: AW-123456789/AbCdEfGhIjk\nGTM tag sends: AW-123456789/{{Conversion Label}}',
+    citationTemplate:
+      'This GTM container contains Google Ads Conversion Tracking tags whose conversion ID or label may not align with the intended Google Ads conversion action. Per Google Tag Manager documentation, the conversion ID (AW-NNNNNNNNN) and conversion label uniquely route a tag hit to a specific conversion action; an incorrect ID, an incorrect label, or a dynamic variable label that resolves unexpectedly will fire the tag successfully while crediting the wrong action or no action at all. The downstream symptoms are ghost conversions on the intended action, mystery volume on an unrelated action, and Smart Bidding optimising on the wrong goal. Fix: copy the conversion ID and label directly from the Google Ads Conversion action into each GTM tag, avoid variable labels unless backed by a tested lookup table, and verify in Tag Assistant Preview that the fired request contains the expected send_to value. Source: support.google.com/tagmanager/answer/6105160.',
+    references: [
+      {
+        label: 'Google Tag Manager. Google Ads Conversion Tracking tag',
+        url: 'https://support.google.com/tagmanager/answer/6105160',
+      },
+      {
+        label: 'Google Ads. Find your conversion ID and label',
+        url: 'https://support.google.com/google-ads/answer/3097054',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['ghost-conversions', 'ads-conversion-missing-gtm-tag'],
   },
   {
@@ -2248,9 +2392,25 @@ export const explainers: CheckExplainer[] = [
     source: 'ads',
     severity: 'info',
     summary: 'Google Ads conversion tag names in GTM do not clearly match enabled conversion action names in Google Ads.',
+    directAnswer:
+      'Google Ads matches conversion tags by conversion ID and label, not by friendly name, so a naming mismatch between GTM tag names and Google Ads action names does not break tracking on its own. It does make the setup hard to audit. A reviewer cannot tell at a glance which Ads action receives each tag hit, which increases the chance of editing the wrong tag, leaving renamed actions live, or missing duplicates during cleanup.',
     why: 'Google Ads matching is controlled by conversion ID and label, not by the friendly name, so a naming mismatch does not automatically break tracking. It does make the setup harder to audit because the person reviewing GTM cannot confidently tell which Google Ads action receives each tag hit. That increases the chance of editing the wrong tag, leaving renamed actions active, or missing duplicates during a cleanup. Clear naming is especially important when agencies hand off accounts or when multiple conversion actions share the same category.',
     howToFix: 'In Google Ads, open Tools & Settings -> Measurement -> Conversions and copy the exact active conversion action names that should be tracked from GTM. In Google Tag Manager, open Workspace -> Tags and rename each Google Ads Conversion Tracking tag so the business action, source, and Ads action name are recognizable. Do not change conversion IDs or labels during the naming cleanup unless you are intentionally remapping the tag. Preview one conversion and compare the GTM tag name, send_to value, and Google Ads action name before publishing.',
     example: 'Google Ads action: Purchase - Website\nGTM tag name: Google Ads - Purchase - Website\nsend_to: AW-123456789/AbCdEfGhIjk',
+    citationTemplate:
+      'This GTM container contains Google Ads Conversion Tracking tags whose names do not clearly correspond to the active Google Ads conversion action names. Per Google Tag Manager and Google Ads documentation, tag-to-action matching is controlled by conversion ID and label rather than friendly name, so this is an auditability issue rather than a tracking break: it raises the cost of every future review, handoff, and cleanup, and increases the risk of editing the wrong tag or missing a duplicate. Fix: rename each Google Ads Conversion Tracking tag in GTM so the business action, source, and matching Ads action are recognisable in the tag list, leave conversion IDs and labels untouched during the naming cleanup, and verify in Tag Assistant Preview that the send_to value still routes to the intended Ads action before publishing. Source: support.google.com/tagmanager/answer/6105160.',
+    references: [
+      {
+        label: 'Google Tag Manager. Google Ads Conversion Tracking tag',
+        url: 'https://support.google.com/tagmanager/answer/6105160',
+      },
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['conversion-label-matching', 'ads-conversion-missing-gtm-tag', 'volume-weighted-duplicates'],
   },
   {
@@ -2808,9 +2968,25 @@ export const explainers: CheckExplainer[] = [
     source: 'cross',
     severity: 'warning',
     summary: 'Enabled Google Ads conversions do not cover enough major funnel stages across awareness, consideration, conversion, and retention.',
+    directAnswer:
+      'Your enabled Google Ads conversion actions cover only one or two stages of the user funnel. When the entire conversion setup tracks just a single end-stage outcome (typically Purchase or Lead), teams lose visibility into whether media is generating qualified visits, product interest, checkout progress, or repeat value. For lower-volume accounts this also makes Smart Bidding brittle: it sees only sparse macro outcomes and no diagnostic signal in between.',
     why: 'Google Ads conversion measurement is meant to track valuable actions such as purchases, sign-ups, and other customer activity after ad interactions. When only one end-stage action is tracked, teams lose visibility into whether media is generating qualified visits, product interest, checkout progress, leads, purchases, or repeat value. That can make optimization brittle for lower-volume accounts because Smart Bidding and analysts see only sparse macro outcomes. The goal is not to count every click as a conversion, but to maintain a defensible funnel map with Primary macro actions and Secondary diagnostic actions.',
     howToFix: 'In Google Ads, open Tools & Settings -> Measurement -> Conversions and list the enabled actions by funnel stage. Add or repair missing diagnostic actions for important stages, then set only the true business outcome as Primary and keep supporting micro-conversions Secondary unless they are intentionally used for bidding. In GTM, open Workspace -> Tags and verify each website-based action has a matching trigger on the real page or event, not only a button click that can fail validation. Re-run the full audit with both GTM and Google Ads exports to confirm no more than one major stage is missing.',
     example: 'Primary: Purchase or Qualified Lead\nSecondary: Landing Page Visit, Product View, Add to Cart, Begin Checkout, Repeat Purchase',
+    citationTemplate:
+      'This Google Ads account does not have enabled conversion actions covering enough stages of the user funnel (landing visit, product view, add to cart or begin checkout, lead or purchase, repeat purchase). Per Google Ads conversion goals documentation, the recommended structure is one Primary macro action per business outcome (Purchase or Qualified Lead) backed by Secondary diagnostic actions across the rest of the funnel. The funnel map gives analysts and Smart Bidding visibility between the campaign click and the macro outcome, which is especially important for lower-volume accounts where the macro action alone is too sparse for reliable optimisation. Fix: list enabled actions by funnel stage in Tools & Settings → Measurement → Conversions, add or repair missing diagnostic actions, mark only the true business outcome as Primary and the rest Secondary, and verify in GTM that each website-based action has a working trigger on the real page or event before re-running the audit. Source: support.google.com/google-ads/answer/12727548.',
+    references: [
+      {
+        label: 'Google Ads. About conversion goals',
+        url: 'https://support.google.com/google-ads/answer/12727548',
+      },
+      {
+        label: 'Google Ads. Primary and secondary actions',
+        url: 'https://support.google.com/google-ads/answer/10812308',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['micro-conversion-pollution', 'missing-primary-conversion', 'conversion-naming-alignment'],
   },
   {
