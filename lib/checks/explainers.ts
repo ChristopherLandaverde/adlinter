@@ -461,6 +461,166 @@ export const explainers: CheckExplainer[] = [
     relatedChecks: ['model-attribution-drift', 'long-attribution-windows', 'attribution-window-mismatch'],
   },
   {
+    id: 'all-vs-primary-gap',
+    name: 'Primary Gap',
+    source: 'report',
+    severity: 'info',
+    summary: 'One or more conversion actions show "All conversions" more than 2x the "Conversions" column.',
+    directAnswer:
+      'Your Google Ads account has conversion actions where "All conversions" runs more than twice the size of "Conversions." That gap is the volume marked Secondary. It counts in reports. It does not feed Smart Bidding. So a big chunk of what looks like account-wide performance is invisible to the bidder making your spend decisions.',
+    why: 'The "Conversions" column is the one Smart Bidding optimizes against. Only actions flagged as Primary land in it. "All conversions" is the catch-all, including every Secondary action plus imports, cross-account, and cross-device variants. When the gap goes above 2x, you have a meaningful amount of conversion volume that the bidder is ignoring on purpose.\n\nSometimes that is correct. Newsletter signups, scroll events, and PDF downloads belong in Secondary. They are diagnostic, not commercial. But the same gap appears when somebody demoted a real revenue action during a cleanup pass, or when a new action was added and never promoted, or when an import is feeding Secondary while the tag-based version was disabled. From the outside the numbers look fine. Reporting shows healthy growth in "All conversions." Internally, the bidder is steering off a smaller, possibly stale signal.\n\nThe other symptom: Smart Bidding learning loops keep restarting because the Primary action does not have enough volume to escape learning, while the Secondary action has plenty. The fix is one toggle. The cost of leaving it alone is months of underperforming campaigns.',
+    howToFix:
+      '1. Open Google Ads, Goals, Conversions, Summary. Sort by the gap between "All conv." and "Conversions." 2. For each flagged action, decide: should this feed bidding (Primary) or is it diagnostic (Secondary)? 3. Promote real revenue or qualified-lead actions to Primary at the appropriate goal level. 4. Leave page views, scrolls, and minor engagement as Secondary. 5. Recheck the report after 7-14 days and confirm the gap closed on the actions you promoted.',
+    example: 'Lead Form: Conversions = 42, All conversions = 128, ratio 3.0x\nMost of the volume is sitting in Secondary and not feeding the bidder.',
+    citationTemplate:
+      'This Google Ads account has one or more conversion actions where the "All conversions" column exceeds the "Conversions" column by more than 2x. Per Google Ads conversion goals documentation, only Primary actions feed the "Conversions" column that Smart Bidding optimizes against. Volume marked Secondary is reported but excluded from bidding decisions. A gap this large usually means a real revenue action was left as Secondary after a goals reorganization, a newly added action was never promoted, or an offline import is duplicating a tag-based action that has since been demoted. The visible effect is healthy "All conversions" growth alongside underperforming campaigns and Smart Bidding learning loops that fail to settle. Fix: review the flagged actions, promote genuine revenue or qualified-lead actions to Primary at the correct goal level, and leave diagnostic events as Secondary. Source: support.google.com/google-ads/answer/12727548.',
+    references: [
+      {
+        label: 'Google Ads. About conversion goals',
+        url: 'https://support.google.com/google-ads/answer/12727548',
+      },
+      {
+        label: 'Google Ads. About Smart Bidding',
+        url: 'https://support.google.com/google-ads/answer/7065882',
+      },
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['conversion-concentration', 'micro-conversion-pollution', 'model-attribution-drift'],
+  },
+  {
+    id: 'conversion-concentration',
+    name: 'Concentration Risk',
+    source: 'report',
+    severity: 'warning',
+    summary: 'A single conversion action accounts for more than 90% of total conversion volume.',
+    directAnswer:
+      'Your Google Ads account has one conversion action carrying over 90% of total volume. If that action breaks, Smart Bidding loses almost all of its training signal in a single failure. There is no fallback, no second source feeding the bidder while you investigate.',
+    why: 'Smart Bidding is a learner. It needs a steady stream of conversion events to keep its model calibrated to current site behavior. When 90%+ of that stream comes from one action, you have a single point of failure on the most expensive part of the account: the bidder itself. A broken tag, a renamed event, a consent change, a checkout redesign, a CMS migration, any of those things can zero out the dominant action overnight. The bidder does not stop. It just operates with stale or missing feedback and quietly drifts off-target.\n\nThe second risk is observational. With one action dominating, your reports cannot tell whether the business is healthy or whether one tag is healthy. You lose the ability to spot funnel issues because everything aggregates into the same number. A drop in newsletter signups, a drop in add-to-carts, a drop in account creations: invisible. You only see purchases, and you see them late.\n\nDiversification here is not about creating fake actions. It is about making sure the supporting events on the path to revenue (lead submit, add to cart, begin checkout, account create) are tracked, named, and at least visible as Secondary so a single failure does not blank the account.',
+    howToFix:
+      '1. Identify the dominant action in the report and confirm its volume share. 2. Audit the rest of the funnel: are add-to-cart, begin-checkout, account-create, or lead-submit events tracked at all? 3. Implement the missing upstream actions as Secondary conversions so they appear in "All conversions" without disrupting bidding. 4. Add at least one backup Primary if the business model supports it (a qualified lead in addition to purchase, for example). 5. Set up an alert on the dominant action so a sudden drop pages someone within 24 hours, not 30 days.',
+    example: 'Purchase: 1,840 conversions (94%)\nAll other actions combined: 117 conversions (6%)\nLose Purchase tracking and Smart Bidding has 6% of its signal left.',
+    citationTemplate:
+      'This Google Ads account has a single conversion action representing more than 90% of total conversion volume. Per Google Ads conversion tracking and Smart Bidding documentation, the bidder relies on a stable conversion signal to keep its model calibrated. When that signal is concentrated in one action, any failure of that action (broken tag, renamed event, consent change, checkout redesign) zeros out the training data overnight while bidding continues to operate on stale feedback. The reporting side of the account also loses the ability to distinguish a business problem from a tagging problem, because every funnel issue collapses into the same dominant number. Fix: audit upstream funnel events, implement missing add-to-cart, begin-checkout, or lead-submit actions as Secondary so they appear in "All conversions," and add at least one backup Primary action where the business model supports it. Source: support.google.com/google-ads/answer/7065882.',
+    references: [
+      {
+        label: 'Google Ads. About Smart Bidding',
+        url: 'https://support.google.com/google-ads/answer/7065882',
+      },
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+      {
+        label: 'Google Ads. About conversion goals',
+        url: 'https://support.google.com/google-ads/answer/12727548',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['all-vs-primary-gap', 'ghost-conversions', 'whale-conversion'],
+  },
+  {
+    id: 'funnel-volume-inversion',
+    name: 'Leak Detector',
+    source: 'report',
+    severity: 'info',
+    summary: 'Lower-funnel conversions (purchases, transactions) exceed upper-funnel volume (add-to-cart, signups).',
+    directAnswer:
+      'Your Google Ads conversion report shows more purchases than add-to-carts. That is physically impossible on a working site. The report is telling you that an upper-funnel event is missing, mis-tagged, or no longer firing. Smart Bidding is reading a funnel that does not exist.',
+    why: 'On any real ecommerce or lead-gen path, upper-funnel volume has to be larger than lower-funnel volume. Add-to-cart precedes purchase. View-content precedes add-to-cart. Begin-checkout sits between cart and purchase. If purchases out-number add-to-carts, one of three things is happening: the upper-funnel tag was never deployed, the upper-funnel tag was deployed once and broke during a later site change, or the upper-funnel action exists in Google Ads settings but its trigger never fires (renamed page, redesigned cart drawer, SPA route that does not emit the event).\n\nWhy this matters beyond the obvious: Smart Bidding can use upper-funnel events as supporting signals for portfolio strategies, and lookalike-style audiences benefit from a fuller event stream. With upper-funnel events missing, the optimizer is working with the narrow bottom of the funnel only. That is a smaller training set, longer learning periods, and noisier bid decisions in low-volume segments.\n\nThe inversion is also a tripwire. If you only audit purchase tracking, you will never notice the cart event has been broken for six months. This check catches it from the shape of the report rather than from inspecting tags directly.',
+    howToFix:
+      '1. Identify which upper-funnel category is missing or under-counted (add-to-cart, begin-checkout, view-content, signup, etc). 2. Open GTM and confirm the corresponding tag exists, is published, and has a current trigger. 3. Walk the actual funnel in a browser with GTM Preview or Tag Assistant and confirm the event fires at the expected step. 4. For SPAs, verify the trigger is bound to a route change or virtual pageview event, not a DOM ready that only runs once. 5. After the fix, wait 48 hours and confirm upper-funnel volume now exceeds lower-funnel volume in the report.',
+    example: 'Purchases: 412\nAdd-to-cart: 0\nBegin-checkout: 0\nThe cart and checkout tags stopped firing after the recent theme update.',
+    citationTemplate:
+      'This Google Ads account is reporting more lower-funnel conversions (purchases, transactions) than upper-funnel conversions (add-to-cart, begin-checkout, signup, view-content). Per Google Ads conversion tracking documentation, conversion volume should follow the physical order of the funnel on the site, with each upstream step producing at least as many events as the downstream step it feeds. An inversion of this shape indicates an upper-funnel tag that was never deployed, a tag that broke during a later site change (theme update, checkout redesign, SPA route change), or a trigger bound to a DOM ready that no longer matches the current markup. The optimizer loses access to supporting signals that would otherwise tighten bid decisions on lower-volume segments. Fix: identify the under-counted upper-funnel category, confirm the matching tag is published with a current trigger, walk the funnel in GTM Preview, and verify that upstream volume exceeds downstream volume within 48 hours. Source: support.google.com/google-ads/answer/1722022.',
+    references: [
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+      {
+        label: 'Google Ads. About conversion goals',
+        url: 'https://support.google.com/google-ads/answer/12727548',
+      },
+      {
+        label: 'Google Ads. About Smart Bidding',
+        url: 'https://support.google.com/google-ads/answer/7065882',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['ghost-conversions', 'micro-conversion-pollution', 'all-vs-primary-gap'],
+  },
+  {
+    id: 'value-instability',
+    name: 'Value Instability',
+    source: 'report',
+    severity: 'warning',
+    summary: 'Average conversion value varies more than 10x within the same conversion category.',
+    directAnswer:
+      'Your Google Ads account has conversion actions in the same category where average values swing by more than 10x. Either the categories are mixing genuinely different products, or one of the actions is sending the wrong number. Target ROAS and value-based bidding are running on values you cannot trust.',
+    why: 'Average conversion value should cluster within a category. All "purchase" actions on the same site should sit within a reasonable range of each other, because the underlying basket sizes do. When one purchase action averages $12 and another in the same category averages $640, three things might be true: a tag is passing cents instead of dollars (the classic 100x error), a tag is passing a placeholder value like 1 or 0 while another tag passes real revenue, or currency is being sent without a `currency_code` and Google Ads is treating EUR as USD silently.\n\nThe consequence is downstream and quiet. Target ROAS bidding optimizes against the value each action reports. If half your purchase actions are off by 100x in either direction, tROAS is chasing a fictional revenue surface and the campaign will either starve (under-reported value) or overspend (over-reported value). Reporting suffers the same way: the revenue column in Google Ads diverges from the commerce backend, and finance reconciliation breaks once a month forever.\n\nTest transactions left in production are another common cause. Someone runs a $0.01 test purchase, or a $9,999 staging order, and never excludes the test action from production reporting.',
+    howToFix:
+      '1. List the conversion actions in the flagged category with their average values. 2. For each outlier, trace the value parameter from the site dataLayer through GTM and into the Google Ads tag. Confirm units (dollars vs cents), confirm currency, confirm whether the value is dynamic or hardcoded. 3. Reconcile three recent real orders against the value Google Ads received for the same transactions. 4. Fix tag-level value bugs at the source rather than overriding in Google Ads. 5. Exclude or rename test-environment actions so they cannot pollute production reporting.',
+    example: 'Category: purchase\nAction A average value: $8.40\nAction B average value: $612.00\nRatio: 73x. One of these is wrong.',
+    citationTemplate:
+      'This Google Ads account has conversion actions within a single category where average conversion value varies by more than 10x. Per Google Ads conversion value documentation, value-based bidding strategies such as Target ROAS optimize directly against the value each conversion action reports. Variance this large inside one category typically indicates a tag passing cents while another passes dollars (the 100x error), a hardcoded placeholder value (1 or 0) running alongside a dynamic revenue value, missing currency parameters causing silent currency mismatches, or a test-environment action leaking into production reporting. The downstream effect is a Target ROAS strategy optimizing against a revenue surface that does not exist, with the campaign either starving on under-reported value or overspending on over-reported value. Fix: trace the value parameter from dataLayer through GTM into the Google Ads tag, confirm units and currency, reconcile three recent orders against the commerce backend, and exclude test-environment actions from production goals. Source: support.google.com/google-ads/answer/13064107.',
+    references: [
+      {
+        label: 'Google Ads. Conversion values',
+        url: 'https://support.google.com/google-ads/answer/13064107',
+      },
+      {
+        label: 'Google Ads. About Target ROAS',
+        url: 'https://support.google.com/google-ads/answer/6268637',
+      },
+      {
+        label: 'Google Ads. About conversion tracking',
+        url: 'https://support.google.com/google-ads/answer/1722022',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['roas-sanity', 'mismatched-values', 'whale-conversion'],
+  },
+  {
+    id: 'whale-conversion',
+    name: 'Whale Check',
+    source: 'report',
+    severity: 'info',
+    summary: 'Fewer than 10% of conversions are driving more than 50% of total conversion value.',
+    directAnswer:
+      'Your Google Ads account has a small share of conversions (under 10% of volume) producing more than half of total conversion value. That is a real revenue pattern in many businesses, but it makes the value signal fragile. Lose tracking on the high-value transactions and Target ROAS instantly loses the majority of its training signal.',
+    why: 'Some businesses are naturally whale-shaped. B2B accounts sell a few large contracts a quarter. Furniture retailers ship a small number of high-ticket orders alongside many accessory orders. Luxury or wholesale catalogs have order distributions that look like power laws. The pattern itself is not a defect.\n\nIt becomes a problem because Target ROAS and value-based bidding average their feedback across all the orders Google Ads sees. When a tiny slice of orders carries most of the value, the bidder is functionally optimizing against that slice. If those whale orders stop being tracked properly (a B2B sales-assisted close that does not import, a high-ticket order processed in a separate checkout, an enterprise deal that converts via a different lead form), the value signal collapses while the volume signal stays unchanged. The dashboard looks the same. The bid strategy quietly starts losing money.\n\nThe second risk is that whales often live in a different tracking path than the long tail. Enterprise leads route through a separate CRM. Wholesale orders use a different payment processor. Each of those paths is its own potential failure mode that the regular conversion audit does not exercise.',
+    howToFix:
+      '1. Confirm whether the whale distribution reflects the real business model or whether one outlier transaction is skewing the data (a test order at $50,000, for example). 2. Document the tracking path each whale segment uses (CRM import, separate processor, enterprise checkout) and confirm each path is independently monitored. 3. Add alerting on the high-value segment specifically. A 24-hour drop in whale volume should page someone. 4. Consider a conversion value rule or value bucket that smooths extreme outliers if Target ROAS is producing volatile bids. 5. Reconcile whale revenue against the commerce or CRM backend monthly.',
+    example: '8% of conversions drive 62% of value.\nLose tracking on the top segment and 62% of the value signal disappears overnight.',
+    citationTemplate:
+      'This Google Ads account shows fewer than 10% of conversions driving more than 50% of total conversion value. Per Google Ads conversion value and Target ROAS documentation, value-based bidding averages its optimization signal across all observed conversions, which means a long-tail distribution of this shape leaves the bidder functionally optimizing against a small set of high-value transactions. If those transactions live in a separate tracking path (CRM import, enterprise checkout, separate payment processor) and that path fails, the value signal collapses while volume looks unchanged, and Target ROAS continues bidding from stale feedback. The pattern often reflects a real B2B, luxury, or wholesale revenue model rather than a defect, but it raises the operational cost of any tracking outage on the whale segment. Fix: confirm the distribution is real (not an outlier test order), document and monitor each whale tracking path independently, add alerting on high-value segment volume, and reconcile whale revenue against the backend monthly. Source: support.google.com/google-ads/answer/6268637.',
+    references: [
+      {
+        label: 'Google Ads. About Target ROAS',
+        url: 'https://support.google.com/google-ads/answer/6268637',
+      },
+      {
+        label: 'Google Ads. Conversion values',
+        url: 'https://support.google.com/google-ads/answer/13064107',
+      },
+      {
+        label: 'Google Ads. About Smart Bidding',
+        url: 'https://support.google.com/google-ads/answer/7065882',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['conversion-concentration', 'value-instability', 'roas-sanity'],
+  },
+  {
     id: 'vtc-click-ratio',
     name: 'Greedy Impression Index',
     source: 'report',
