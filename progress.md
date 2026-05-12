@@ -1,5 +1,68 @@
 # AdLint — Progress Log
 
+## v1.25.4 — De-slop Pass + /checks Page Template Overhaul
+**Commit:** Pending
+
+User feedback: "feels like slop right now." Honest assessment — most of v1.25.1 through v1.25.3 prose had standard AI tells: em dashes everywhere, "AdLint detected..." opening every citation template, "Recommended remediation:" boilerplate, banlist vocabulary ("material risk of," "corrupts," "silently"), metronomic visual rhythm.
+
+This release: bulk de-slop pass on the prose, and a full visual template overhaul that addresses 13 design findings from the live design audit. The page now reads like a publication, not a doc page.
+
+### Prose: bulk de-slop pass (scripts in `scripts/de-slop-*.mjs`)
+Applied across all 90 explainer entries:
+- All em dashes removed (replaced with periods, commas, or parens)
+- "AdLint detected..." opener stripped from every citationTemplate (51 instances)
+- "Recommended remediation:" → "Fix:" (corporate boilerplate)
+- "Per Google's documentation" → "Google's documentation" (less robotic)
+- Banlist vocabulary: "material risk of," "silently," "corrupts," "the practical effect is," "the damage compounds" — all replaced or removed
+- Grammar repair pass to capitalize sentence openers after the boilerplate was stripped
+
+Voice prototype (`missing-conversion-linker`) hand-written first as the target: second-person, chain-walking, varied rhythm, concrete specifics. The bulk pass approximates this across the other 62 full-treatment entries.
+
+### Visual: 13 design findings addressed
+Live design audit on `http://localhost:3947/checks/missing-conversion-linker` surfaced 13 findings ranked by impact. All addressed in this commit:
+
+**HIGH:**
+- F1 — Section variants. H2 sections now have three rhythms: `story` (Why, Fix — large headings), `callout` (Citation — no heading, card treatment), `reference` (References, Related — small uppercase quiet headings). The page is no longer metronomic.
+- F2 — Citation block as deliverable. Wrapped in a dashed-accent card, labelled "FOR YOUR CLIENT REPORT," with a copy-to-clipboard button. The page's actual differentiator now reads as one.
+- F3 — Mobile mockups. `GTMTagListMock` and `GTMTriggerListMock` now stack as card lists at `< sm` breakpoint instead of crushing the 3-column grid. Each row becomes a card with name title + key-value Type/Fires rows.
+
+**MEDIUM:**
+- F4 — Direct answer as lead paragraph. Larger size (text-xl), font-weight 500, accent left rule. Visually elevated from body text.
+- F5 — `Before`/`After` pills on mockup pairs differentiate the broken-state from the fixed-state. No more visual twins.
+- F6 — References as numbered footnotes. `[1]`, `[2]`, `[3]` formatting, two columns at desktop, smaller denser type. Reads like a footer index, not a doc bulleted list.
+- F7 — Author monogram avatar. 32px accent circle with "CL" initials. Authority signal that text byline alone can't carry.
+- F8 — Example block with "Configuration" header + copy button. Code dumps now read like recipe steps.
+
+**POLISH:**
+- F9 — Smaller, quieter category chips at top. They whisper context, not shout.
+- F11 — Closing CTA. Card at article bottom: "Audit your own files for this check" + "Run a free audit" button.
+- F12 — Sticky table of contents at `lg+` widths. Right column, anchored to `id`'d sections.
+- F13 — Mockup colour legend (one-line caption above each mock explaining what coloured rows mean).
+- F10 deferred (H3 styling — none of the current prose needs sub-headings; can revisit if explainers get restructured later).
+
+### New files
+- `components/check-detail/CopyButton.tsx` — client component, clipboard API
+- `components/check-detail/PageTOC.tsx` — sticky table of contents
+- `scripts/de-slop-explainers.mjs`, `de-slop-pass2.mjs`, `de-slop-pass3.mjs` — one-shot bulk-edit scripts (kept in repo for audit history)
+
+### Files modified
+- `lib/checks/explainers.ts` — every full-treatment entry de-slopped
+- `app/checks/[id]/page.tsx` — full template rewrite for visual fixes
+- `components/mockups/GTMTagListMock.tsx`, `GTMTriggerListMock.tsx` — mobile stacking
+- `progress.md`
+
+### Verification
+- 573 tests pass
+- Type-check clean
+- `npx next build` green (189 routes, 178 check pages)
+- Live screenshots before/after at `/tmp/adlint-design-audit/screenshots/`
+- Design audit report at `/tmp/adlint-design-audit/design-audit-flagship.md`
+
+### Why
+The prose was slop. The layout was a doc page. Both were undermining the reputation-play goal (defensibly citable, Simo-Ahava-tier reference). This release closes that gap on the foundation pages. Remaining 62 explainers benefit from the bulk pass; the visual template applies to all 178 pages uniformly because it's template-level. The lift now is editorial polish on individual entries, not infrastructure.
+
+---
+
 ## v1.25.3 — Google Ads Sprint Complete: All 34 Ads Explainers
 **Commit:** Pending
 
