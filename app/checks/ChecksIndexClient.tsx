@@ -305,6 +305,7 @@ export function ChecksIndexClient({
                 <Link
                   href={`/checks/${e.id}`}
                   onMouseEnter={() => setActiveIndex(i)}
+                  aria-current={i === activeIndex ? 'true' : undefined}
                   className={`flex items-start gap-3 rounded-md border px-4 py-3 transition-colors ${
                     i === activeIndex
                       ? 'border-accent/50 bg-accent/[0.03]'
@@ -340,10 +341,10 @@ export function ChecksIndexClient({
       ) : (
         // EMPTY state: example queries + featured findings.
         <div className="space-y-10">
-          <section>
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted">
+          <section aria-labelledby="try-queries">
+            <h2 id="try-queries" className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted">
               Try
-            </p>
+            </h2>
             <div className="flex flex-wrap gap-2">
               {exampleQueries.map((q) => (
                 <button
@@ -362,10 +363,10 @@ export function ChecksIndexClient({
           </section>
 
           {featured.length > 0 && (
-            <section>
-              <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted">
+            <section aria-labelledby="featured-findings">
+              <h2 id="featured-findings" className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted">
                 Most-cited critical findings
-              </p>
+              </h2>
               <ul className="space-y-1.5">
                 {featured.map((e) => (
                   <li key={e.id}>
