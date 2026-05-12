@@ -565,9 +565,30 @@ export const explainers: CheckExplainer[] = [
     source: 'meta',
     severity: 'critical',
     summary: 'The Meta Pixel export does not show an active PageView event.',
-    why: 'PageView is the base signal for Meta website audiences, diagnostics, and much of the event funnel context. Without it, remarketing audiences are incomplete and downstream events are harder to validate against site traffic. Campaign optimization can also suffer because Meta sees isolated conversions without the normal browsing path.',
-    howToFix: 'Install the Meta base pixel on every page, either directly, through GTM, or through your platform integration. Confirm fbq("track", "PageView") fires once per page load and is not blocked by consent rules after consent is granted. Use Meta Events Manager Test Events to verify active traffic.',
+    directAnswer:
+      'Your Meta Pixel is not firing PageView. PageView is the floor of the pixel. Without it, Meta has no record that any user ever visited the site, which means website custom audiences are empty and every conversion event below it lands without browsing context.',
+    why: 'PageView is what `fbq("init", ...)` followed by `fbq("track", "PageView")` produces. Meta uses it for three things. First, audience building. The "All website visitors" audience and every "Visited specific pages" audience read from PageView. If PageView never fires, those audiences never populate and your remarketing pool stays at zero. Second, event matching quality. Meta scores match quality partly on whether a conversion event has prior PageView hits from the same browser. A Purchase that arrives with no PageView history looks like a server-side leak or a bot, and the match score drops. Third, diagnostics. Events Manager grades the pixel against expected traffic, and when PageView is missing the whole grading panel goes sideways.\n\nThe common failure modes: the base pixel snippet was installed but `fbq("track", "PageView")` got commented out, the pixel is gated behind a consent state that never resolves to granted, or the tag was added through GTM but the trigger is set to a specific event instead of All Pages.',
+    howToFix:
+      '1. Install the Meta base pixel on every page, either inline, via GTM, or through your platform integration (Shopify, WordPress, etc). 2. Confirm `fbq("track", "PageView")` runs once per page load. Pixel Helper should show one PageView per navigation, not zero and not three. 3. If the pixel is consent-gated, verify it actually fires once consent is granted. Walk the denied path, the granted path, and a returning-visitor path. 4. Open Meta Events Manager, go to Test Events, paste a URL from the site, and confirm PageView lands within a few seconds. 5. Republish and re-run AdLint.',
     example: "fbq('init', '1234567890');\nfbq('track', 'PageView');",
+    citationTemplate:
+      'This Meta Pixel is not firing a PageView event. Per Meta\'s pixel documentation, PageView is the base event emitted by `fbq("track", "PageView")` after `fbq("init", ...)` and is required for website custom audiences, event match quality scoring, and Events Manager diagnostics. Without it, the "All website visitors" audience cannot populate, conversion events arrive without prior browsing context (which lowers their match score), and the pixel grading panel in Events Manager will not produce meaningful health data. The pixel may be installed but commented out, blocked by a consent state that never resolves, or attached to a GTM trigger narrower than All Pages. Fix: install or unblock the base pixel, confirm one PageView per pageview in Meta Pixel Helper, and verify in Events Manager Test Events before publishing. Source: developers.facebook.com/docs/meta-pixel.',
+    references: [
+      {
+        label: 'Meta. Meta Pixel implementation guide',
+        url: 'https://developers.facebook.com/docs/meta-pixel/',
+      },
+      {
+        label: 'Meta. Standard events reference',
+        url: 'https://developers.facebook.com/docs/meta-pixel/reference',
+      },
+      {
+        label: 'Meta Business Help. About Standard Events',
+        url: 'https://www.facebook.com/business/help/402791146561655',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['meta-missing-conversion-events', 'meta-ecommerce-funnel'],
   },
   {
@@ -576,9 +597,30 @@ export const explainers: CheckExplainer[] = [
     source: 'meta',
     severity: 'critical',
     summary: 'No active standard Meta conversion event such as Purchase or Lead is present.',
-    why: 'Meta campaigns need standard conversion events to optimize for business outcomes. If only PageView or custom diagnostic events exist, campaigns may optimize for traffic instead of purchases or leads. Advertisers lose audience quality, conversion reporting, and stable event matching for downstream actions.',
-    howToFix: 'Configure the appropriate standard event for the business model: Purchase for e-commerce, Lead or CompleteRegistration for lead generation, and Subscribe or SubmitApplication where relevant. Fire the event on the final confirmation step, not on button click unless the action is guaranteed. Validate the event in Events Manager and confirm it has recent volume.',
+    directAnswer:
+      'Your Meta Pixel fires PageView and maybe a few custom events, but no standard conversion event (Purchase, Lead, CompleteRegistration, Subscribe). Meta has nothing to optimize toward. Any campaign on this account that asks for "Conversions" will quietly fall back to optimizing for traffic, link clicks, or whatever proxy it can find.',
+    why: 'Meta\'s ad delivery system is built around standard events. The optimizer learns "this kind of user, on this kind of placement, at this time of day, eventually fires Purchase." If Purchase never appears in the event stream, the optimizer has no target and the campaign drifts toward whatever signal it can latch onto. That is almost always link clicks, which is the cheapest action and the least correlated with revenue.\n\nThe second problem is reporting. The Ads Manager "Results" column reads from standard events first, custom events second. With no standard events configured, every campaign reports against whatever objective it was created with, and you cannot compare them to each other. Lead campaigns, sales campaigns, app campaigns all show different "Results" units and the numbers stop meaning the same thing.\n\nThe third problem is audiences. Lookalike sources built from Purchase produce dramatically better seed quality than lookalikes built from PageView. No Purchase event, no purchase lookalike, no warm path for prospecting at scale.\n\nThe usual cause is a pixel that was installed for diagnostics during a site rebuild, never wired to the order confirmation page, and never revisited.',
+    howToFix:
+      '1. Identify the right standard event for the business: Purchase for ecommerce, Lead or CompleteRegistration for lead gen, Subscribe or SubmitApplication where relevant. The full list is in Meta\'s standard events reference. 2. Fire the event on the actual confirmation step, not the button click. Button clicks include abandoned attempts and inflate volume. 3. Pass the standard parameters Meta expects for that event (value and currency on Purchase, content_name on Lead, etc). 4. Verify in Events Manager Test Events that the event lands with the expected parameters. 5. Wait 24-48 hours and confirm the event shows recent volume in the Overview tab before optimizing campaigns toward it.',
     example: "fbq('track', 'Purchase', { value: 129.99, currency: 'USD' });",
+    citationTemplate:
+      'This Meta Pixel has no active standard conversion event. Per Meta\'s standard events documentation, events such as Purchase, Lead, CompleteRegistration, and Subscribe are the units Meta uses to optimize ad delivery and to populate Ads Manager Results columns. With only PageView or custom events configured, Conversions-objective campaigns lose their optimization target and tend to drift toward link-click proxies, lookalike audiences built from Purchase cannot be created, and cross-campaign reporting becomes incomparable. The most common root cause is a pixel installed for diagnostics and never wired into the order confirmation or lead confirmation step. Fix: implement the appropriate standard event for the business model, fire it on the confirmation step (not the button click), validate the payload in Events Manager Test Events, and confirm 24-48 hours of stable volume before optimizing campaigns toward it. Source: developers.facebook.com/docs/meta-pixel/reference.',
+    references: [
+      {
+        label: 'Meta. Standard events reference',
+        url: 'https://developers.facebook.com/docs/meta-pixel/reference',
+      },
+      {
+        label: 'Meta Business Help. About Standard Events',
+        url: 'https://www.facebook.com/business/help/402791146561655',
+      },
+      {
+        label: 'Meta. Meta Pixel implementation guide',
+        url: 'https://developers.facebook.com/docs/meta-pixel/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['meta-purchase-missing-value', 'meta-ecommerce-funnel'],
   },
   {
@@ -587,9 +629,30 @@ export const explainers: CheckExplainer[] = [
     source: 'meta',
     severity: 'critical',
     summary: 'Meta Purchase events are firing without usable value data.',
-    why: 'Purchase count alone is not enough for value optimization or reliable ROAS reporting. Without value and currency, Meta cannot distinguish order sizes or optimize toward higher-value customers. The result is volume-biased optimization and a weak comparison against Google Ads or backend revenue.',
-    howToFix: 'Pass dynamic value and currency parameters with every Meta Purchase event. Pull the value from the order confirmation data, not from a hardcoded tag setting. Check Events Manager diagnostics for missing parameters and compare a few recent orders to reported purchase values.',
+    directAnswer:
+      'Your Meta Purchase events fire, but they arrive without `value` and `currency`. Meta counts the order. It cannot tell a $12 sticker sale from a $1,200 furniture sale. Every bid decision and every ROAS number on this account is built on order count, not order revenue.',
+    why: 'Value-based optimization (Meta\'s "Value" purchase optimization goal) needs each Purchase event to carry the actual order total. When `value` is missing, Meta cannot run value optimization at all. The campaign falls back to optimizing for purchase count, which treats a $5 add-on identically to a $500 cart. Spend chases volume, not revenue, and the ROAS column in Ads Manager either shows zero or shows a number Meta calculated from a default value it inferred. Neither is real.\n\nMissing `currency` is the same shape of problem. Meta assumes USD when no currency is sent. Sites that operate in EUR, GBP, or anywhere multi-currency get their reported revenue mis-converted without warning, and the numbers in Ads Manager will not line up with the numbers in Shopify or the order management system.\n\nThis usually happens because the Purchase tag was set up with a static value (often `value: 0` or `value: 1`) during QA and never rewired to the real order total. It also happens when the developer pulled the value from a CSS selector on the confirmation page that no longer exists after a redesign.',
+    howToFix:
+      '1. Pass `value` and `currency` on every Purchase event. Source `value` from the confirmed order total in the order object or the platform\'s data layer. Do not hardcode it. Do not read it from a price string on the page. 2. Use the correct ISO 4217 currency code (USD, EUR, GBP, etc). 3. Include `content_ids` and `content_type: "product"` so Meta can attribute revenue back to specific catalog items for Advantage+ Shopping and dynamic ads. 4. In Events Manager, open the Purchase event and check the Parameters tab. `value` and `currency` should appear with high coverage (Meta will warn if either is below ~90%). 5. Spot-check three recent real orders: the value sent should match the order total in your commerce backend within rounding.',
     example: "fbq('track', 'Purchase', { value: order.total, currency: 'USD', content_ids: order.skus });",
+    citationTemplate:
+      'This Meta Pixel is firing Purchase events without `value` and `currency` parameters. Per Meta\'s standard events reference, Purchase requires both parameters for value-based bid optimization and for accurate revenue reporting in Ads Manager. Without `value`, the optimizer cannot run the Value purchase optimization goal and falls back to optimizing for raw order count, treating low-margin and high-margin orders as equivalent. Without `currency`, Meta defaults to USD and mis-converts revenue from any other currency without flagging it, which causes Ads Manager revenue to diverge from the commerce backend. The typical root cause is a tag wired with a placeholder value during QA, or a value source (such as a DOM selector on the confirmation page) that broke during a later redesign. Fix: pass `value` from the confirmed order total and the correct ISO 4217 `currency`, verify parameter coverage in Events Manager, and reconcile three recent orders against the commerce backend. Source: developers.facebook.com/docs/meta-pixel/reference.',
+    references: [
+      {
+        label: 'Meta. Standard events reference (Purchase parameters)',
+        url: 'https://developers.facebook.com/docs/meta-pixel/reference',
+      },
+      {
+        label: 'Meta Business Help. About Standard Events',
+        url: 'https://www.facebook.com/business/help/402791146561655',
+      },
+      {
+        label: 'Meta. Conversions API. Deduplicate pixel and server events',
+        url: 'https://developers.facebook.com/docs/marketing-api/conversions-api/deduplicate-pixel-and-server-events',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['meta-missing-conversion-events', 'meta-ecommerce-funnel'],
   },
   {
@@ -598,9 +661,30 @@ export const explainers: CheckExplainer[] = [
     source: 'meta',
     severity: 'warning',
     summary: 'Expected Meta e-commerce funnel events are missing or inactive.',
-    why: 'ViewContent, AddToCart, InitiateCheckout, and Purchase give Meta a complete picture of shopping intent. Missing mid-funnel events reduce audience building, funnel diagnostics, and optimization context. Teams then cannot tell whether a campaign fails at product view, cart, checkout, or purchase.',
-    howToFix: 'Implement the standard Meta funnel events on their matching site actions and keep event names exactly aligned with Meta standards. Include content IDs and value where available, especially on AddToCart and Purchase. Test the funnel in Events Manager from product page through order confirmation.',
+    directAnswer:
+      'Your Meta Pixel is missing one or more mid-funnel ecommerce events (ViewContent, AddToCart, InitiateCheckout). Purchase may still be firing, but Meta cannot see the journey that led there. You lose abandoned-cart audiences, dynamic product ads, and most of the diagnostic value Events Manager would otherwise provide.',
+    why: 'Meta\'s ecommerce stack expects a four-event funnel: ViewContent on a product page, AddToCart on cart add, InitiateCheckout when the user enters the checkout flow, Purchase on order completion. Each event powers something specific.\n\nViewContent feeds product-level retargeting and is the seed for Advantage+ Catalog Ads. Without it, dynamic product ads have no inventory of "what did this user look at" and fall back to a generic catalog rotation. AddToCart is what builds your abandoned-cart audience. No AddToCart event, no abandoned-cart audience, no cart-recovery campaign. InitiateCheckout is the late-funnel intent signal Meta uses to find users who are close to buying but did not finish. Skipping it means losing the warmest remarketing pool you have.\n\nThe usual failure pattern is partial coverage. Purchase fires because someone made sure the confirmation page was tagged. The earlier events were never wired because the dev team did not know they existed, or the Shopify / WooCommerce plugin only covers a subset. The pixel looks healthy at the bottom of the funnel and is empty above it.',
+    howToFix:
+      '1. Map each event to a site action. ViewContent on `/products/:slug` pageviews. AddToCart on the add-to-cart button (after the cart actually accepts the item). InitiateCheckout on the first step of the checkout flow. Purchase on the order confirmation page. 2. Use exact Meta standard event names. `AddToCart`, not `add_to_cart`. Custom-cased event names will not match Meta\'s catalog. 3. Pass `content_ids`, `content_type: "product"`, `value`, and `currency` on every event from ViewContent down. These are what tie pixel events to your product catalog. 4. Walk the full funnel once in a real browser. Pixel Helper should show each event fire exactly once at its expected step. 5. In Events Manager, check the Overview tab and confirm all four events show recent volume in a sensible ratio (ViewContent will be the highest, Purchase the lowest).',
     example: 'Expected events: PageView -> ViewContent -> AddToCart -> InitiateCheckout -> Purchase',
+    citationTemplate:
+      'This Meta Pixel is missing one or more standard ecommerce funnel events (ViewContent, AddToCart, InitiateCheckout). Per Meta\'s standard events reference, these events feed product-level retargeting (ViewContent into Advantage+ Catalog Ads), abandoned-cart audiences (AddToCart), and late-funnel intent audiences (InitiateCheckout). With partial funnel coverage, dynamic product ads cannot personalize against viewed products, cart-recovery campaigns cannot be built, and Events Manager cannot grade funnel drop-off. The typical root cause is that the order confirmation page was tagged in isolation while earlier funnel steps were never wired, or a platform plugin covers only Purchase. Fix: implement ViewContent, AddToCart, and InitiateCheckout on their matching site actions using exact Meta standard event names, pass `content_ids`, `content_type`, `value`, and `currency` on each, and verify the full sequence in Pixel Helper and Events Manager. Source: developers.facebook.com/docs/meta-pixel/reference.',
+    references: [
+      {
+        label: 'Meta. Standard events reference',
+        url: 'https://developers.facebook.com/docs/meta-pixel/reference',
+      },
+      {
+        label: 'Meta Business Help. About Standard Events',
+        url: 'https://www.facebook.com/business/help/402791146561655',
+      },
+      {
+        label: 'Meta. Meta Pixel implementation guide',
+        url: 'https://developers.facebook.com/docs/meta-pixel/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['meta-missing-pageview', 'meta-purchase-missing-value'],
   },
   {
