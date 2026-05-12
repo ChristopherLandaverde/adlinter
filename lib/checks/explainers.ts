@@ -2866,6 +2866,230 @@ export const explainers: CheckExplainer[] = [
     relatedChecks: ['snapchat-pixel-id-format', 'snapchat-purchase-missing-value'],
   },
   {
+    id: 'snapchat-duplicate-events',
+    name: 'Duplicate Snap Event Names',
+    source: 'snapchat',
+    severity: 'warning',
+    summary: 'Two or more Snap Pixel events share the same name, splitting volume across copies.',
+    directAnswer:
+      'You have multiple Snap Pixel events firing under the same name (for example, two PURCHASE events from a GTM tag and a Shopify integration, or two PAGE_VIEW events from a hardcoded snippet and a tag manager). Snapchat treats each as a separate stream when you optimise against it, which means one business action ends up split across two signals and neither has the volume Snap needs.',
+    why: 'Snap Pixel events are keyed by name. When `snaptr(\'track\', \'PURCHASE\', ...)` fires twice for the same order from two different sources, Events Manager logs both. The deduplication mechanism Snap provides is `event_id`, not the event name itself, so name collisions without matching event IDs produce true duplicates rather than dedup candidates.\n\nThe common cause is migrations that leave the old implementation live. A team installs Snap via Shopify, then later adds a GTM container with its own PURCHASE tag for richer parameters. Nobody removes the original. Both fire on the order confirmation page. PURCHASE volume in Ads Manager doubles overnight and ROAS appears to spike before anyone realises it is double counting.\n\nThe second cause is parameter forks. A team wants to test sending extra parameters on PURCHASE, copies the tag, edits the copy, forgets to pause the original. Now half the orders get the new payload and half get both.',
+    howToFix:
+      '1. Open Events Manager and look at the event list for the affected pixel. Sort by volume and identify names with suspicious traffic spikes. 2. In GTM, search for every tag that calls `snaptr(\'track\', ...)` and document which event names each one fires. 3. Cross-reference with hardcoded site snippets and commerce integrations (Shopify, WooCommerce). Snap is often installed in more than one place. 4. Pick one canonical source per event and pause or delete the duplicates. 5. Reload the affected pages with the Snap Pixel Helper extension and confirm each event fires exactly once per business action.',
+    example: 'PURCHASE x 2 (one from Shopify integration, one from GTM)\nPAGE_VIEW x 2 (one hardcoded, one from GTM)',
+    citationTemplate:
+      'Your Snap Pixel has duplicate event names firing from more than one source for the same business action. Per Snapchat\'s standard events documentation, each business action should map to one event name and one firing source so Ads Manager volume describes real user behaviour rather than instrumentation overlap. Duplicate PURCHASE or PAGE_VIEW events inflate Events Manager totals, distort ROAS, and feed Snap\'s optimisation engine a doubled signal that biases bidding. Deduplication in Snap relies on `event_id`, not name collision, so two tags with the same name and no shared event ID produce true duplicates. Fix: identify every source firing each event name (GTM, hardcoded snippets, Shopify or other commerce integrations), pick one canonical source per event, pause the rest, and verify single-fire behaviour with the Snap Pixel Helper. Source: businesshelp.snapchat.com/s/article/standard-events.',
+    references: [
+      {
+        label: 'Snapchat. Standard events',
+        url: 'https://businesshelp.snapchat.com/s/article/standard-events',
+      },
+      {
+        label: 'Snapchat. About the Snap Pixel',
+        url: 'https://businesshelp.snapchat.com/s/article/snap-pixel-about',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['snapchat-similar-event-names', 'snapchat-capi-dedup-currency'],
+  },
+  {
+    id: 'snapchat-ecommerce-funnel',
+    name: 'Snap E-commerce Funnel Events',
+    source: 'snapchat',
+    severity: 'warning',
+    summary: 'The Snap Pixel is missing one or more standard e-commerce funnel events.',
+    directAnswer:
+      'Your business is configured as e-commerce, but the Snap Pixel is not tracking the full funnel from PAGE_VIEW through VIEW_CONTENT, ADD_CART, START_CHECKOUT, and PURCHASE. Snapchat\'s audience tools and Smart Bidding expect those five events as the canonical shopper path. Any gap means lookalikes and retargeting pools draw from a partial picture, and Snap cannot model intent steps between landing and purchase.',
+    why: 'Snap recommends the five-step e-commerce funnel for a reason: each step doubles or triples the audience size of the step below it, which is what Snap needs to build reliable lookalikes and run retargeting. PAGE_VIEW is the broadest, PURCHASE the narrowest. The middle three (VIEW_CONTENT for product detail pages, ADD_CART for cart adds, START_CHECKOUT for entering checkout) are what give Snap intent signal on users who are interested but did not convert.\n\nWhen one of those is missing, retargeting falls back to the next available step. If ADD_CART is not firing, the cart abandoner audience either does not exist or has to be approximated from VIEW_CONTENT, which is a far weaker signal. If VIEW_CONTENT is missing, dynamic product ads have no event to associate product IDs with, and DPA campaigns will not optimise correctly.\n\nThe most common gap is START_CHECKOUT. Teams remember to instrument the product page and the confirmation page but skip the checkout entry because it is buried in a multi-step flow. The result is a funnel that jumps straight from cart to purchase with no intermediate signal.',
+    howToFix:
+      '1. Audit each funnel step in the live site. Load a product page and confirm `snaptr(\'track\', \'VIEW_CONTENT\', { item_ids: [...] })` fires. 2. Add a product to cart and confirm ADD_CART fires with `item_ids` and `price`. 3. Enter checkout and confirm START_CHECKOUT fires. 4. Complete a test order and confirm PURCHASE fires with `transaction_id`, `price`, and `currency`. 5. In Events Manager, verify all five events appear in the event list and have non-zero volume after 24 hours. 6. If using Shopify, the native Snap integration covers most of these, but custom checkouts often need manual GTM tags.',
+    example: 'Expected: PAGE_VIEW, VIEW_CONTENT, ADD_CART, START_CHECKOUT, PURCHASE\nObserved: PAGE_VIEW, PURCHASE (missing 3)',
+    citationTemplate:
+      'Your Snap Pixel is missing one or more standard e-commerce funnel events. Per Snapchat\'s standard events documentation, an e-commerce Pixel should fire PAGE_VIEW, VIEW_CONTENT, ADD_CART, START_CHECKOUT, and PURCHASE so Snap can build retargeting audiences at each step and run dynamic product ads correctly. When intermediate events such as ADD_CART or START_CHECKOUT are not firing, retargeting pools collapse to whichever event is available, lookalike seeds shrink to PURCHASE-only volume, and Smart Bidding loses the intent steps it uses to model conversion probability. Fix: instrument each missing event on the right page (VIEW_CONTENT on product pages, ADD_CART on cart adds, START_CHECKOUT on checkout entry), pass `item_ids`, `price`, and `currency` where applicable, and confirm volume in Events Manager. Source: businesshelp.snapchat.com/s/article/standard-events.',
+    references: [
+      {
+        label: 'Snapchat. Standard events',
+        url: 'https://businesshelp.snapchat.com/s/article/standard-events',
+      },
+      {
+        label: 'Snapchat. About the Snap Pixel',
+        url: 'https://businesshelp.snapchat.com/s/article/snap-pixel-about',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['snapchat-missing-conversion-events', 'snapchat-purchase-missing-value'],
+  },
+  {
+    id: 'snapchat-missing-conversion-events',
+    name: 'Missing Snap Conversion Events',
+    source: 'snapchat',
+    severity: 'critical',
+    summary: 'No active Snap conversion event (PURCHASE, SIGN_UP, SUBSCRIBE, or START_CHECKOUT) was found.',
+    directAnswer:
+      'Your Snap Pixel is installed and may be firing PAGE_VIEW, but none of the standard conversion events Snap optimises against are active. Without at least one of PURCHASE, SIGN_UP, SUBSCRIBE, or START_CHECKOUT, you cannot run conversion campaigns, build value-based audiences, or measure cost per acquisition in Ads Manager. The pixel is acting as a traffic counter, not a measurement system.',
+    why: 'Snap Ads Manager separates campaign objectives by event. To run a Conversions objective campaign you must select a standard event the pixel is already receiving. If your active events list only contains PAGE_VIEW (or some non-standard custom event), the conversion objective dropdown is empty for that pixel and the campaign cannot be built.\n\nThe second consequence is bidding. Snap\'s auto-bid and target cost strategies need a conversion event to optimise toward. With none configured, the only available strategy is impression-based, which gives up Snap\'s optimisation entirely. You are paying for reach, not outcomes.\n\nThe third is audiences. Retargeting and lookalike pools seeded from conversion events (purchasers, subscribers, signed-up users) are the highest-value audiences Snap offers. Without those events firing, the seed lists do not exist and you fall back to broad PAGE_VIEW retargeting, which performs poorly.\n\nThe usual cause is a partial install: the Snap Pixel base code is on every page (so PAGE_VIEW works) but the team never added the `snaptr(\'track\', \'PURCHASE\', ...)` call to the order confirmation page.',
+    howToFix:
+      '1. Identify the business outcome that matches a Snap standard conversion event. PURCHASE for e-commerce, SIGN_UP for lead gen, SUBSCRIBE for subscription products, START_CHECKOUT for funnel intent. 2. Add the matching `snaptr(\'track\', ...)` call on the page that confirms the outcome (order confirmation for PURCHASE, post-signup page for SIGN_UP). 3. Pass required parameters: `transaction_id`, `price`, and `currency` for PURCHASE; `user_email` (hashed) where relevant. 4. Deploy and place one real test conversion. 5. Confirm it appears in Events Manager within minutes and the event becomes available in the Conversions objective dropdown in Ads Manager.',
+    example: 'Active events: PAGE_VIEW only\nExpected at minimum: PAGE_VIEW + one of PURCHASE, SIGN_UP, SUBSCRIBE, START_CHECKOUT',
+    citationTemplate:
+      'Your Snap Pixel has no active standard conversion event. Per Snapchat\'s standard events and Conversions objective documentation, running optimised campaigns requires at least one of PURCHASE, SIGN_UP, SUBSCRIBE, or START_CHECKOUT to be firing on the relevant business event. Without one, the Conversions objective dropdown for the pixel is empty, auto-bid strategies have no signal to optimise against, and conversion-seeded audiences cannot be built. The pixel reverts to a traffic counter rather than a measurement system. Fix: identify which standard conversion event matches your business outcome, instrument it on the page that confirms the outcome, pass `transaction_id`, `price`, and `currency` where applicable, and verify it appears in Events Manager and in the Ads Manager objective dropdown. Source: businesshelp.snapchat.com/s/article/standard-events.',
+    references: [
+      {
+        label: 'Snapchat. Standard events',
+        url: 'https://businesshelp.snapchat.com/s/article/standard-events',
+      },
+      {
+        label: 'Snapchat. About the Snap Pixel',
+        url: 'https://businesshelp.snapchat.com/s/article/snap-pixel-about',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['snapchat-missing-page-view', 'snapchat-ecommerce-funnel'],
+  },
+  {
+    id: 'snapchat-missing-page-view',
+    name: 'Missing Snap PAGE_VIEW Event',
+    source: 'snapchat',
+    severity: 'critical',
+    summary: 'No active PAGE_VIEW event was found on the Snap Pixel.',
+    directAnswer:
+      'The Snap Pixel snippet is on the site, but PAGE_VIEW is either not firing or is paused. PAGE_VIEW is the base signal Snap uses to confirm the pixel is alive and to seed broad audiences. Without it, Events Manager shows no baseline traffic, retargeting pools cannot be built from site visitors, and Snap will surface the pixel as inactive even if conversion events occasionally fire.',
+    why: 'When you install Snap, the base code includes a `snaptr(\'track\', \'PAGE_VIEW\')` call that runs on every page load. That single event does three jobs at once. It confirms to Snap that the pixel is reachable from the user\'s browser. It populates the broadest retargeting audience (all site visitors in the last N days). It serves as the denominator for funnel diagnostics so Snap can show conversion rates from view to purchase.\n\nWhen PAGE_VIEW is missing or disabled, all three break. Events Manager shows the pixel as low- or zero-volume and may flag it as unhealthy. Site-visitor retargeting either does not exist or relies on a custom event with much lower coverage. Funnel reports show conversion rates over an unknown base because Snap does not know how many pages were viewed.\n\nThe usual cause is one of two things. Either the base code was modified to remove the auto PAGE_VIEW call (sometimes done deliberately for SPAs where developers plan to fire it manually on route changes, then forget the manual call). Or the entire base snippet is gated behind a consent banner that never grants consent because of a misconfiguration.',
+    howToFix:
+      '1. Load any tracked page and open the Snap Pixel Helper extension. Confirm PAGE_VIEW appears in the event list. 2. If missing, check the base snippet in source view. The default snippet includes `snaptr(\'track\', \'PAGE_VIEW\')` at the bottom. 3. For SPAs, ensure a manual `snaptr(\'track\', \'PAGE_VIEW\')` fires on every route change, not just the initial load. 4. If consent gating is the cause, confirm the consent platform is granting Snap the right purpose before the base snippet runs. 5. After fixing, confirm PAGE_VIEW volume in Events Manager grows over a 24-hour window.',
+    example: 'Base snippet ends with: snaptr(\'track\', \'PAGE_VIEW\');\nObserved: line removed or never executed',
+    citationTemplate:
+      'Your Snap Pixel is installed but PAGE_VIEW is not firing. Per Snapchat\'s Snap Pixel installation documentation, the base snippet auto-fires PAGE_VIEW on every page load, and this event acts as the health check, broad retargeting seed, and funnel denominator for the pixel. When PAGE_VIEW is absent, Events Manager may flag the pixel as inactive, broad site-visitor retargeting cannot be built, and conversion-rate reporting loses its base. Common causes include a modified base snippet on single-page apps without a replacement manual fire on route changes, or a consent banner gating the snippet without granting the right purpose. Fix: restore the auto PAGE_VIEW call, instrument route changes on SPAs, verify consent flow grants Snap, and confirm volume with the Snap Pixel Helper. Source: businesshelp.snapchat.com/s/article/snap-pixel-about.',
+    references: [
+      {
+        label: 'Snapchat. About the Snap Pixel',
+        url: 'https://businesshelp.snapchat.com/s/article/snap-pixel-about',
+      },
+      {
+        label: 'Snapchat. Standard events',
+        url: 'https://businesshelp.snapchat.com/s/article/standard-events',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['snapchat-pixel-id-format', 'snapchat-missing-conversion-events'],
+  },
+  {
+    id: 'snapchat-purchase-missing-value',
+    name: 'Snap PURCHASE Missing Value',
+    source: 'snapchat',
+    severity: 'critical',
+    summary: 'PURCHASE events are firing without value data, blocking ROAS and value-based bidding.',
+    directAnswer:
+      'Your Snap PURCHASE events are firing with non-zero volume but the `price` field is zero or missing. Without value, Snapchat cannot compute ROAS, cannot run value-based bidding (target ROAS, value optimisation), and reports the campaign as if every order were worth nothing. Conversion counts look fine while the revenue column stays at zero.',
+    why: 'Snap\'s PURCHASE event accepts `price` and `currency` as standard parameters. `price` carries the order total. `currency` is an ISO 4217 code that lets Snap convert across markets for aggregated reporting. When `price` is missing or zero, the event still counts as one conversion (so Conversions objective campaigns keep running), but ROAS in Ads Manager is zero divided by spend, which is zero, and value-based optimisation has no signal to weight against.\n\nThis usually happens for two reasons. First, the team copied a generic PURCHASE snippet that did not include a value parameter and never went back to wire up the order total from the cart object. Second, a server-side templating bug renders the price as a string with currency symbols (`$129.90`) or with a comma decimal (`129,90`), and the Snap Pixel rejects or coerces it to zero. The browser shows the event firing, the console shows the call going out, but Events Manager logs value as zero.\n\nWith value missing, you cannot meaningfully compare campaigns by ROAS, and you cannot trust Snap\'s lookalikes from value-based seed audiences, because the seed audience has no values to weight by.',
+    howToFix:
+      '1. Open the order confirmation page and inspect the `snaptr(\'track\', \'PURCHASE\', ...)` call in the browser console. 2. Confirm the second argument includes `price` as a number (not a string), and `currency` as a three-letter ISO 4217 code. 3. If your platform exposes the order total as a string like `$129.90`, strip the symbol and parse as a float before passing to Snap. 4. Fire a real test order and confirm the PURCHASE event in Events Manager shows the correct value and currency. 5. After 24 hours, check the ROAS column in Ads Manager has populated.',
+    example: 'Wrong: snaptr(\'track\', \'PURCHASE\', { transaction_id: \'10492\' })\nRight: snaptr(\'track\', \'PURCHASE\', { transaction_id: \'10492\', price: 129.90, currency: \'USD\' })',
+    citationTemplate:
+      'Your Snap PURCHASE events are firing without value data. Per Snapchat\'s standard events documentation, PURCHASE should include `price` (as a number) and `currency` (as an ISO 4217 code) so Ads Manager can report ROAS and value-based bidding can weight conversions by revenue. When `price` is missing or zero, conversion counts still log but the revenue column reads as zero, ROAS becomes meaningless, and value-based optimisation has no signal to weight against. Common causes include generic copy-paste snippets that omit the parameter, or templating bugs that render the price as a string with currency symbols, which the pixel coerces to zero. Fix: pass `price` as a numeric value and `currency` as an ISO 4217 code on every PURCHASE call, verify in Events Manager, and confirm the ROAS column populates in Ads Manager. Source: businesshelp.snapchat.com/s/article/standard-events.',
+    references: [
+      {
+        label: 'Snapchat. Standard events',
+        url: 'https://businesshelp.snapchat.com/s/article/standard-events',
+      },
+      {
+        label: 'Snapchat Marketing API. Conversions API reference',
+        url: 'https://marketingapi.snapchat.com/docs/conversion.html',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['snapchat-capi-dedup-currency', 'snapchat-ecommerce-funnel'],
+  },
+  {
+    id: 'snapchat-similar-event-names',
+    name: 'Similar Snap Event Names',
+    source: 'snapchat',
+    severity: 'info',
+    summary: 'Two or more Snap events have similar names that may represent the same action.',
+    directAnswer:
+      'Your Snap Pixel has events with names that look like typos or variants of each other (for example, `purchase` and `Purchase`, or `ADD_CART` and `AddToCart`). Snap treats each unique string as a distinct event, so similar names split what should be one signal across two streams. Both streams end up below the volume Snap needs to optimise reliably.',
+    why: 'Snap event names are case-sensitive strings. `PURCHASE`, `Purchase`, and `purchase` are three different events to Events Manager. The same goes for spacing and separators: `ADD_CART` is not the same event as `AddCart` or `ADD CART`. When two tags fire what was intended to be the same business action under slightly different names, both events appear in the event list, both accumulate volume, and the Conversions objective dropdown shows both as selectable.\n\nThis matters because Snap\'s optimisation engine needs roughly 50 events per week per event to bid well. Splitting one stream across two names cuts each in half. Two underpowered events optimise worse than one event at full volume.\n\nIt also confuses reporting. Analysts see two PURCHASE-like events in the dashboard, do not know which one to trust, and either sum them (risking double counting if both fire on the same order) or pick one arbitrarily.\n\nThe usual cause is a migration where the new tag introduced a different casing convention than the old one, or a custom event that should have been mapped to a Snap standard event but was given a bespoke name instead.',
+    howToFix:
+      '1. Review the flagged event pairs and identify the canonical name. For Snap standard events, the canonical name is the all-caps version listed in the standard events documentation (`PURCHASE`, not `Purchase`). 2. Update the tag firing the non-canonical name to use the canonical one. 3. If both names have historical volume, decide whether to keep the old name as a deprecated audience source or delete it. 4. Reload affected pages with the Snap Pixel Helper and confirm only the canonical name fires. 5. Re-baseline the canonical event\'s volume over the next week.',
+    example: 'Flagged pair: \'PURCHASE\' and \'Purchase\'\nFlagged pair: \'ADD_CART\' and \'AddToCart\'',
+    citationTemplate:
+      'Your Snap Pixel has events with similar names that likely represent the same business action. Per Snapchat\'s standard events documentation, event names are case-sensitive strings and each unique name is treated as a distinct event by Events Manager and the Conversions objective optimiser. When near-duplicate names split one business action across two streams, each stream ends up below the roughly 50 events per week per event threshold Snap needs to optimise reliably, and reporting becomes ambiguous about which event represents the true conversion. Fix: identify the canonical name (the all-caps form for standard events), update the offending tag to use it, and verify single-fire behaviour with the Snap Pixel Helper. Source: businesshelp.snapchat.com/s/article/standard-events.',
+    references: [
+      {
+        label: 'Snapchat. Standard events',
+        url: 'https://businesshelp.snapchat.com/s/article/standard-events',
+      },
+      {
+        label: 'Snapchat. About the Snap Pixel',
+        url: 'https://businesshelp.snapchat.com/s/article/snap-pixel-about',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['snapchat-duplicate-events', 'snapchat-standard-event-names'],
+  },
+  {
+    id: 'snapchat-standard-event-names',
+    name: 'Snap Standard Event Names',
+    source: 'snapchat',
+    severity: 'warning',
+    summary: 'Events tagged as standard do not match Snap\'s canonical standard event names.',
+    directAnswer:
+      'You have events marked as standard in the Snap Pixel that do not match Snap\'s canonical list (PAGE_VIEW, VIEW_CONTENT, SEARCH, ADD_CART, ADD_BILLING, ADD_TO_WISHLIST, START_CHECKOUT, PURCHASE, SIGN_UP, SUBSCRIBE). Snap will not treat these as standard for objective selection, audience templates, or dynamic product ads. They behave as custom events even though they are flagged as standard.',
+    why: 'Snap maintains a fixed list of standard event names. These names unlock specific Ads Manager features: the Conversions objective dropdown lists them by default, dynamic product ads require VIEW_CONTENT and PURCHASE with specific `item_ids`, value-based bidding expects `price` on PURCHASE, and audience templates assume the standard names.\n\nWhen a team installs a Snap event using a near-match like `Purchase` instead of `PURCHASE`, or `Checkout` instead of `START_CHECKOUT`, Snap stores it as a custom event with a string name. It will still appear in Events Manager and you can still optimise against it as a custom conversion, but you lose the templated audience definitions, the dynamic product ad integration, and the default placement in the objective UI.\n\nThe migration cost is real. Once a campaign has been optimising against the wrong-name event for weeks, switching to the canonical name resets the learning phase on every campaign that depended on it. Better to instrument the canonical name from day one.\n\nThe usual cause is a developer who paraphrased the event name from memory or from a third-party blog post that used inconsistent casing.',
+    howToFix:
+      '1. Open Snapchat\'s standard events documentation and copy the exact canonical names. 2. Audit every `snaptr(\'track\', ...)` call in GTM, hardcoded snippets, and commerce integrations. 3. Replace non-canonical strings with the canonical ones. Pay attention to case (all caps) and separators (underscores, not spaces or dashes). 4. Deploy and verify each event reappears in Events Manager under the canonical name. 5. Where a campaign was optimising against a non-canonical name, plan for the optimisation reset and switch the campaign to the new canonical event when volume is sufficient.',
+    example: 'Wrong: snaptr(\'track\', \'Purchase\') / snaptr(\'track\', \'Add to Cart\')\nRight: snaptr(\'track\', \'PURCHASE\') / snaptr(\'track\', \'ADD_CART\')',
+    citationTemplate:
+      'Your Snap Pixel has events flagged as standard that do not match the canonical Snap standard event names. Per Snapchat\'s standard events documentation, Snap recognises a fixed list (PAGE_VIEW, VIEW_CONTENT, SEARCH, ADD_CART, ADD_BILLING, ADD_TO_WISHLIST, START_CHECKOUT, PURCHASE, SIGN_UP, SUBSCRIBE) and only these names unlock the Conversions objective default dropdown, dynamic product ads, value-based bidding, and templated audience definitions. Near-match names such as `Purchase` or `AddToCart` are stored as custom events and lose those features even when the underlying business action is identical. Fix: copy the canonical names from the standard events documentation, replace non-canonical strings in every `snaptr(\'track\', ...)` call, and plan for the optimisation reset on any campaign that depended on the old name. Source: businesshelp.snapchat.com/s/article/standard-events.',
+    references: [
+      {
+        label: 'Snapchat. Standard events',
+        url: 'https://businesshelp.snapchat.com/s/article/standard-events',
+      },
+      {
+        label: 'Snapchat. About the Snap Pixel',
+        url: 'https://businesshelp.snapchat.com/s/article/snap-pixel-about',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['snapchat-similar-event-names', 'snapchat-duplicate-events'],
+  },
+  {
+    id: 'snapchat-zero-volume-events',
+    name: 'Zero Volume Active Snap Events',
+    source: 'snapchat',
+    severity: 'warning',
+    summary: 'One or more active Snap events have recorded zero volume.',
+    directAnswer:
+      'You have Snap events marked active in Events Manager that have logged zero events. An active event with no volume usually means a broken trigger, a tag that never fires, a blocked request, or a rule scoped so narrowly that no real user matches it. Either way, the event is dead weight: it occupies a slot in the objective dropdown and the audience list, but it cannot be optimised against.',
+    why: 'Snap shows three event states: active (eligible to receive volume), paused (intentionally stopped), and inactive (not eligible). A zero-volume active event is the most ambiguous of the three. From Snap\'s perspective, the event is ready to receive data. From your perspective, no data is coming in. The gap is always somewhere in your implementation.\n\nThe four common causes:\n\nFirst, the tag never fires. A GTM trigger is wired to an element selector that no longer exists on the page after a redesign. The tag is enabled, but no event ever matches the trigger.\n\nSecond, the request is blocked. A consent platform, ad blocker, or CSP rule prevents `snaptr` calls from reaching Snap. The tag executes, the call queues, the network request fails. Events Manager sees nothing.\n\nThird, the event name was renamed and the old name is still in the active list. You moved to `PURCHASE` from `Purchase`, but the `Purchase` event is still flagged active with zero new volume.\n\nFourth, the rule is too narrow. A custom event is gated behind a parameter check that almost no user satisfies.',
+    howToFix:
+      '1. For each zero-volume active event, identify the source tag in GTM or the hardcoded snippet. 2. Reproduce the triggering action in a browser with the Snap Pixel Helper extension open. Confirm whether `snaptr(\'track\', ...)` actually fires. 3. If the tag does not fire, fix the trigger (selector change, page path mismatch, consent gate). If the tag fires but the request is blocked, check the network tab for blocked requests to `sc-static.net` or `tr.snapchat.com`. 4. If the event is a renamed legacy, pause or archive it in Events Manager. 5. If the rule is too narrow, broaden the trigger or accept that the event has no audience and archive it.',
+    example: 'Active events with zero volume: \'Lead\', \'PURCHASE_v2\', \'TestCheckout\'',
+    citationTemplate:
+      'Your Snap Pixel has events marked active in Events Manager with zero recorded volume. Per Snapchat\'s Snap Pixel documentation, an active event is eligible to receive data, so zero volume points to an implementation gap rather than a Snap-side issue. Common causes include GTM triggers wired to selectors that no longer exist after a site redesign, consent platforms or ad blockers blocking the network request to `tr.snapchat.com`, renamed events left active under their old name with no new traffic, or overly narrow rule conditions that no real user satisfies. Each zero-volume event still occupies a slot in the objective dropdown and audience list while delivering nothing optimisable. Fix: reproduce the triggering action with the Snap Pixel Helper, verify whether the tag fires and the request leaves the browser, fix or archive each event accordingly. Source: businesshelp.snapchat.com/s/article/snap-pixel-about.',
+    references: [
+      {
+        label: 'Snapchat. About the Snap Pixel',
+        url: 'https://businesshelp.snapchat.com/s/article/snap-pixel-about',
+      },
+      {
+        label: 'Snapchat. Standard events',
+        url: 'https://businesshelp.snapchat.com/s/article/standard-events',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['snapchat-duplicate-events', 'snapchat-similar-event-names'],
+  },
+  {
     id: 'wrong-counting-method',
     name: 'Wrong Conversion Counting Method',
     source: 'ads',
