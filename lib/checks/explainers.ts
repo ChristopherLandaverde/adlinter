@@ -2246,6 +2246,246 @@ export const explainers: CheckExplainer[] = [
     relatedChecks: ['pinterest-conversion-api-parity', 'pinterest-checkout-missing-value'],
   },
   {
+    id: 'pinterest-checkout-missing-value',
+    name: 'Pinterest Checkout Event Missing Value',
+    source: 'pinterest',
+    severity: 'critical',
+    summary: 'Pinterest Checkout events are firing without a value or currency payload.',
+    directAnswer:
+      'Your Pinterest Checkout events are arriving in Events Manager with zero or missing `value`. The conversion counts. The dollars do not. That means every ROAS, AOV, and value-based bidding strategy your account team is running is working from a blank revenue field. Pinterest can tell that a Checkout happened, but it cannot tell whether the order was 12 dollars or 1,200, so the optimizer treats every Checkout as equivalent.',
+    why: 'Pinterest documents `value` and `currency` as required for any optimization that bids on revenue, and for any reporting downstream that compares spend to outcome. When Checkout fires without them, three things break in sequence.\n\nFirst, value-based bidding cannot run. Pinterest Smart Bidding objectives that target ROAS need a populated `value` to learn from; without it, the campaign falls back to Checkout-volume optimization and ignores the size of the basket entirely. Second, the Events Manager revenue column reads zero, so the in-platform dashboard contradicts the ecommerce backend on every reconciliation. Third, the Conversions API mirror inherits the same gap, because a server payload that omits `value` cannot deduplicate against a browser payload that also omits it without ambiguity.\n\nFor an agency client review, this is the line that fails first. You can defend conversion count. You cannot defend revenue attribution when `value` is missing from the source event.',
+    howToFix:
+      '1. Open the Pinterest Tag implementation on the order confirmation page and confirm the Checkout call passes both `value` (numeric, no currency symbol) and `currency` (ISO 4217, for example USD or EUR). 2. In Tag Manager or your dataLayer, source `value` from the same order total your backend uses for reconciliation, not from a UI string. 3. Mirror the same `value` and `currency` into the Conversions API Checkout payload with a shared `event_id`. 4. Send a test Checkout and verify Events Manager reports the populated value and currency on both Browser and Server columns. 5. Confirm that the revenue column on the Pinterest campaign report begins populating within 24 hours and matches backend totals within an acceptable margin.',
+    example: 'Problem: twq(\'event\', \'Checkout\', { event_id: \'abc\' })\nBetter:  twq(\'event\', \'Checkout\', { event_id: \'abc\', value: 84.50, currency: \'USD\', order_id: \'1001\' })',
+    citationTemplate:
+      'This Pinterest Tag is recording Checkout events without a `value` or `currency` payload. Pinterest documentation requires both fields for value-based bidding, revenue reporting in Events Manager, and Conversions API deduplication on monetary events. When Checkout fires with empty value, Pinterest Smart Bidding cannot optimize toward ROAS, the in-platform revenue column reads zero, and reconciliation against the ecommerce backend fails. Conversion volume in the Pinterest dashboard therefore overstates the defensible revenue picture and produces an attribution story that cannot survive a client performance review. Fix: populate `value` and `currency` on every Checkout event from the same order total the backend uses, mirror the fields into the Conversions API payload with a shared `event_id`, and verify Events Manager reports populated revenue on both Browser and Server columns. Source: help.pinterest.com/en/business/article/track-conversions-with-pinterest-tag.',
+    references: [
+      {
+        label: 'Pinterest. Install the Pinterest Tag',
+        url: 'https://help.pinterest.com/en/business/article/install-the-pinterest-tag',
+      },
+      {
+        label: 'Pinterest. Conversions API',
+        url: 'https://developers.pinterest.com/docs/conversions/conversion-management/',
+      },
+      {
+        label: 'Pinterest. Conversions API getting started',
+        url: 'https://developers.pinterest.com/docs/conversions/getting-started/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['pinterest-missing-conversion-events', 'pinterest-conversion-api-parity', 'pinterest-ecommerce-funnel'],
+  },
+  {
+    id: 'pinterest-duplicate-events',
+    name: 'Pinterest Duplicate Event Names',
+    source: 'pinterest',
+    severity: 'warning',
+    summary: 'The same Pinterest event name is configured more than once on this account.',
+    directAnswer:
+      'Two or more Pinterest events share the same name in Events Manager. From the optimizer perspective, that means a single business action is producing two competing signals. Pinterest cannot tell which one is the source of truth for bidding, so it treats them as separate streams that count the same Checkout twice, or splits volume between them and starves both of learning data.',
+    why: 'Pinterest configures bidding and reporting on the event name. Two Checkout events under one tag is not a redundancy. It is two distinct objects that each get their own audiences, their own optimization counters, and their own row in reporting.\n\nThe shapes that produce duplicates are predictable. A migration from a legacy tag template left the old Checkout in place when the new one launched. A staging configuration got promoted to production without removing the test event. A second GTM container loaded by a forgotten embed re-registered an event already published by the primary container. In every case, the front end still works. Events fire. The dashboard shows numbers. But the numbers are split, and the optimizer is running on half-evidence.\n\nFor agencies reviewing a Pinterest account, duplicate events are also the cleanest indicator that the implementation has been touched by multiple owners without governance. Even when reporting impact looks small, the configuration is a red flag for the rest of the audit.',
+    howToFix:
+      '1. In Pinterest Events Manager, sort the event list by name and identify every event that appears more than once. 2. For each duplicate pair, determine which event is currently used by active campaigns and audiences and which is dormant. 3. Pause the dormant event, confirm no campaign or audience depends on it, and then archive it. 4. If both events are in use, consolidate the campaigns onto the canonical event before archiving the other. 5. Reload the page and verify that each event name appears exactly once and that subsequent Checkout, Lead, or Signup hits land on the canonical event only.',
+    example: 'Problem: Checkout (legacy template), Checkout (new template), both active\nBetter:  Checkout (canonical), legacy archived after audience and campaign migration',
+    citationTemplate:
+      'This Pinterest Tag has more than one event configured under the same name. Pinterest treats each configured event as a distinct object for bidding, audience building, and reporting, so duplicate names produce split signal where one business action feeds two competing streams. The pattern typically arises when a legacy template is not retired during a migration, when a staging configuration is promoted without cleanup, or when a secondary tag container re-registers an event already published by the primary container. The visible result is reporting that contradicts backend totals and bidding behaviour that underperforms because Smart Bidding learns from half the volume on each duplicate. Fix: identify duplicates in Events Manager, determine the canonical event in use by active campaigns and audiences, migrate dependents off the dormant duplicate, and archive the redundant configuration. Source: help.pinterest.com/en/business/article/install-the-pinterest-tag.',
+    references: [
+      {
+        label: 'Pinterest. Install the Pinterest Tag',
+        url: 'https://help.pinterest.com/en/business/article/install-the-pinterest-tag',
+      },
+      {
+        label: 'Pinterest. Conversions API',
+        url: 'https://developers.pinterest.com/docs/conversions/conversion-management/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['pinterest-similar-event-names', 'pinterest-standard-event-names', 'pinterest-zero-volume-events'],
+  },
+  {
+    id: 'pinterest-ecommerce-funnel',
+    name: 'Pinterest E-commerce Funnel Events',
+    source: 'pinterest',
+    severity: 'warning',
+    summary: 'The Pinterest e-commerce funnel is missing one or more standard events.',
+    directAnswer:
+      'For an ecommerce account, Pinterest expects four standard events that map to the funnel: PageVisit, ViewCategory, AddToCart, and Checkout. One or more of these is missing or inactive on the audited tag. That gap removes the rung in the funnel where Pinterest builds the audience that gets retargeted, optimizes the upper-funnel campaign, or scores the conversion path leading into Checkout.',
+    why: 'Pinterest documents the four standard ecommerce events as the minimum tag coverage for an online store. Each one has a job.\n\nPageVisit is the base signal. Every retargeting audience and every funnel diagnostic depends on it. ViewCategory feeds upper-funnel optimization and product-aware audiences. AddToCart is the strongest mid-funnel intent signal and the event most retargeting campaigns optimize against. Checkout is the revenue event that anchors ROAS and value-based bidding. Drop one of the four and the path the Pinner walks through your site becomes invisible in that slot.\n\nThe most common failure pattern is shipping PageVisit and Checkout while skipping ViewCategory and AddToCart, because those two require dataLayer work on the category and product detail pages. The result is a Pinterest account that can count revenue but cannot retarget cart-abandoners or build product-aware lookalikes. Smart Bidding then runs upper-funnel campaigns blind, because it cannot see which Pinners viewed categories without converting.\n\nFor agencies, a partial funnel is a finding that translates directly to campaign options the client cannot use until the tag is complete.',
+    howToFix:
+      '1. Open Pinterest Events Manager and list active events. Confirm PageVisit, ViewCategory, AddToCart, and Checkout each appear as active. 2. For each missing event, identify the trigger in your tag manager (PageVisit on all pages, ViewCategory on category templates, AddToCart on the add-to-cart action, Checkout on order confirmation). 3. Implement the missing events through the Pinterest Tag and mirror them through the Conversions API where Checkout and AddToCart are missing on the server. 4. Send test events for each newly added event and confirm Events Manager registers volume on both Browser and Server columns. 5. Wait 24 hours and verify that retargeting audiences (Add to Cart in last 30 days, Category viewers) begin populating.',
+    example: 'Active: PageVisit, Checkout\nMissing: ViewCategory, AddToCart\nAdd category-page and PDP add-to-cart triggers to complete the funnel.',
+    citationTemplate:
+      'This Pinterest Tag is missing one or more standard events from the documented e-commerce funnel of PageVisit, ViewCategory, AddToCart, and Checkout. Pinterest defines this set as the minimum tag coverage for an online store, with each event powering a specific layer of optimization and audience building. A partial funnel leaves Smart Bidding running upper-funnel campaigns without category or cart signal, prevents the account from building retargeting audiences for cart-abandoners or category viewers, and produces reporting that can count revenue but cannot describe the path leading to it. The implementation works, but the campaign options available to the client are reduced to what the existing events can support. Fix: implement the missing PageVisit, ViewCategory, AddToCart, or Checkout events through the Pinterest Tag, mirror them through the Conversions API where applicable, and verify Events Manager registers volume on each before relying on retargeting audiences. Source: help.pinterest.com/en/business/article/install-the-pinterest-tag.',
+    references: [
+      {
+        label: 'Pinterest. Install the Pinterest Tag',
+        url: 'https://help.pinterest.com/en/business/article/install-the-pinterest-tag',
+      },
+      {
+        label: 'Pinterest. Conversions API getting started',
+        url: 'https://developers.pinterest.com/docs/conversions/getting-started/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['pinterest-missing-pagevisit', 'pinterest-missing-conversion-events', 'pinterest-checkout-missing-value'],
+  },
+  {
+    id: 'pinterest-missing-conversion-events',
+    name: 'Pinterest Missing Conversion Events',
+    source: 'pinterest',
+    severity: 'critical',
+    summary: 'No active Pinterest Checkout, Lead, or Signup event is configured on this account.',
+    directAnswer:
+      'Your Pinterest Tag is loaded and PageVisit may be firing, but no conversion-class event (Checkout, Lead, or Signup) is active. That is the event Pinterest needs to optimize campaigns toward business outcomes. Without it, every Pinterest campaign is bidding for clicks and reach, not for sales or leads, regardless of what objective is selected in Ads Manager.',
+    why: 'Pinterest Smart Bidding objectives like Conversions and Catalog Sales need a conversion event in Events Manager to optimize against. The Ads Manager UI will let you select these objectives even when no conversion event is configured, but the optimizer falls back to upstream proxy signals because it has nothing to learn from on the conversion side. Spend goes out. Optimization quality is whatever Pinterest can infer from clicks alone.\n\nThere are two common shapes. The first is a store that shipped the Pinterest Tag base code but never added the order-confirmation Checkout event, often because the Shopify or BigCommerce template hook was disabled or because the dataLayer push got dropped during a theme migration. The second is a lead-generation account that fires PageVisit and a few Custom events but never publishes a Lead or Signup event, so the CRM signups happening on the site are invisible to Pinterest entirely.\n\nFor an agency taking over the account, this is the first thing that has to be fixed before any conversion-objective campaign is worth running. Reporting will look fine in Ads Manager. The number of Pinners that actually bought, signed up, or filled out a form is unknown.',
+    howToFix:
+      '1. Open Pinterest Events Manager and confirm whether any of Checkout, Lead, or Signup is listed as active. 2. For ecommerce accounts, implement Checkout on the order confirmation page through the Pinterest Tag with `value`, `currency`, and `order_id`. For lead generation, implement Lead or Signup on the form-submission success page. 3. Mirror the conversion event into the Conversions API with a shared `event_id` for resilient server-side measurement. 4. Send a test conversion and confirm Events Manager registers it on both Browser and Server columns within minutes. 5. Once the conversion event is active and accruing volume, reconfigure existing Pinterest campaigns to optimize toward it.',
+    example: 'Active events: PageVisit, ViewCategory\nMissing: Checkout (ecommerce) or Lead/Signup (lead gen)\nResult: Conversions campaigns optimize on click signal only.',
+    citationTemplate:
+      'This Pinterest account has no active Checkout, Lead, or Signup event configured in Events Manager. Pinterest documents these as the standard conversion-class events that Smart Bidding uses to optimize Conversions and Catalog Sales campaigns toward real business outcomes. Without an active conversion event, Pinterest campaigns continue to spend and the Ads Manager UI continues to allow conversion-objective selection, but the optimizer falls back to upstream click and view signals because there is no conversion data to learn from. The reported campaign performance therefore reflects upper-funnel proxy metrics rather than the sales or leads the client is paying to acquire. Fix: implement Checkout for ecommerce or Lead and Signup for lead generation through the Pinterest Tag, mirror the event through the Conversions API with a shared `event_id`, and verify Events Manager registers volume before configuring campaigns to optimize against it. Source: help.pinterest.com/en/business/article/install-the-pinterest-tag.',
+    references: [
+      {
+        label: 'Pinterest. Install the Pinterest Tag',
+        url: 'https://help.pinterest.com/en/business/article/install-the-pinterest-tag',
+      },
+      {
+        label: 'Pinterest. Conversions API',
+        url: 'https://developers.pinterest.com/docs/conversions/conversion-management/',
+      },
+      {
+        label: 'Pinterest. Conversions API getting started',
+        url: 'https://developers.pinterest.com/docs/conversions/getting-started/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['pinterest-missing-pagevisit', 'pinterest-checkout-missing-value', 'pinterest-conversion-api-parity'],
+  },
+  {
+    id: 'pinterest-missing-pagevisit',
+    name: 'Pinterest Missing PageVisit Event',
+    source: 'pinterest',
+    severity: 'critical',
+    summary: 'No active Pinterest PageVisit event is configured on this account.',
+    directAnswer:
+      'Pinterest is not seeing PageVisit fire anywhere on the site. PageVisit is the base event that every other Pinterest signal sits on top of. With it missing, you cannot build a site-visitor retargeting audience, the funnel diagnostics in Events Manager will not populate, and conversion campaigns lose the upper-funnel reference that lets the optimizer connect a click to the rest of the session.',
+    why: 'PageVisit is the Pinterest equivalent of a base pageview event. Pinterest expects it to fire on every tracked page, and it is the dependency for three things that all break together when it is absent.\n\nFirst, retargeting. The default site-visitor audience in Pinterest is built from PageVisit. No PageVisit, no audience, no retargeting line item. Second, Events Manager match-quality and event-coverage scoring. Pinterest evaluates the tag against a baseline of PageVisit volume; without it, the diagnostic columns sit empty or show artificially poor coverage on the downstream events. Third, attribution context. When a Checkout fires without a PageVisit ancestor, Pinterest has less session evidence to weigh against the click-through window and the resulting attribution is weaker.\n\nThe usual cause is a tag that was installed only on the conversion page (a common pattern when someone copies a Checkout snippet from documentation and stops there), or a GTM trigger set to fire PageVisit only on a single page template instead of All Pages. Sometimes the base tag fires but the PageVisit event call is commented out or guarded by a consent flag that never resolves.',
+    howToFix:
+      '1. Open Pinterest Events Manager and confirm no PageVisit event has recent volume. 2. In your tag manager, configure the Pinterest Tag base code on All Pages and ensure `pintrk(\'track\', \'PageVisit\')` runs on every page load, including SPA route changes. 3. If consent gating is in use, confirm PageVisit fires after consent is granted rather than being blocked indefinitely on no-decision. 4. Send a test PageVisit by browsing any page on the site and verify it lands in Events Manager within minutes. 5. Wait 24 hours and confirm site-visitor audience sizes begin populating in Ads Manager.',
+    example: 'Problem: pintrk(\'track\', \'PageVisit\') only fires on /checkout/success\nBetter:  PageVisit fires on every page, including SPA route changes, after consent resolves.',
+    citationTemplate:
+      'This Pinterest Tag has no active PageVisit event firing. Pinterest documentation defines PageVisit as the base tag event expected on every tracked page, and as the dependency for site-visitor retargeting audiences, Events Manager match-quality scoring, and session context for downstream conversion events. The pattern typically appears when the Pinterest Tag is installed only on the conversion page, when a single-page-application route change is not instrumented, or when consent gating blocks the call indefinitely. The visible effect is retargeting audiences that fail to populate, diagnostic columns that read zero, and a conversion attribution that is weaker than the campaign reporting would suggest. Fix: configure the Pinterest base tag on all pages, ensure PageVisit fires on every page load including SPA route changes, verify consent gating resolves the call rather than blocking it, and confirm volume in Events Manager. Source: help.pinterest.com/en/business/article/install-the-pinterest-tag.',
+    references: [
+      {
+        label: 'Pinterest. Install the Pinterest Tag',
+        url: 'https://help.pinterest.com/en/business/article/install-the-pinterest-tag',
+      },
+      {
+        label: 'Pinterest. Enhanced Match',
+        url: 'https://help.pinterest.com/en/business/article/enhanced-match',
+      },
+      {
+        label: 'Pinterest. Conversions API getting started',
+        url: 'https://developers.pinterest.com/docs/conversions/getting-started/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['pinterest-missing-conversion-events', 'pinterest-ecommerce-funnel', 'pinterest-zero-volume-events'],
+  },
+  {
+    id: 'pinterest-similar-event-names',
+    name: 'Pinterest Similar Event Names',
+    source: 'pinterest',
+    severity: 'info',
+    summary: 'Two or more Pinterest events have names similar enough to be reporting on the same action.',
+    directAnswer:
+      'Pinterest is showing event pairs with names that differ by a typo, a capitalization, or a separator: `AddToCart` and `add_to_cart`, `Checkout` and `Checkout1`, `Lead` and `Leads`. The tag treats each as a separate event with its own audience, its own counter, and its own row in reporting. If both represent the same business action, your volume is split and the optimizer is learning from half the signal on each.',
+    why: 'Pinterest matches events on the exact string. `AddToCart` and `addtocart` are two events, not one. When a similar pair exists, it is almost always because two different implementations on the site target the same user action: a Shopify template event fires `AddToCart` while a custom GTM tag fires `add_to_cart`, or a legacy snippet uses `Lead` while a new form integration uses `Leads`. Both work. Both record volume. The data is just split in a place no dashboard surfaces by default.\n\nThe operational impact depends on which events overlap. Standard events versus custom events with similar names produce the worst case, because Pinterest applies different optimization treatment to standard events. A `Checkout` event will feed Smart Bidding on conversion-objective campaigns; a custom event called `Checkout1` will not. Two similarly named custom events split audience size and weaken retargeting coverage. Two near-identical standard event names are the cleanest fix, because the resolution is unambiguous: pick one, migrate dependents, archive the other.',
+    howToFix:
+      '1. Open Pinterest Events Manager and list the similar event pairs flagged in the audit. 2. For each pair, decide which name is canonical, preferring the Pinterest standard event name (PageVisit, ViewCategory, AddToCart, Checkout, Search, Signup, Lead, WatchVideo) when one of the two matches. 3. Update the site implementation so only the canonical name fires going forward, and confirm the duplicate firing path is removed. 4. Migrate any campaigns or audiences off the deprecated event onto the canonical one. 5. Archive the deprecated event in Events Manager and verify subsequent volume lands only on the canonical name.',
+    example: 'Problem: AddToCart (standard) and add_to_cart (custom) both active\nBetter:  AddToCart canonical, custom firing path removed, audiences migrated.',
+    citationTemplate:
+      'This Pinterest Tag has event names similar enough to suggest two implementations are tracking the same business action under different strings. Pinterest matches events on exact string equality, so `AddToCart` and `add_to_cart` are treated as independent events with separate audiences, counters, and reporting rows. The condition typically arises when a platform template event coexists with a custom GTM tag targeting the same action, or when a legacy snippet outlives a new integration. The result is split signal, weaker Smart Bidding performance because each event learns from half the volume, and retargeting audiences that under-cover the addressable visitor base. Fix: pick a canonical event name, prefer the Pinterest standard event when one of the variants matches, remove the duplicate firing path on the site, migrate campaigns and audiences onto the canonical event, and archive the deprecated event in Events Manager. Source: help.pinterest.com/en/business/article/install-the-pinterest-tag.',
+    references: [
+      {
+        label: 'Pinterest. Install the Pinterest Tag',
+        url: 'https://help.pinterest.com/en/business/article/install-the-pinterest-tag',
+      },
+      {
+        label: 'Pinterest. Conversions API',
+        url: 'https://developers.pinterest.com/docs/conversions/conversion-management/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['pinterest-duplicate-events', 'pinterest-standard-event-names', 'pinterest-zero-volume-events'],
+  },
+  {
+    id: 'pinterest-standard-event-names',
+    name: 'Pinterest Standard Event Names',
+    source: 'pinterest',
+    severity: 'info',
+    summary: 'Custom Pinterest events have names that closely resemble a documented standard event.',
+    directAnswer:
+      'Some events on this Pinterest Tag are configured as Custom but use names that map almost exactly to a Pinterest standard event. A custom event called `checkout_complete` or `add-to-cart` does the same job as `Checkout` or `AddToCart`, except Pinterest does not give it the same treatment. Standard events get richer optimization, default audience templates, and the documented funnel diagnostics. Custom events do not.',
+    why: 'Pinterest defines a set of standard events (PageVisit, ViewCategory, Search, AddToCart, Checkout, Lead, Signup, WatchVideo, Custom) and gives them platform-level affordances. Smart Bidding has built-in optimization paths for them. Events Manager funnel diagnostics expect them. Default audience templates use them. Catalog Sales campaigns reference Checkout and AddToCart by name.\n\nWhen the implementation ships a custom event named like a standard event, Pinterest cannot connect the dots. The campaign team has to manually configure conversion-objective optimization against the custom event, audience templates that would have worked out of the box need rebuilding, and funnel diagnostics in Events Manager omit the event from the standard view. None of this is broken. It is just measurably worse than the same volume flowing through a standard event.\n\nThe shape that produces this is usually a developer naming events to match the dataLayer convention on the site (snake_case, kebab-case) rather than the Pinterest convention (PascalCase standard event names). The fix is a string change on the tag side; the dataLayer can keep its own conventions.',
+    howToFix:
+      '1. Open the audit detail for the flagged custom events and compare each name to the Pinterest standard event list. 2. For each event that maps to a standard (for example `checkout_complete` to Checkout, `add-to-cart` to AddToCart, `signup_form` to Signup), update the Pinterest Tag call to use the standard event name. 3. Republish the tag and verify the standard event begins recording volume in Events Manager. 4. Migrate any campaigns or audiences from the custom event to the new standard event. 5. Archive the custom event once dependents have been moved and confirm the standard event is now feeding Smart Bidding and audience templates.',
+    example: 'Problem: pintrk(\'track\', \'checkout_complete\', { value: 84.5, currency: \'USD\' })\nBetter:  pintrk(\'track\', \'Checkout\',           { value: 84.5, currency: \'USD\' })',
+    citationTemplate:
+      'This Pinterest Tag has custom events with names that closely resemble Pinterest standard events such as Checkout, AddToCart, Lead, or Signup. Pinterest gives standard events platform-level treatment: Smart Bidding optimization paths, default audience templates, Events Manager funnel diagnostics, and Catalog Sales campaign integration. Custom events with similar names produce the same volume but do not inherit any of these affordances, so the campaign team must configure conversion-objective optimization manually, audience templates need rebuilding, and funnel diagnostics omit the event from the standard view. The implementation works but trades default platform behaviour for naming choices that almost certainly do not need to differ from the Pinterest convention. Fix: rename the affected events to the matching Pinterest standard event, republish the tag, migrate campaigns and audiences onto the standard event, and archive the custom event once dependents have moved. Source: help.pinterest.com/en/business/article/install-the-pinterest-tag.',
+    references: [
+      {
+        label: 'Pinterest. Install the Pinterest Tag',
+        url: 'https://help.pinterest.com/en/business/article/install-the-pinterest-tag',
+      },
+      {
+        label: 'Pinterest. Conversions API getting started',
+        url: 'https://developers.pinterest.com/docs/conversions/getting-started/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['pinterest-duplicate-events', 'pinterest-similar-event-names', 'pinterest-ecommerce-funnel'],
+  },
+  {
+    id: 'pinterest-zero-volume-events',
+    name: 'Pinterest Zero Volume Active Events',
+    source: 'pinterest',
+    severity: 'warning',
+    summary: 'Active Pinterest events show zero recorded volume in Events Manager.',
+    directAnswer:
+      'Pinterest Events Manager lists these events as active, but the volume column reads zero. The configuration is published. The event is wired up. Something between the site and Pinterest is silently dropping the call, or the event was never connected to a real user action in the first place. Either way, any campaign optimizing against the event is bidding for an outcome Pinterest cannot see.',
+    why: 'A zero-volume active event has three usual causes, and the first audit task is figuring out which one applies.\n\nThe first is a trigger that does not match the real page. The tag is published, but the GTM trigger condition (URL contains, click on selector, dataLayer event name) never matches what the site actually emits. Order confirmation pages get redesigned and the trigger URL pattern goes stale. PDP add-to-cart selectors get renamed by a theme update. The tag still loads on every page; the event call inside it never executes.\n\nThe second is a tag blocked by consent or by an ad blocker before the event call runs. Consent platforms that gate the Pinterest Tag will allow the base script to load but suppress the `track` call indefinitely if the user has not granted consent or if the consent state never resolves. Ad blockers do the same thing at the network level.\n\nThe third is a renamed event that no longer matches the trigger code. Someone renamed the event in Events Manager from `Checkout` to `Purchase` to align with internal language, but the site code still calls `pintrk(\'track\', \'Checkout\', ...)`. Both sides exist; they do not point at each other.\n\nIn every case, the campaign optimizing against the event sees zero conversions and has no signal to learn from.',
+    howToFix:
+      '1. For each zero-volume event, identify the intended trigger (page URL, user action, dataLayer event) and confirm the trigger fires on the live site using Tag Manager preview or browser devtools. 2. Inspect the network panel during the expected user flow and look for the Pinterest `track` call carrying the event name. If the call never appears, the trigger is the problem. If it appears but Events Manager shows zero, the event name on the call does not match the event configured in Events Manager. 3. Check the consent platform integration to confirm the Pinterest Tag and its `track` calls execute after consent is granted. 4. Reconcile the site code event name with the Events Manager event name exactly. 5. Re-fire the event and confirm Events Manager registers volume within minutes; wait 24 hours and verify campaign optimization begins seeing the event.',
+    example: 'Active in Events Manager: Checkout (0 volume)\nSite code: pintrk(\'track\', \'checkout\', ...)  // lowercase, no match\nFix:       pintrk(\'track\', \'Checkout\', ...)',
+    citationTemplate:
+      'This Pinterest Tag has events listed as active in Events Manager with zero recorded volume. Pinterest only counts an event when the `track` call from the site matches the configured event name exactly and the call reaches the Pinterest endpoint. Zero-volume active events typically indicate a trigger condition that no longer matches the live site, a consent platform suppressing the call indefinitely, an ad blocker dropping the request at the network layer, or a name mismatch between the published event and the site code. Any campaign or audience optimizing against the event has no signal to learn from while spend continues, producing reporting that shows zero conversions even when the underlying user action occurs on the site. Fix: confirm the trigger fires on the live site, inspect the network panel for the Pinterest `track` call during the expected user flow, reconcile event name strings between site code and Events Manager, and verify the consent integration releases the call after consent is granted. Source: help.pinterest.com/en/business/article/install-the-pinterest-tag.',
+    references: [
+      {
+        label: 'Pinterest. Install the Pinterest Tag',
+        url: 'https://help.pinterest.com/en/business/article/install-the-pinterest-tag',
+      },
+      {
+        label: 'Pinterest. Conversions API',
+        url: 'https://developers.pinterest.com/docs/conversions/conversion-management/',
+      },
+      {
+        label: 'Pinterest. Conversions API getting started',
+        url: 'https://developers.pinterest.com/docs/conversions/getting-started/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['pinterest-duplicate-events', 'pinterest-similar-event-names', 'pinterest-conversion-api-parity'],
+  },
+  {
     id: 'twitter-event-id-format',
     name: 'Twitter/X Event ID Format',
     source: 'twitter',
