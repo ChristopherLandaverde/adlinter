@@ -117,7 +117,7 @@ export default function Home() {
           Find what&apos;s actually broken in your tracking.
         </h1>
         <p className="mx-auto mb-8 max-w-3xl text-lg leading-8 text-muted">
-          Audit GTM, Google Ads, Meta Pixel, TikTok Pixel, LinkedIn Insight Tag, and performance reports in 60 seconds. Everything runs in your browser &mdash; your data never leaves your machine.
+          Audit GTM, Google Ads, Meta Pixel, TikTok Pixel, LinkedIn Insight Tag, Pinterest Tag, Twitter/X Pixel, Snapchat Pixel, and performance reports in 60 seconds. Everything runs in your browser &mdash; your data never leaves your machine.
         </p>
         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link

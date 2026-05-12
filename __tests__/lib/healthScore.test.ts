@@ -21,6 +21,9 @@ function results(overrides: Partial<AuditResults> = {}): AuditResults {
     meta: [],
     tiktok: [],
     linkedin: [],
+    pinterest: [],
+    twitter: [],
+    snapchat: [],
     summary: { critical: 0, warning: 0, info: 0, passed: 0 },
     ...overrides,
   };

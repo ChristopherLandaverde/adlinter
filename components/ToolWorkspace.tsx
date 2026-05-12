@@ -13,6 +13,9 @@ import { parseGTMJSON } from '@/lib/parsers/gtmParser';
 import { parseMetaPixelCSV } from '@/lib/parsers/metaPixelParser';
 import { parseTikTokPixelCSV } from '@/lib/parsers/tiktokPixelParser';
 import { parseLinkedInInsightCSV } from '@/lib/parsers/linkedinInsightParser';
+import { parsePinterestCSV } from '@/lib/parsers/pinterestParser';
+import { parseTwitterCSV } from '@/lib/parsers/twitterParser';
+import { parseSnapchatCSV } from '@/lib/parsers/snapchatParser';
 import type { AuditContext } from '@/lib/types';
 import type { ToolConfig, ToolFileSlot } from '@/lib/tools';
 
@@ -37,6 +40,12 @@ function parseFile(parser: ToolFileSlot['parser'], text: string) {
       return parseTikTokPixelCSV(text);
     case 'linkedin':
       return parseLinkedInInsightCSV(text);
+    case 'pinterest':
+      return parsePinterestCSV(text);
+    case 'twitter':
+      return parseTwitterCSV(text);
+    case 'snapchat':
+      return parseSnapchatCSV(text);
   }
 }
 
@@ -399,6 +408,36 @@ function ExportInstructions({ parser }: { parser: ToolFileSlot['parser'] }) {
           <li>Go to <strong>Account Assets</strong></li>
           <li>Open <strong>Conversions</strong></li>
           <li>Click <strong>Export</strong></li>
+          <li>Save as CSV or JSON</li>
+        </ol>
+      );
+    case 'pinterest':
+      return (
+        <ol className="list-decimal list-inside space-y-1 text-sm text-muted">
+          <li>Open Pinterest Ads Manager</li>
+          <li>Go to <strong>Conversions</strong></li>
+          <li>Select your Pinterest Tag</li>
+          <li>Click <strong>Export</strong> or download event data</li>
+          <li>Save as CSV or JSON</li>
+        </ol>
+      );
+    case 'twitter':
+      return (
+        <ol className="list-decimal list-inside space-y-1 text-sm text-muted">
+          <li>Open Twitter/X Ads Manager</li>
+          <li>Go to <strong>Tools &rarr; Events Manager</strong></li>
+          <li>Select your website tag or pixel events</li>
+          <li>Click <strong>Export</strong> or download event data</li>
+          <li>Save as CSV or JSON</li>
+        </ol>
+      );
+    case 'snapchat':
+      return (
+        <ol className="list-decimal list-inside space-y-1 text-sm text-muted">
+          <li>Open Snapchat Ads Manager</li>
+          <li>Go to <strong>Events Manager</strong></li>
+          <li>Select your Snap Pixel</li>
+          <li>Click <strong>Export</strong> or download event data</li>
           <li>Save as CSV or JSON</li>
         </ol>
       );

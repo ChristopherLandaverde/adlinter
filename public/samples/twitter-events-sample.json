@@ -1,0 +1,58 @@
+[
+  {
+    "pixelId": "tw-pixel-main",
+    "pixelName": "Main Twitter/X Pixel",
+    "name": "Purchase",
+    "eventId": "tw-abc123-def456",
+    "conversionId": "",
+    "eventType": "conversion",
+    "status": "active",
+    "eventCount": 72,
+    "value": 0,
+    "currency": "USD",
+    "attributionWindow": "7 days",
+    "campaignWindow": "30 days"
+  },
+  {
+    "pixelId": "tw-pixel-main",
+    "pixelName": "Main Twitter/X Pixel",
+    "name": "Lead",
+    "eventId": "lead-123",
+    "conversionId": "lead-2026-001",
+    "eventType": "conversion",
+    "status": "active",
+    "eventCount": 28,
+    "value": 0,
+    "currency": "USD",
+    "attributionWindow": "7 days",
+    "campaignWindow": "7 days"
+  },
+  {
+    "pixelId": "tw-pixel-main",
+    "pixelName": "Main Twitter/X Pixel",
+    "name": "Tweet engagements",
+    "eventId": "tw-eng-001",
+    "conversionId": "",
+    "eventType": "engagement",
+    "status": "active",
+    "eventCount": 1840,
+    "value": 0,
+    "currency": "USD",
+    "attributionWindow": "1 day",
+    "campaignWindow": "1 day"
+  },
+  {
+    "pixelId": "tw-pixel-main",
+    "pixelName": "Main Twitter/X Pixel",
+    "name": "SignUp",
+    "eventId": "tw-sgn-002",
+    "conversionId": "signup-2026-001",
+    "eventType": "conversion",
+    "status": "active",
+    "eventCount": 0,
+    "value": 0,
+    "currency": "USD",
+    "attributionWindow": "7 days",
+    "campaignWindow": "7 days"
+  }
+]

@@ -1,4 +1,4 @@
-import { GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, LinkedInInsightData, AuditResults, AuditContext } from './types';
+import { GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, LinkedInInsightData, PinterestTagData, TwitterPixelData, SnapchatPixelData, AuditResults, AuditContext } from './types';
 import { allGTMChecks } from './checks/gtmChecks';
 import { allAdsChecks } from './checks/adsChecks';
 import { allCrossChecks } from './checks/crossChecks';
@@ -15,6 +15,9 @@ import { allEdgeCaseChecks } from './checks/edgeCaseChecks';
 import { allMetaChecks } from './checks/metaChecks';
 import { allTikTokChecks } from './checks/tiktokChecks';
 import { allLinkedInChecks } from './checks/linkedinChecks';
+import { allPinterestChecks } from './checks/pinterestChecks';
+import { allTwitterChecks } from './checks/twitterChecks';
+import { allSnapchatChecks } from './checks/snapchatChecks';
 
 export const runAudit = (
   gtmData: GTMContainer | null = null,
@@ -23,7 +26,10 @@ export const runAudit = (
   reportData?: AdsReportData | null,
   metaData?: MetaPixelData | null,
   tiktokData?: TikTokPixelData | null,
-  linkedinData?: LinkedInInsightData | null
+  linkedinData?: LinkedInInsightData | null,
+  pinterestData?: PinterestTagData | null,
+  twitterData?: TwitterPixelData | null,
+  snapchatData?: SnapchatPixelData | null
 ): AuditResults => {
   const results: AuditResults = {
     gtm: [],
@@ -33,6 +39,9 @@ export const runAudit = (
     meta: [],
     tiktok: [],
     linkedin: [],
+    pinterest: [],
+    twitter: [],
+    snapchat: [],
     summary: {
       critical: 0,
       warning: 0,
@@ -122,8 +131,26 @@ export const runAudit = (
     results.linkedin = linkedinResults;
   }
 
+  // Run Pinterest Tag checks if Pinterest data provided
+  if (pinterestData) {
+    const pinterestResults = allPinterestChecks.map(check => check(pinterestData, context));
+    results.pinterest = pinterestResults;
+  }
+
+  // Run Twitter/X Pixel checks if Twitter/X data provided
+  if (twitterData) {
+    const twitterResults = allTwitterChecks.map(check => check(twitterData, context));
+    results.twitter = twitterResults;
+  }
+
+  // Run Snapchat Pixel checks if Snapchat data provided
+  if (snapchatData) {
+    const snapchatResults = allSnapchatChecks.map(check => check(snapchatData, context));
+    results.snapchat = snapchatResults;
+  }
+
   // Calculate summary
-  const allChecks = [...results.gtm, ...results.ads, ...results.cross, ...results.report, ...results.meta, ...results.tiktok, ...results.linkedin];
+  const allChecks = [...results.gtm, ...results.ads, ...results.cross, ...results.report, ...results.meta, ...results.tiktok, ...results.linkedin, ...results.pinterest, ...results.twitter, ...results.snapchat];
   allChecks.forEach(check => {
     if (check.passed) {
       results.summary.passed++;

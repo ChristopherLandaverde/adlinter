@@ -1,4 +1,5 @@
 import type { SVGProps } from 'react';
+import { Bookmark, Camera, MessageSquare as Twitter } from 'lucide-react';
 
 type IconProps = SVGProps<SVGSVGElement>;
 
@@ -90,6 +91,9 @@ export const toolIcons = {
   Facebook,
   Music2,
   Linkedin,
+  Bookmark,
+  Twitter,
+  Camera,
 } as const;
 
 export function getToolIcon(iconName: string) {

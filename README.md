@@ -1,6 +1,6 @@
 # AdLint
 
-**Free, privacy-first audit suite for ad-tech tracking — GTM, Google Ads, Meta Pixel, LinkedIn, and performance reports.**
+**Free, privacy-first audit suite for ad-tech tracking — GTM, Google Ads, Meta Pixel, TikTok Pixel, LinkedIn, Pinterest, Twitter/X, Snapchat, and performance reports.**
 
 AdLint analyzes your ad-tech exports to surface tracking issues before they cost you money. All processing runs entirely in the browser — no data ever leaves your machine.
 
@@ -15,6 +15,9 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 - **Meta Pixel Auditor** — 10 checks
 - **TikTok Pixel Auditor** — 10 checks
 - **LinkedIn Insight Tag Auditor** — 10 checks
+- **Pinterest Tag Auditor** — 10 checks
+- **Twitter/X Pixel Auditor** — 10 checks
+- **Snapchat Pixel Auditor** — 10 checks
 
 ## Features
 
@@ -27,7 +30,7 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 - Try-with-sample-data button on every tool: see the audit in 5 seconds without exporting anything
 - Audit context picker: tune severity rules to your business model, value strategy, sales cycle, and consent requirements
 - Context-aware severity based on business model, sales cycle, value strategy, and consent requirements
-- /checks reference: 38 per-check documentation pages with why-it-matters and how-to-fix guidance
+- /checks reference: 50+ per-check documentation pages with why-it-matters and how-to-fix guidance
 
 ### Check Coverage
 
@@ -43,6 +46,9 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 | Meta Pixel | 10 | Missing PageView, missing conversion events, duplicate event names, similar event names, zero volume active events, custom events with standard alternatives, purchase value tracking, e-commerce funnel events, event volume concentration, disabled conversion events |
 | TikTok Pixel | 10 | Base pixel active events, missing conversion events, duplicate event names, similar event names, zero volume active events, custom events with standard alternatives, CompletePayment value tracking, e-commerce funnel events, event volume concentration, disabled conversion events |
 | LinkedIn Insight Tag | 10 | No active conversions, missing key conversions, duplicate conversion names, similar conversion names, zero volume active conversions, Other category overuse, purchase value tracking, short conversion windows, unattached conversions, disabled key conversions |
+| Pinterest Tag | 10 | Missing PageVisit, missing conversion events, duplicate event names, zero volume active events, standard event naming, Checkout value tracking, e-commerce funnel events, Conversion API parity, enhanced match, currency consistency |
+| Twitter/X Pixel | 10 | Event ID format, conversion_id coverage, deduplication, conversion window mismatches, Tweet engagements vs conversion events, missing conversion events, duplicate event names, zero volume active events, purchase value tracking |
+| Snapchat Pixel | 10 | Pixel ID format, missing PAGE_VIEW, missing conversion events, standard event names, duplicate event names, zero volume active events, purchase value tracking, e-commerce funnel events, Conversions API alignment, currency mismatch |
 
 ## Getting Started
 
@@ -73,6 +79,15 @@ Export from TikTok Events Manager > Web Events > Export; supports CSV and JSON.
 
 **LinkedIn Conversion Actions:**
 Export from LinkedIn Campaign Manager > Account Assets > Conversions > Export; supports CSV and JSON.
+
+**Pinterest Tag Events:**
+Export from Pinterest Ads Manager > Conversions; supports CSV and JSON.
+
+**Twitter/X Pixel Events:**
+Export from Twitter/X Ads Manager > Events Manager; supports CSV and JSON.
+
+**Snapchat Pixel Events:**
+Export from Snapchat Ads Manager > Events Manager; supports CSV and JSON.
 
 ## Running Tests
 

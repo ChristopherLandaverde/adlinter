@@ -1,4 +1,4 @@
-export type ExplainerSource = 'gtm' | 'ads' | 'report' | 'cross' | 'meta' | 'tiktok' | 'linkedin';
+export type ExplainerSource = 'gtm' | 'ads' | 'report' | 'cross' | 'meta' | 'tiktok' | 'linkedin' | 'pinterest' | 'twitter' | 'snapchat';
 
 export interface CheckExplainer {
   id: string;
@@ -20,6 +20,9 @@ export const explainerSources: { key: ExplainerSource; label: string }[] = [
   { key: 'meta', label: 'Meta Pixel' },
   { key: 'tiktok', label: 'TikTok Pixel' },
   { key: 'linkedin', label: 'LinkedIn Insight Tag' },
+  { key: 'pinterest', label: 'Pinterest Tag' },
+  { key: 'twitter', label: 'Twitter/X Pixel' },
+  { key: 'snapchat', label: 'Snapchat Pixel' },
 ];
 
 export const explainers: CheckExplainer[] = [
@@ -440,6 +443,72 @@ export const explainers: CheckExplainer[] = [
     howToFix: 'In Google Ads, open Tools & Settings -> Measurement -> Conversions and list the enabled actions by funnel stage. Add or repair missing diagnostic actions for important stages, then set only the true business outcome as Primary and keep supporting micro-conversions Secondary unless they are intentionally used for bidding. In GTM, open Workspace -> Tags and verify each website-based action has a matching trigger on the real page or event, not only a button click that can fail validation. Re-run the full audit with both GTM and Google Ads exports to confirm no more than one major stage is missing.',
     example: 'Primary: Purchase or Qualified Lead\nSecondary: Landing Page Visit, Product View, Add to Cart, Begin Checkout, Repeat Purchase',
     relatedChecks: ['micro-conversion-pollution', 'missing-primary-conversion', 'conversion-naming-alignment'],
+  },
+  {
+    id: 'pinterest-conversion-api-parity',
+    name: 'Pinterest Conversion API Parity',
+    source: 'pinterest',
+    severity: 'warning',
+    summary: 'Pinterest browser events have no matching server-side Conversion API volume.',
+    why: 'Pinterest positions the Conversion API as a way to send conversion events from the server alongside the browser tag. If browser events exist but the server stream is missing, measurement depends on client-side requests that can be blocked by browsers, consent timing, or network conditions. The result is weaker event durability and less defensible attribution when the browser and server sources should be backing each other up.',
+    howToFix: 'Map each important Pinterest Tag event to the equivalent Conversion API event and send the same business action from the server where possible. Include event time, event name, value, currency, and matching identifiers needed for deduplication and enhanced match. Confirm Events Manager shows browser and server volume for the same major events before relying on campaign reporting.',
+    example: 'Browser event: Checkout\nServer event: Checkout\nShared fields: event_id, value, currency, order_id, customer match fields',
+    relatedChecks: ['pinterest-tag-configuration-quality', 'pinterest-checkout-missing-value'],
+  },
+  {
+    id: 'pinterest-tag-configuration-quality',
+    name: 'Pinterest Tag Configuration Quality',
+    source: 'pinterest',
+    severity: 'warning',
+    summary: 'Pinterest tag naming, enhanced match, or currency setup is inconsistent.',
+    why: 'Pinterest setup quality problems often do not stop events from firing, but they make the event stream harder to defend. Reusing a partner name as a tag name obscures ownership, missing enhanced match weakens matching quality, and mixing EUR and USD values makes revenue reporting hard to reconcile. These are measurement governance issues: the data exists, but the account team cannot trust what it means without cleanup.',
+    howToFix: 'Use clear, distinct names for the Pinterest Tag and any partner or integration layer. Enable enhanced match where it is appropriate for the consent and data policy in scope. Standardize value events on one expected currency, then re-test Checkout and Lead events in Pinterest Events Manager.',
+    example: 'Problem: partnerName = Main Tag, tagName = Main Tag, currencies = USD and EUR\nBetter: partnerName = Shopify, tagName = US Store Pinterest Tag, currency = USD',
+    relatedChecks: ['pinterest-conversion-api-parity', 'pinterest-checkout-missing-value'],
+  },
+  {
+    id: 'twitter-event-id-format',
+    name: 'Twitter/X Event ID Format',
+    source: 'twitter',
+    severity: 'critical',
+    summary: 'Twitter/X website events do not use the expected tw-XXXX-XXXX event ID format.',
+    why: 'The event ID is the routing key that tells the Twitter/X website tag which configured event should receive the hit. If the ID is malformed, the tag can fire in the browser while the conversion never lands in the intended event. That creates a hard-to-spot failure where network activity exists but optimization and reporting are pointed at missing or incorrect conversion signals.',
+    howToFix: 'Copy the event ID directly from Twitter/X Ads Events Manager into the website tag or GTM template. Avoid hand-typing IDs or transforming them through variables unless there is a tested lookup table. Fire a test conversion and confirm the request contains the same tw-prefixed ID shown in the platform UI.',
+    example: 'Expected: tw-abc123-def456\nProblem: abc123-def456 or TW abc123 def456',
+    relatedChecks: ['twitter-conversion-id-required', 'twitter-deduplication-conversion-id'],
+  },
+  {
+    id: 'twitter-deduplication-conversion-id',
+    name: 'Twitter/X conversion_id Deduplication',
+    source: 'twitter',
+    severity: 'warning',
+    summary: 'Twitter/X conversion events are missing or reusing conversion_id values.',
+    why: 'Twitter/X uses conversion identifiers to recognize the same business event when it arrives from more than one path, such as browser and server. Without a stable conversion_id, repeated hits can inflate conversion counts, while missing IDs make server-side alignment harder to audit. Reused IDs across different orders or leads create the opposite risk by collapsing distinct events.',
+    howToFix: 'Generate a unique conversion_id from the order ID, lead ID, or another stable transaction identifier. Pass the same ID only when browser and server payloads represent the same event. Review recent events for missing IDs and for repeated IDs that span different users or conversion actions.',
+    example: 'Purchase order 10492\nBrowser conversion_id: 10492\nServer conversion_id: 10492',
+    relatedChecks: ['twitter-conversion-id-required', 'twitter-event-id-format'],
+  },
+  {
+    id: 'snapchat-pixel-id-format',
+    name: 'Snap Pixel ID Format',
+    source: 'snapchat',
+    severity: 'critical',
+    summary: 'The Snap Pixel ID is missing or does not match the expected UUID-style format.',
+    why: 'Snap Pixel events need to be associated with the correct pixel before they can populate audiences, diagnostics, and conversion reporting. A copied-short, malformed, or stale ID can send events into the wrong asset or prevent them from being recognized. The event code may still execute, so the practical risk is silent measurement loss rather than an obvious page error.',
+    howToFix: 'Copy the Pixel ID from Snapchat Events Manager and compare it against every GTM tag, direct site tag, and commerce integration. Keep one canonical ID per property unless there is an intentional multi-pixel setup. Test PAGE_VIEW and PURCHASE after the change and confirm they appear under the expected Snap Pixel.',
+    example: 'Expected shape: 123e4567-e89b-12d3-a456-426614174000',
+    relatedChecks: ['snapchat-missing-page-view', 'snapchat-capi-dedup-currency'],
+  },
+  {
+    id: 'snapchat-capi-dedup-currency',
+    name: 'Snap CAPI, Deduplication, and Currency Alignment',
+    source: 'snapchat',
+    severity: 'warning',
+    summary: 'Snap Pixel and Conversions API events are not aligned on deduplication or currency.',
+    why: 'Snap recommends aligning browser pixel and Conversions API implementations so the same user action can be matched without double-counting. Missing deduplication IDs make browser plus server setups vulnerable to inflated counts, while missing CAPI volume leaves the account dependent on browser-only measurement. Mixed currencies add another reporting risk because conversion value totals no longer describe one economic unit.',
+    howToFix: 'Send the same deduplication ID on matching Snap Pixel and Conversions API events, normally derived from the order ID, lead ID, or event ID. Confirm server-side volume appears for key events such as PURCHASE and SIGN_UP. Standardize currency on the value events and validate a real transaction against the value and currency shown in Events Manager.',
+    example: 'PURCHASE event_id: order-10492\nPixel currency: USD\nCAPI currency: USD',
+    relatedChecks: ['snapchat-pixel-id-format', 'snapchat-purchase-missing-value'],
   },
 ];
 
