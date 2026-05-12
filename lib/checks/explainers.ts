@@ -851,6 +851,445 @@ export const explainers: CheckExplainer[] = [
     relatedChecks: ['stale-tags', 'unused-triggers', 'unused-variables'],
   },
   {
+    id: 'conversion-error-handling',
+    name: 'Conversion Tags Missing Error Handling',
+    source: 'gtm',
+    severity: 'critical',
+    summary: 'Conversion tags fire on click or form-submit triggers without callback or sequencing safeguards.',
+    directAnswer:
+      'One or more Google Ads conversion tags fire on click or form-submit triggers that may navigate the user away before the conversion request completes. Without an event callback or wait-for-tags configuration, the browser can abandon the conversion request mid-flight and the conversion is silently lost.',
+    why: 'Conversion tags that fire on a click or form-submit trigger are racing the browser. The user clicks Submit, the form posts, and the browser starts navigating to the next page — but the conversion tag may still be in the middle of sending its request to Google Ads. If the navigation completes first, the request is killed by the browser and the conversion never arrives. Google\'s recommended pattern uses one of three safeguards: (1) tag sequencing with a setup tag that waits, (2) an `eventCallback` parameter that delays navigation until the tag fires, or (3) the trigger\'s built-in "Wait for tags" option with an appropriate timeout. Without one of these, conversion loss is correlated with how fast the user\'s device is — slower devices lose more conversions, which biases reported data toward fast-device demographics and corrupts Smart Bidding signal.',
+    howToFix:
+      '1. In GTM, open Triggers and find every click and form-submit trigger that fires conversion tags. 2. In the trigger configuration, enable "Wait for Tags" and set a Max Wait Time of around 2000ms. 3. Alternatively, on the conversion tag itself, add an `eventCallback` parameter that handles the navigation after the tag finishes (Custom HTML tags), or use Tag Sequencing to ensure dependent setup tags fire first. 4. In Preview mode, complete a real form submission on a throttled connection (DevTools → Network → Slow 3G) and verify the conversion request shows status 200 before navigation. 5. Publish only after the wait-for-tags configuration is visible on every flagged trigger.',
+    example: 'Trigger: Form Submit - Lead Capture\nWait for Tags: enabled, max wait = 2000ms\nCheck Validation: enabled',
+    citationTemplate:
+      'AdLint detected Google Ads conversion tags firing on navigation-triggering events (click or form-submit) without configured error handling. Per Google\'s Tag Manager trigger documentation, the "Wait for Tags" option or an event callback must be configured to prevent the browser navigation from killing in-flight conversion requests. Without these safeguards, conversion data is lost on slower devices and connections in proportion to the latency of the conversion request. Recommended remediation: enable "Wait for Tags" with a 2000ms max wait on every flagged trigger and verify completion in Preview under throttled network conditions. Source: support.google.com/tagmanager/answer/7679219.',
+    references: [
+      {
+        label: 'Google Tag Manager — Form submission trigger',
+        url: 'https://support.google.com/tagmanager/answer/7679219',
+      },
+      {
+        label: 'Google Tag Manager — Click triggers',
+        url: 'https://support.google.com/tagmanager/answer/6106961',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['conversion-linker-sequencing', 'missing-conversion-linker'],
+  },
+  {
+    id: 'remarketing-tag-issues',
+    name: 'Remarketing Tag Issues',
+    source: 'gtm',
+    severity: 'warning',
+    summary: 'Google Ads remarketing or Floodlight counter tags are missing required parameters.',
+    directAnswer:
+      'One or more remarketing tags in this container (Google Ads remarketing or Floodlight counter) are missing a required parameter — typically the conversion ID or tag ID. The tag fires, but the request lacks the identifier Google needs to attach the visitor to the correct audience list.',
+    why: 'Remarketing tags work by attaching the current visitor to an audience list identified by the conversion ID (Google Ads) or tag ID (Google Marketing Platform / Floodlight). When the ID is missing or unmapped, the tag fires but Google does not know which audience to update — the request is effectively a no-op. The damage is invisible from the GTM side because the tag shows green in Tag Assistant; the audience list silently fails to grow. Marketing teams discover this when remarketing campaigns underperform or list sizes mysteriously plateau, and the chain of debugging usually does not start at GTM.',
+    howToFix:
+      '1. In GTM, open Workspace → Tags and filter for tag type "Google Ads Remarketing" or "Floodlight." 2. For each flagged tag, open it and check the Conversion ID (Google Ads) or Tag ID (Floodlight) field. 3. If the field is empty, populate it with the correct ID from Google Ads → Audience Manager → Audience Sources, or from your DV360/Campaign Manager account. 4. If the field references a variable, confirm the variable resolves in Preview mode. 5. After publish, check Google Ads → Audience Manager → Audience Lists to confirm the list size starts incrementing within 24 hours.',
+    example: 'Tag type: Google Ads Remarketing\nConversion ID: AW-123456789\nSegment configuration: All visitors',
+    citationTemplate:
+      'AdLint detected Google Ads remarketing or Floodlight tags in this container with missing required parameters (Conversion ID or Tag ID). Per Google\'s remarketing tag documentation, these identifiers are mandatory for the tag to associate the visitor with the correct audience list. Without them, the tag fires but performs no useful work; audience lists silently fail to populate. Recommended remediation: populate the missing ID parameter on every flagged remarketing tag and verify audience list growth in Google Ads after publishing. Source: support.google.com/google-ads/answer/2476688.',
+    references: [
+      {
+        label: 'Google Ads — Set up Google Ads remarketing tag',
+        url: 'https://support.google.com/google-ads/answer/2476688',
+      },
+      {
+        label: 'Campaign Manager 360 — Floodlight overview',
+        url: 'https://support.google.com/campaignmanager/answer/2823388',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['missing-conversion-linker', 'consent-violations'],
+  },
+  {
+    id: 'datalayer-dependencies',
+    name: 'DataLayer Variable Dependencies',
+    source: 'gtm',
+    severity: 'warning',
+    summary: 'Tags reference Data Layer Variables that are not defined in the container.',
+    directAnswer:
+      'Tag parameters in this container reference variables using `{{Variable Name}}` syntax, but the named variables do not exist in the container\'s User-Defined Variables. At runtime, GTM resolves these placeholders to empty strings, so the tags fire with missing data — currency, transaction ID, user identifiers, or whatever the unresolved variable was supposed to carry.',
+    why: 'GTM\'s variable resolution is permissive: a tag can reference `{{DLV - ecommerce.value}}` even if no such variable exists. At runtime, GTM logs nothing and substitutes an empty string. The tag fires, looks healthy in Tag Assistant, but the field it was supposed to carry is empty. This is one of the highest-frequency causes of "the tracking is in place but reports are wrong" tickets. Common root causes: a variable was deleted but tag references were not updated; a tag was copy-pasted from another container with different variable names; a typo in the variable name (case-sensitive); or a variable that exists in a parent workspace but not in the current one.',
+    howToFix:
+      '1. Open the affected tag in GTM and list every `{{...}}` placeholder in the configuration. 2. For each placeholder, search Workspace → Variables → User-Defined Variables for an exact case-sensitive match. 3. Create any missing variables — usually Data Layer Variables — with the correct Data Layer Variable Name and Version. 4. If a referenced variable is truly no longer needed, edit the tag to remove the placeholder. 5. In Preview mode, fire the tag and verify every parameter shows a resolved value (not an empty string). Publish after verification.',
+    example: 'Tag references: {{DLV - customer.email}}\nWorkspace variable: missing (typo: {{DLV - customer.Email}})\nFix: create DLV - customer.email with Data Layer Variable Name = customer.email',
+    citationTemplate:
+      'AdLint detected tag parameters in this container referencing Data Layer Variables that do not exist as User-Defined Variables. Per Google\'s GTM variable resolution behaviour, unresolved variable references evaluate to empty strings at runtime — the tag fires but the field is empty. This is a high-frequency cause of silent measurement degradation. Recommended remediation: audit each flagged tag, create the missing variables with correct Data Layer Variable Names and Versions, and verify resolution in Preview mode. Source: support.google.com/tagmanager/answer/6164391.',
+    references: [
+      {
+        label: 'Google Tag Manager — Variable types',
+        url: 'https://support.google.com/tagmanager/answer/6164391',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['missing-datalayer-variables', 'duplicate-datalayer-paths', 'unused-variables'],
+  },
+  {
+    id: 'trigger-conflicts',
+    name: 'Trigger Conflicts',
+    source: 'gtm',
+    severity: 'warning',
+    summary: 'Tags fire on multiple triggers with conflicting types, risking duplicate or misattributed fires.',
+    directAnswer:
+      'One or more tags in this container fire on multiple triggers of different types — for example, both a Page View trigger and a Custom Event trigger. The tag will fire on every match across all triggers, which can produce duplicate conversions or fires in contexts the tag was not designed for.',
+    why: 'GTM evaluates each firing trigger independently. A tag attached to both a Page View and a Custom Event trigger fires every time either trigger matches. This is sometimes intentional (a GA4 Configuration tag firing on All Pages plus on a session-start custom event), but is more often a misconfiguration: someone added a trigger to "make sure" the tag fires and accidentally created a duplicate-fire path. The damage depends on the tag type — a configuration tag firing twice is harmless; a Google Ads conversion tag firing twice doubles the reported conversion. The check is conservative — it flags any tag with mixed trigger types because the configuration intent cannot be inferred — but every flagged tag deserves a manual review.',
+    howToFix:
+      '1. In GTM, open each flagged tag and review the Firing Triggers list. 2. Ask: was this tag intentionally configured to fire on multiple trigger types, or did the second trigger get added accidentally? 3. If only one trigger is correct, remove the others. 4. If multiple triggers are intentional (e.g. for a tag that must fire on initial page load and on subsequent route changes in a SPA), document the intent in the tag\'s Notes field and add a description that future audits can recognize. 5. Use Preview mode to walk the most common user journeys (page load, form submit, navigation) and confirm the tag fires only the expected number of times per journey.',
+    example: 'Tag: Google Ads — Purchase\nFiring triggers:\n  - Custom Event - purchase\n  - Page View - /thank-you (legacy, not removed)\nFix: remove the Page View trigger; the custom event is the canonical signal.',
+    citationTemplate:
+      'AdLint detected GTM tags configured with firing triggers of conflicting types. Per Google\'s Tag Manager trigger documentation, every trigger that matches the page event causes the tag to fire, which can produce duplicate or contextually-incorrect fires when triggers of different types are combined unintentionally. Recommended remediation: audit each flagged tag, remove unintended triggers, and document multi-trigger configurations that are intentional. Source: support.google.com/tagmanager/answer/6106961.',
+    references: [
+      {
+        label: 'Google Tag Manager — About triggers',
+        url: 'https://support.google.com/tagmanager/answer/6106961',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['overlapping-triggers', 'duplicate-conversions'],
+  },
+  {
+    id: 'datalayer-naming-inconsistency',
+    name: 'Inconsistent Data Layer Variable Naming',
+    source: 'gtm',
+    severity: 'warning',
+    summary: 'Less than 80% of Data Layer Variables follow a single naming convention.',
+    directAnswer:
+      'Data Layer Variables in this container use mixed naming patterns — some use `dot.notation`, others `camelCase`, others `snake_case`. AdLint detected the dominant pattern accounts for less than 80% of variables, which means the dataLayer is being read inconsistently across the container.',
+    why: 'A consistent naming pattern for Data Layer Variables is a leading indicator of dataLayer governance discipline. When variables mix `ecommerce.value`, `ecommerceValue`, and `ecommerce_value`, three things break down. First, developers cannot predict the right path when adding a new tag and end up creating a new variable instead of reusing an existing one (see `duplicate-datalayer-paths`). Second, the dataLayer spec implied by GTM stops matching the dataLayer pushed by the site, because the site team and the GTM team have different mental models. Third, every audit takes longer because the auditor has to mentally normalize names before they can see what is actually configured. The threshold of 80% is chosen because some legacy variables will always exist; the goal is a clearly-dominant convention, not perfect uniformity.',
+    howToFix:
+      '1. Decide the canonical convention. The default in modern GTM implementations is dot-notation matching the GA4 ecommerce spec: `ecommerce.value`, `ecommerce.currency`, `ecommerce.items.0.item_id`. 2. In GTM, open Workspace → Variables → User-Defined Variables and identify variables that do not match. 3. For each non-matching variable, create a new variable with the canonical name and update tag references. 4. Archive the non-matching variables once nothing references them. 5. Document the convention in your team\'s GTM governance doc so new variables follow it by default.',
+    example: 'Inconsistent:\n  ecommerce.value (dot-notation)\n  purchaseValue (camelCase)\n  transaction_total (snake_case)\n\nConsistent:\n  ecommerce.value\n  ecommerce.currency\n  ecommerce.transaction_id',
+    citationTemplate:
+      'AdLint detected Data Layer Variable naming inconsistency in this GTM container — less than 80% of variables follow a single naming convention. Per industry-standard GTM governance, the dominant convention is dot-notation matching the GA4 e-commerce specification. Naming inconsistency correlates with duplicate variable creation, audit friction, and dataLayer spec drift between the site and the container. Recommended remediation: adopt the GA4 dot-notation convention, rename non-matching variables, and document the convention in team governance materials. Source: developers.google.com/analytics/devguides/collection/ga4/ecommerce.',
+    references: [
+      {
+        label: 'Google Analytics 4 — E-commerce events naming reference',
+        url: 'https://developers.google.com/analytics/devguides/collection/ga4/ecommerce',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['naming-conventions', 'duplicate-datalayer-paths'],
+  },
+  {
+    id: 'unused-datalayer-variables',
+    name: 'Unused Data Layer Variables',
+    source: 'gtm',
+    severity: 'info',
+    summary: 'Data Layer Variables are defined in the container but never referenced by any tag or trigger.',
+    directAnswer:
+      'This container defines Data Layer Variables that no tag or trigger references — they exist in Workspace → Variables but are never read at runtime. The variables themselves cost nothing, but they are usually a signal that something was abandoned half-implemented, and they make audits harder by adding noise to the variable list.',
+    why: 'Unused Data Layer Variables typically have three origin stories. (1) A migration left them behind — the old tag was removed but the variable that fed it was not. (2) An implementation was started but never finished — variables were created in anticipation of tags that were never built. (3) A copy-paste from a sample container or another GTM workspace included variables that this site does not actually push to the dataLayer. None of these are runtime problems, but each one is a small audit-friction tax. The check is info-level because the impact is operational, not behavioural — but ignoring it long enough produces a container where finding the relevant variable means scrolling past 40 abandoned ones.',
+    howToFix:
+      '1. In GTM, open Workspace → Variables → User-Defined Variables and identify each Data Layer Variable in the audit\'s unused list. 2. For each one, use "Find references" — confirm GTM truly has no references. 3. Decide per variable: archive if no longer needed, or note in the variable description if it is being kept for a known-future use. 4. Archive (do not delete) — archiving preserves audit history and is reversible. 5. Re-run AdLint after the next publish to confirm the count clears.',
+    example: 'DLV - oldRevenue → ecommerce.revenue\nReferences: 0 tags, 0 triggers\nAction: archive after confirming no upcoming work depends on it.',
+    citationTemplate:
+      'AdLint detected Data Layer Variables defined in this container that are not referenced by any tag or trigger. While unused variables do not affect runtime behaviour, they are an operational indicator of incomplete migrations or abandoned implementations and add friction to every audit cycle. Recommended remediation: confirm each variable is truly unused, then archive (not delete) to preserve audit history. Source: support.google.com/tagmanager/answer/6164391.',
+    references: [
+      {
+        label: 'Google Tag Manager — Variable types',
+        url: 'https://support.google.com/tagmanager/answer/6164391',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['unused-variables', 'unused-triggers', 'stale-tags'],
+  },
+  {
+    id: 'circular-tag-dependencies',
+    name: 'Circular Tag Dependencies',
+    source: 'gtm',
+    severity: 'warning',
+    summary: 'Tag sequencing chains contain a cycle — Tag A depends on Tag B which depends on Tag A.',
+    directAnswer:
+      'GTM\'s Tag Sequencing feature lets one tag declare another as a setup tag that must fire first. AdLint detected a cycle in those declarations: Tag A is configured to fire after Tag B, but Tag B is configured to fire after Tag A. GTM resolves cycles by ignoring one side of the dependency, so the actual ordering is non-deterministic and likely wrong.',
+    why: 'GTM has no compile-time validation for tag sequencing cycles. You can create Tag A with setup tag B, then edit Tag B to declare setup tag A, and the GTM UI accepts it silently. At runtime, GTM has to break the cycle somewhere — it does, but the choice is opaque, and the behaviour can change between container versions or even between page loads if other timing factors shift. This is almost always the result of two engineers editing tags in parallel without seeing each other\'s sequencing configuration. The damage is intermittent — the tags fire in unpredictable order, and any timing dependency between them (Conversion Linker → Conversion Tag) is unreliable. The fix is straightforward: identify the cycle and break it by deciding which tag is genuinely the prerequisite.',
+    howToFix:
+      '1. AdLint\'s finding details list every cycle (Tag A → Tag B → Tag A). 2. For each cycle, open both tags in GTM and identify the Tag Sequencing configuration. 3. Decide which dependency is the real one — usually there is a clear answer (a Conversion Linker is the prerequisite for a Conversion Tag, not the other way around). 4. Remove the incorrect Tag Sequencing relationship from the wrong side. 5. In Preview mode, fire the tags and confirm they execute in the intended order. Publish.',
+    example: 'Cycle:\n  Tag: Google Ads - Purchase Conversion (Setup tag: Google Ads - Conversion Linker)\n  Tag: Google Ads - Conversion Linker (Setup tag: Google Ads - Purchase Conversion)\n\nFix: remove the second setup-tag relationship — the linker does not depend on the conversion tag.',
+    citationTemplate:
+      'AdLint detected a circular Tag Sequencing dependency in this GTM container. Per Google\'s Tag Sequencing documentation, sequencing relationships must form a directed acyclic graph for runtime ordering to be deterministic. Circular dependencies cause non-deterministic firing order, which compromises any time-sensitive behaviour built on the sequencing (such as Conversion Linker → conversion tag ordering). Recommended remediation: identify each cycle, decide which sequencing edge is genuinely required, and remove the redundant relationship. Source: support.google.com/tagmanager/answer/6238868.',
+    references: [
+      {
+        label: 'Google Tag Manager — Tag sequencing',
+        url: 'https://support.google.com/tagmanager/answer/6238868',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['conversion-linker-sequencing', 'excessive-sequencing-depth', 'orphaned-tag-sequences'],
+  },
+  {
+    id: 'excessive-sequencing-depth',
+    name: 'Excessive Tag Sequencing Depth',
+    source: 'gtm',
+    severity: 'warning',
+    summary: 'A tag sequencing chain exceeds three levels of depth.',
+    directAnswer:
+      'A tag in this container has a sequencing chain more than three setup tags deep — Tag A depends on B which depends on C which depends on D. At each link, GTM must wait for the upstream tag to complete before firing the next one, which serializes work that often does not need to be serial and can add hundreds of milliseconds to time-to-fire.',
+    why: 'Tag Sequencing serializes execution: GTM does not fire a tag until every declared setup tag has completed. Two or three levels is normal (Consent Mode → Conversion Linker → Conversion Tag), but five-deep chains are usually accidental — someone added a setup-tag relationship that did not need to be a setup-tag relationship. The cost is page-load performance: every additional level adds the network or compute time of one more tag to the critical path. For conversion tags on confirmation pages where the page often closes immediately after fire, this directly correlates with conversion loss on slow connections. The threshold of 3 is informational guidance; the real test is whether each link in the chain is genuinely a prerequisite or just incidentally configured that way.',
+    howToFix:
+      '1. AdLint\'s details list the deepest tag chains. Walk each chain from leaf to root. 2. For each setup-tag relationship, ask: does the downstream tag actually require the side effect of the upstream tag? 3. Where the answer is no, remove the setup-tag declaration — the tags can fire in parallel. 4. Where the answer is yes (Conversion Linker before Conversion Tag, GA4 Config before GA4 Event), keep the dependency. 5. Republish and verify time-to-fire improves in Preview mode.',
+    example: 'Chain depth: 5\n  Tag E (depth 5) ← setup: Tag D\n  Tag D (depth 4) ← setup: Tag C\n  Tag C (depth 3) ← setup: Tag B\n  Tag B (depth 2) ← setup: Tag A\n  Tag A (depth 1)\n\nFix: review whether each level is a real prerequisite — usually one or two are incidental.',
+    citationTemplate:
+      'AdLint detected GTM tag sequencing chains exceeding three levels of depth. Per Google\'s Tag Sequencing documentation, each setup-tag relationship serializes execution and adds the upstream tag\'s firing time to the downstream tag\'s critical path. Deep chains often contain incidental dependencies and degrade page-load performance, particularly on conversion-confirmation pages where rapid tag fire is essential to avoid loss. Recommended remediation: audit each chain link for true prerequisite status and remove incidental setup-tag relationships. Source: support.google.com/tagmanager/answer/6238868.',
+    references: [
+      {
+        label: 'Google Tag Manager — Tag sequencing',
+        url: 'https://support.google.com/tagmanager/answer/6238868',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['circular-tag-dependencies', 'orphaned-tag-sequences', 'performance-heavy-triggers'],
+  },
+  {
+    id: 'orphaned-tag-sequences',
+    name: 'Orphaned Tag Sequence References',
+    source: 'gtm',
+    severity: 'info',
+    summary: 'Tags reference setup or cleanup tags by name, but the referenced tags no longer exist in the container.',
+    directAnswer:
+      'One or more tags in this container have Tag Sequencing relationships pointing to setup tags or blocking tags that have been deleted. The reference is left behind in the configuration but resolves to nothing at runtime, which means the intended sequencing simply does not happen.',
+    why: 'When you delete a tag in GTM, references to it from other tags\' Tag Sequencing configuration are not auto-cleaned. The downstream tag keeps a stale reference to a tag name that no longer exists. At runtime, GTM evaluates the reference, finds no match, and silently proceeds — so the dependent tag fires without its expected prerequisite. This is silently dangerous: a conversion tag may have been carefully configured to fire after the Conversion Linker, but if someone deletes the linker and creates a replacement with a different name without updating the references, the conversion tag now fires unsequenced. The check finds these dangling references so the team can clean them up before they become a real problem.',
+    howToFix:
+      '1. AdLint\'s details list each orphaned reference (the tag, the missing target, and whether it is a setup-tag or blocking-tag reference). 2. For each, open the referencing tag and decide: is the intended prerequisite tag still in the container under a different name, or has it been removed entirely? 3. If a replacement exists, update the reference to point to the current tag. 4. If the prerequisite is genuinely gone and no longer needed, remove the orphaned reference entirely from the tag\'s Tag Sequencing configuration. 5. Publish.',
+    example: 'Tag: Google Ads - Purchase Conversion\n  Setup tag reference: "Google Ads - Conversion Linker (old)"\n  Status: target tag does not exist (was renamed to "Conversion Linker")\nFix: update the setup-tag reference to "Conversion Linker"',
+    citationTemplate:
+      'AdLint detected GTM tags with Tag Sequencing references to setup or blocking tags that no longer exist in the container. Per Google\'s Tag Sequencing documentation, orphaned references resolve to nothing at runtime and silently break the intended ordering between dependent tags. This is particularly risky for conversion tags configured to wait for Conversion Linker tags that have since been renamed or replaced. Recommended remediation: update orphaned references to point at current tags or remove them entirely from the Tag Sequencing configuration. Source: support.google.com/tagmanager/answer/6238868.',
+    references: [
+      {
+        label: 'Google Tag Manager — Tag sequencing',
+        url: 'https://support.google.com/tagmanager/answer/6238868',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['circular-tag-dependencies', 'excessive-sequencing-depth', 'stale-tags'],
+  },
+  {
+    id: 'overlapping-triggers',
+    name: 'Overlapping Trigger Conditions',
+    source: 'gtm',
+    severity: 'warning',
+    summary: 'Two or more triggers of the same type have identical filter conditions.',
+    directAnswer:
+      'This container has multiple triggers configured with the same type and identical filter conditions — for example, two Custom Event triggers both filtering on `event equals purchase`. The duplicates do not cause direct measurement problems by themselves, but they multiply tag fires when a tag is wired to both of them.',
+    why: 'Identical-condition triggers usually appear when two engineers solved the same problem independently and neither cleaned up the other\'s work. The triggers are functionally identical at runtime — when one matches, the other does too. The damage depends on which tags reference them. A tag wired to only one is unaffected. A tag wired to both fires twice for every match, which is the most common cause of doubled GA4 events and Google Ads conversion duplication in audits like this one. The check is conservative: it flags identical-filter pairs because a human review can usually decide quickly which is canonical, but it does not auto-detect "near-identical" overlaps where one trigger has an additional restriction. Those need a manual review of the trigger logic.',
+    howToFix:
+      '1. AdLint\'s details list each pair of overlapping triggers and the matching tag type. 2. For each pair, pick the canonical trigger — usually the one with the clearer name or the more recent creation date. 3. Update every tag that references the duplicate trigger to reference the canonical one instead. 4. Archive (do not delete) the duplicate trigger. 5. In Preview mode, fire the underlying event and confirm only one trigger matches and only the expected number of tags fire. Publish.',
+    example: 'Overlap:\n  Trigger A: Custom Event, filter: event equals "purchase"\n  Trigger B: Custom Event, filter: event equals "purchase"\nTags wired to both: Google Ads - Purchase, GA4 - Purchase\nFix: rewire Tag → Trigger A, archive Trigger B.',
+    citationTemplate:
+      'AdLint detected pairs of GTM triggers configured with the same type and identical filter conditions. Per Google\'s Tag Manager trigger documentation, identical-condition triggers cause any tag wired to both to fire multiple times on each match, producing duplicated measurement events. Recommended remediation: identify the canonical trigger for each duplicate pair, rewire dependent tags to reference only the canonical trigger, and archive the duplicates. Source: support.google.com/tagmanager/answer/6106961.',
+    references: [
+      {
+        label: 'Google Tag Manager — About triggers',
+        url: 'https://support.google.com/tagmanager/answer/6106961',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    whyMockup: {
+      kind: 'gtm-trigger-list',
+      containerLabel: 'GTM-AB12CDE · Workspace: Default',
+      caption:
+        'Two Custom Event triggers with identical filter conditions. Any tag wired to both fires twice on every match.',
+      rows: [
+        { name: 'CE - Purchase (legacy)', type: 'Custom Event', fires: 'event equals "purchase"', highlight: 'warning', note: 'Identical conditions to "CE - purchase event"' },
+        { name: 'CE - purchase event', type: 'Custom Event', fires: 'event equals "purchase"', highlight: 'warning', note: 'Identical conditions to "CE - Purchase (legacy)"' },
+        { name: 'Page View - Thank You', type: 'Page View', fires: 'Page Path contains "/thank-you"' },
+      ],
+    },
+    relatedChecks: ['trigger-conflicts', 'duplicate-conversions', 'unused-triggers'],
+  },
+  {
+    id: 'invalid-css-selectors',
+    name: 'Invalid CSS Selectors in Triggers',
+    source: 'gtm',
+    severity: 'warning',
+    summary: 'Element-based triggers contain CSS selectors with invalid syntax.',
+    directAnswer:
+      'One or more Click or Element Visibility triggers use CSS selectors with syntax errors — unclosed brackets, malformed pseudo-classes, or unescaped special characters. Invalid selectors do not match anything at runtime, so the trigger never fires and any tag dependent on it is silently dead.',
+    why: 'GTM\'s Click and Element Visibility triggers accept a CSS selector as their match target (`Click Element matches CSS selector`). The browser evaluates the selector against the DOM at trigger time. If the selector is malformed — `button[data-id="cta]` with an unclosed quote, `.cta:hov` with a typo in the pseudo-class — the browser throws an error and the trigger silently fails to match. The tag wired to that trigger never fires, and the audit dashboard shows it as "passed" because no errors were logged. The most common pattern is a copy-paste from a developer Slack message where the selector was abbreviated or wrapped, breaking the syntax. AdLint validates the selector syntax statically; the check is high-signal because invalid selectors are nearly always bugs, not intentional configurations.',
+    howToFix:
+      '1. AdLint\'s details list each affected trigger and its invalid selector. 2. Open each trigger in GTM and inspect the selector field. 3. Validate the selector — paste it into your browser\'s DevTools console: `document.querySelector("your-selector-here")`. If it throws, the syntax is broken. 4. Common fixes: balance quotes and brackets, escape colons and other special characters in attribute values (`[data-test="user\\:profile"]`), and check pseudo-class spelling (`:hover` not `:hov`). 5. After fixing, complete a test interaction in Preview mode and confirm the trigger now matches. Publish.',
+    example: 'Invalid: button[data-cta="signup\nFixed: button[data-cta="signup"]\n\nInvalid: .nav-link:hov\nFixed: .nav-link:hover',
+    citationTemplate:
+      'AdLint detected invalid CSS selectors in one or more GTM Click or Element Visibility triggers. Per the W3C Selectors specification, browsers reject malformed selectors at evaluation time, causing the trigger to silently never match. Tags wired to these triggers fail to fire without surfacing any error, producing dead measurement paths invisible in standard reporting. Recommended remediation: validate each flagged selector against the live DOM using `document.querySelector` and fix syntax errors. Source: developer.mozilla.org/en-US/docs/Web/CSS/CSS_selectors.',
+    references: [
+      {
+        label: 'MDN — CSS selectors',
+        url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_selectors',
+      },
+      {
+        label: 'Google Tag Manager — Click triggers',
+        url: 'https://support.google.com/tagmanager/answer/6106961',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['trigger-conflicts', 'overlapping-triggers', 'performance-heavy-triggers'],
+  },
+  {
+    id: 'unused-triggers',
+    name: 'Unused Triggers',
+    source: 'gtm',
+    severity: 'info',
+    summary: 'Triggers are defined in the container but not referenced by any tag.',
+    directAnswer:
+      'This container has triggers in Workspace → Triggers that no tag uses for firing or blocking. The triggers do not affect runtime behaviour, but they clutter the Triggers screen and usually indicate something was left unfinished.',
+    why: 'Unused triggers accumulate the same way as unused variables: a migration left them behind, an implementation was planned but never finished, or a copy-paste from another container brought triggers along that nothing uses. The runtime cost is zero, but the operational cost is real — every audit, handoff, and change requires scanning past triggers that do nothing, and the longer they live there the more likely a future engineer is to assume one of them is load-bearing and avoid touching it. The check is info-level because no measurement is affected, but governance-tier teams treat unused-trigger cleanup as part of every quarterly review.',
+    howToFix:
+      '1. AdLint\'s details list each unused trigger by name. 2. For each, use GTM\'s "Find references" link to confirm no tags reference it for firing or blocking. 3. Decide: archive if not needed, or update the trigger\'s description to record the intended future use if you are keeping it around. 4. Archive (do not delete) — archiving preserves audit history and can be reversed. 5. Re-run AdLint after the next publish to confirm the count clears.',
+    example: 'Trigger: Click - Old Hero CTA\nReferences: 0 tags (firing or blocking)\nAction: archive after confirming no upcoming campaign depends on it.',
+    citationTemplate:
+      'AdLint detected GTM triggers defined in this container that no tag references for firing or blocking. While unused triggers do not affect measurement, they accumulate audit friction and increase the chance of future engineers misinterpreting their status. Recommended remediation: confirm each trigger is genuinely unused and archive to preserve audit history. Source: support.google.com/tagmanager/answer/6106961.',
+    references: [
+      {
+        label: 'Google Tag Manager — About triggers',
+        url: 'https://support.google.com/tagmanager/answer/6106961',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['unused-variables', 'unused-datalayer-variables', 'stale-tags'],
+  },
+  {
+    id: 'performance-heavy-triggers',
+    name: 'Performance-Heavy Triggers',
+    source: 'gtm',
+    severity: 'warning',
+    summary: 'Triggers are configured in ways that can degrade page-load performance — short timer intervals or aggressive history-change polling.',
+    directAnswer:
+      'One or more triggers in this container fire so frequently that they add measurable CPU and main-thread work to every page. The most common offenders are Timer triggers with intervals under 5 seconds and History Change triggers that fire on every browser-state push, regardless of whether the change is meaningful.',
+    why: 'GTM triggers run JavaScript on the main thread. A Timer trigger with a 1000ms interval evaluates its conditions and potentially fires tags 60 times per minute, every minute the page is open — on a content-heavy page that is already busy, this can push Cumulative Layout Shift and Interaction-to-Next-Paint into yellow or red ranges. History Change triggers in single-page applications fire on every `pushState` and `replaceState` call, which modern SPA frameworks call constantly during normal user interaction. The accumulation is invisible until the marketing team complains that Core Web Vitals scores are tanking and nobody can pinpoint why. The check fires conservatively on configurations Google has documented as performance risks; every match should be reviewed against the actual use case to decide whether the frequency is justified.',
+    howToFix:
+      '1. AdLint\'s details list each performance-heavy trigger and the specific reason it was flagged. 2. For Timer triggers: ask whether the use case really requires sub-5-second polling. Most measurement use cases fire fine on 30-second or 60-second intervals; if you genuinely need real-time, consider a different architecture (server-side GTM or a custom event). 3. For History Change triggers: add filter conditions so the trigger only matches genuinely meaningful URL changes (e.g. `Page Path matches RegEx ^/(checkout|signup|confirmation)`), not every minor pushState. 4. Republish and re-run a Lighthouse or PageSpeed test on a representative page to confirm CWV scores improve.',
+    example: 'Timer trigger: "Engagement ping"\n  Interval: 1000ms (fires every 1 second)\nFix: raise interval to 30000ms (30s), or remove the trigger if the measurement is not load-bearing.',
+    citationTemplate:
+      'AdLint detected GTM triggers configured in ways documented as performance risks — Timer triggers with sub-5-second intervals or History Change triggers without filter restrictions. Per Google\'s Tag Manager performance best practices, these patterns add main-thread work that compounds across every page view and can measurably degrade Core Web Vitals scores. Recommended remediation: raise Timer intervals to a frequency the use case actually requires, and add filter conditions to History Change triggers so they fire only on meaningful URL changes. Source: support.google.com/tagmanager/answer/7679319.',
+    references: [
+      {
+        label: 'Google Tag Manager — Trigger types',
+        url: 'https://support.google.com/tagmanager/answer/7679319',
+      },
+      {
+        label: 'web.dev — Core Web Vitals',
+        url: 'https://web.dev/articles/vitals',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['excessive-custom-html', 'overlapping-triggers', 'container-size-score'],
+  },
+  {
+    id: 'excessive-custom-html',
+    name: 'Excessive Custom HTML Tags',
+    source: 'gtm',
+    severity: 'warning',
+    summary: 'More than 30% of tags in the container are Custom HTML, which is a governance and performance risk.',
+    directAnswer:
+      'A high share of tags in this container are Custom HTML — arbitrary JavaScript injected at runtime instead of native, audited GTM tag templates. Custom HTML tags are powerful but expensive: each one is unaudited code with full DOM access, runs on the main thread, and is harder for the next engineer to understand than a native template would be.',
+    why: 'Google ships native tag templates for most common third-party platforms (Google Ads, Meta, TikTok, LinkedIn, Pinterest, etc.). These templates are reviewed, sandboxed, and present a configuration UI that a non-developer can audit. Custom HTML tags bypass all of that — they execute arbitrary JavaScript with access to the entire page, run unsandboxed, and require code review to assess what they actually do. A small share of Custom HTML in a container is normal (genuinely custom behaviour, one-off integrations); a large share is a smell. The 30% threshold is conservative — most well-governed containers run well below 10%. High Custom HTML share correlates strongly with three downstream issues: privacy/security audit findings, page-performance regressions, and engineer-handoff friction when the people who wrote the Custom HTML have left the team.',
+    howToFix:
+      '1. AdLint\'s details give the Custom HTML count and percentage. 2. In GTM, filter the Tags screen by tag type Custom HTML. 3. For each Custom HTML tag, ask: does a native tag template exist for the same purpose? Browse the GTM Community Template Gallery and the platform-specific tag types in the GTM tag chooser. 4. Migrate Custom HTML to native templates where one exists. Native templates often have features the Custom HTML predecessor lacked (Consent Mode integration, server-side support). 5. For Custom HTML tags that have no native equivalent, document the intent in the tag\'s description and ensure the code has been reviewed in version control. 6. Re-run AdLint after migration; the share will drop.',
+    example: 'Custom HTML count: 24 of 67 total tags (36%)\nNative equivalents available for: Meta Pixel (6), LinkedIn Insight Tag (3), Hotjar (2)\nMigration order: Meta first (highest count), then LinkedIn, then Hotjar.',
+    citationTemplate:
+      'AdLint detected that more than 30% of tags in this GTM container are Custom HTML — arbitrary unsandboxed JavaScript. Per Google\'s GTM tag template documentation, native tag templates are the recommended pattern because they offer sandboxing, Consent Mode integration, and an audit-friendly configuration surface. High Custom HTML share correlates with elevated privacy, security, and performance risk. Recommended remediation: migrate Custom HTML tags to native templates where equivalents exist via the GTM Community Template Gallery, and document remaining Custom HTML tags with reviewer notes. Source: developers.google.com/tag-platform/tag-manager/templates.',
+    references: [
+      {
+        label: 'Google Tag Manager — Custom Templates',
+        url: 'https://developers.google.com/tag-platform/tag-manager/templates',
+      },
+      {
+        label: 'Google Tag Manager — Community Template Gallery',
+        url: 'https://tagmanager.google.com/gallery/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['debug-tags-in-production', 'performance-heavy-triggers', 'container-size-score'],
+  },
+  {
+    id: 'missing-descriptions',
+    name: 'Documentation Completeness',
+    source: 'gtm',
+    severity: 'info',
+    summary: 'Less than 50% of tags, triggers, and variables have descriptions filled in.',
+    directAnswer:
+      'GTM lets you add a Notes/Description field to every tag, trigger, and variable. AdLint scores this container below 50% on documentation completeness — the majority of assets have no description, which makes every audit, handoff, and change harder than it needs to be.',
+    why: 'Descriptions are GTM\'s version of code comments: they answer "why does this exist" at the moment a reviewer is looking at the asset. A container with no descriptions is a black box — every tag, trigger, and variable name has to encode its entire purpose, which they almost never do (`Google Ads - Purchase` tells you what it is, not why it was created with this specific configuration). Without descriptions, the only way to understand an asset is to read its full configuration, cross-reference its references, and reconstruct intent. With descriptions, the next engineer reads "Tag created 2024-03 for the BFCM landing page launch; can be paused after 2024-12-31" and immediately knows what to do. The 50% threshold is generous; mature governance targets >80% with descriptions for every load-bearing asset.',
+    howToFix:
+      '1. Pick a starting target — the next time you touch any tag, trigger, or variable, add a one-line description before saving. This stops the bleeding. 2. For the existing backlog, prioritize the most-frequently-touched assets (anything modified in the last 90 days). 3. Description format suggestion: `[Purpose] for [campaign/page/initiative]. [Sunset note if applicable].` E.g. "Conversion tracking for the BFCM 2024 lead-gen flow. Sunset after 2025-02-28." 4. Document the description convention in your team\'s GTM governance doc. 5. Re-run AdLint after a quarterly cleanup pass to see the score rise.',
+    example: 'Tag: Google Ads - Purchase Conversion\nDescription (empty)\n\nBetter:\nDescription: Standard purchase conversion for AW-123 account, fires on dataLayer purchase event. Migrated from legacy ATC tag 2024-08. Owner: marketing-ops@.',
+    citationTemplate:
+      'AdLint detected that less than 50% of tags, triggers, and variables in this GTM container have descriptions. Per Google\'s GTM workspace governance recommendations, the Notes/Description field is the recommended location for documenting asset intent, owner, and sunset criteria. Containers below this threshold accumulate audit friction proportional to size; well-governed containers target >80% description coverage. Recommended remediation: adopt a description convention and apply it to the most-frequently-modified assets first. Source: support.google.com/tagmanager/answer/6103693.',
+    references: [
+      {
+        label: 'Google Tag Manager — Help and best practices',
+        url: 'https://support.google.com/tagmanager/answer/6103693',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['naming-conventions', 'stale-tags', 'unused-variables'],
+  },
+  {
+    id: 'stale-tags',
+    name: 'Potentially Stale Tags',
+    source: 'gtm',
+    severity: 'info',
+    summary: 'Tags have names suggesting they are outdated, temporary, or legacy ("old," "legacy," "backup," "deprecated," "temp," "test").',
+    directAnswer:
+      'One or more tags in this container have names containing words like "old," "legacy," "backup," "deprecated," "temp," or "test." The names are operational signals from previous engineers that these tags are unfinished business — kept around because someone was not sure they could be safely removed.',
+    why: 'Stale-named tags are a recognized governance anti-pattern. The name was chosen specifically to mark the tag for later cleanup, but "later" has not arrived. The risk is twofold. First, the tag may still be firing on production triggers, doing real work nobody is auditing — a "legacy" tag firing on All Pages can be sending data to an old analytics property nobody monitors anymore, including PII or commercial data that should not be flowing. Second, the tag adds container weight and audit friction even if it does nothing. The check is conservative — it flags by name pattern only, since real behavior requires manual review — but every flagged tag deserves a decision: archive it or rename it.',
+    howToFix:
+      '1. AdLint\'s details list each flagged tag by name. 2. For each tag, decide one of three actions. (a) If the tag is genuinely no longer needed, archive it (preserves history, reversible). (b) If the tag is still load-bearing, rename it to remove the stale terminology and add a description explaining its current role. (c) If you cannot tell, pause the tag (it stops firing but stays in the container) and watch for downstream alerts for one full reporting cycle — if no alerts fire, archive it. 3. Document a "name lifecycle" convention so future tags get a sunset date in their description instead of "temp" in their name.',
+    example: 'Stale-named tags:\n  - "GA - OLD Pageview Tag" (still firing on All Pages)\n  - "FB Pixel - Legacy" (paused)\n  - "Hotjar Backup" (firing)\n\nDecisions:\n  - Archive the OLD GA tag (GA4 has replaced it)\n  - Archive the Legacy FB Pixel (already paused, not needed)\n  - Rename Hotjar Backup to "Hotjar - Production" if still load-bearing.',
+    citationTemplate:
+      'AdLint detected GTM tags with names suggesting outdated, temporary, or legacy status — containing words like "old," "legacy," "backup," "deprecated," "temp," or "test." Per GTM workspace governance best practice, stale naming is an operational signal that the tag was marked for cleanup but never resolved. Each flagged tag deserves a decision: archive (if no longer needed), rename (if still load-bearing), or pause for one reporting cycle (if uncertain). Source: support.google.com/tagmanager/answer/6103693.',
+    references: [
+      {
+        label: 'Google Tag Manager — Help and best practices',
+        url: 'https://support.google.com/tagmanager/answer/6103693',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['debug-tags-in-production', 'missing-descriptions', 'naming-conventions'],
+  },
+  {
+    id: 'unused-variables',
+    name: 'Unused Variables',
+    source: 'gtm',
+    severity: 'info',
+    summary: 'User-defined variables are present in the container but never referenced by any tag or trigger.',
+    directAnswer:
+      'This container has user-defined variables — Data Layer Variables, Custom JavaScript, Lookup Tables, and so on — that no tag or trigger uses. The variables exist in Workspace → Variables but never get evaluated at runtime.',
+    why: 'Unused variables share the same origin story as unused triggers and unused Data Layer Variables: leftover from migrations, half-finished implementations, or imported from other containers. The runtime cost is effectively zero — GTM only evaluates a variable when something references it — but the operational cost is the same as everywhere else in this audit. Every unused variable adds to the time a reviewer spends scrolling, and any one of them could be silently shadowing a variable somebody assumes is canonical. The check is info-level for this reason: not measurement-critical, but a leading indicator of governance health.',
+    howToFix:
+      '1. AdLint\'s details list each unused variable by name. 2. For each, use GTM\'s "Find references" link to confirm no tags or triggers reference it. 3. Decide: archive if not needed, or update the variable\'s description with a note explaining why it is being kept around. 4. Archive (do not delete) — archiving is reversible and preserves audit history. 5. Re-run AdLint after the next publish.',
+    example: 'Variable: CJS - oldUserIdResolver\nReferences: 0 tags, 0 triggers\nAction: archive (the new auth flow replaced this).',
+    citationTemplate:
+      'AdLint detected user-defined variables in this GTM container that no tag or trigger references. While unused variables do not affect runtime measurement, they accumulate audit friction and increase the risk of silent shadowing — where a forgotten variable masks a canonical one with a similar name. Recommended remediation: confirm each variable is genuinely unused via "Find references," then archive to preserve audit history. Source: support.google.com/tagmanager/answer/6164391.',
+    references: [
+      {
+        label: 'Google Tag Manager — Variable types',
+        url: 'https://support.google.com/tagmanager/answer/6164391',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['unused-triggers', 'unused-datalayer-variables', 'stale-tags'],
+  },
+  {
     id: 'conversion-funnel-coverage',
     name: 'Conversion Tracking Funnel Coverage',
     source: 'cross',

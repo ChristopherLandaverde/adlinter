@@ -1,5 +1,62 @@
 # AdLint — Progress Log
 
+## v1.25.2 — GTM Flagship Complete: All 17 Remaining GTM Explainers
+**Commit:** Pending
+
+Closes the GTM Flagship Sprint. Every GTM check ID the audit engine emits (29 total) now has a full-treatment editorial explainer — directAnswer, citationTemplate, references, lastUpdated, JSON-LD Article + FAQPage schema, and mockup illustrations where applicable. 100% GTM coverage at flagship quality.
+
+### Written in this batch (17 new)
+**Critical:**
+- `conversion-error-handling` — Wait-for-tags / event callbacks on navigation triggers
+
+**Warning (10):**
+- `remarketing-tag-issues` — Missing Conversion ID / Tag ID on remarketing tags
+- `datalayer-dependencies` — Tags reference variables that don't exist
+- `trigger-conflicts` — Tags fire on multiple triggers with conflicting types
+- `datalayer-naming-inconsistency` — Less than 80% of variables follow a convention
+- `circular-tag-dependencies` — Tag sequencing cycles
+- `excessive-sequencing-depth` — Chains deeper than 3 levels
+- `overlapping-triggers` — Identical-condition triggers (with GTM trigger-list mockup)
+- `invalid-css-selectors` — Malformed selectors in element triggers
+- `performance-heavy-triggers` — Short timer intervals, unfiltered History Change triggers
+- `excessive-custom-html` — Custom HTML > 30% of total tags
+
+**Info (6):**
+- `unused-datalayer-variables`
+- `orphaned-tag-sequences` — References to deleted setup/blocking tags
+- `unused-triggers`
+- `missing-descriptions` — Documentation completeness < 50%
+- `stale-tags` — Names like "old," "legacy," "backup," "deprecated"
+- `unused-variables`
+
+### Coverage scoreboard
+- **GTM full-treatment explainers: 29 / 29 (100%)**
+- Total full-treatment across all sources: 47 → 64
+- All 178 check IDs still have a renderable page (stubs everywhere not yet GTM)
+
+### Verification
+- 573 tests pass
+- Type-check clean
+- `npx next build` green
+- All 17 new pages return HTTP 200, render JSON-LD `TechArticle` + `FAQPage`, and carry the Christopher Landaverde byline. `overlapping-triggers` renders the new `GTMTriggerListMock` component.
+
+### Sprint complete
+Week 1 (v1.25): foundation — registry, stubs, page template.
+Week 1.5 (v1.25.1): 8 legacy upgrades + 3 new explainers.
+Week 2 (v1.25.2, this entry): the remaining 17.
+GTM is now the AdLint flagship surface.
+
+### Files modified
+- `lib/checks/explainers.ts` (17 new full-treatment entries inserted after `container-size-score`)
+- `progress.md`
+
+### Next sprint candidates
+- Apply the same treatment to the 27 Google Ads check IDs (next most-trafficked source)
+- Build a `/checks/gtm` category landing page positioned for "GTM auditing" / "GTM container review" category queries
+- Build a stub-page heatmap so the team knows which check IDs to upgrade next based on actual click-through from `/audit`
+
+---
+
 ## v1.25.1 — GTM Flagship: 11 More Full-Treatment Explainers
 **Commit:** Pending
 
