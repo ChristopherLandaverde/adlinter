@@ -1653,9 +1653,30 @@ export const explainers: CheckExplainer[] = [
     source: 'pinterest',
     severity: 'warning',
     summary: 'Pinterest tag naming, enhanced match, or currency setup is inconsistent.',
-    why: 'Pinterest setup quality problems often do not stop events from firing, but they make the event stream harder to defend. Reusing a partner name as a tag name obscures ownership, missing enhanced match weakens matching quality, and mixing EUR and USD values makes revenue reporting hard to reconcile. These are measurement governance issues: the data exists, but the account team cannot trust what it means without cleanup.',
-    howToFix: 'Use clear, distinct names for the Pinterest Tag and any partner or integration layer. Enable enhanced match where it is appropriate for the consent and data policy in scope. Standardize value events on one expected currency, then re-test Checkout and Lead events in Pinterest Events Manager.',
+    directAnswer:
+      'Your Pinterest Tag fires, and the events arrive. The configuration around them is the problem. The `partner_name` matches the tag name so you cannot tell which integration owns the hits. Enhanced Match is off, so Pinterest is matching on cookies alone. Value events are arriving in two currencies on the same property, so revenue totals in Events Manager describe two different economic units stacked on top of each other. None of this breaks the pixel. All of it breaks the audit trail.',
+    why: 'Pinterest setup quality is a governance problem, not a delivery problem. The tag is healthy. The data underneath is not defensible.\n\nThree patterns show up most often. First, the `partner_name` field gets reused as the tag display name (or left as the default "Main Tag"). When two integrations point at the same Pinterest account, you cannot tell from Events Manager whether a Checkout came from Shopify, a headless build, or a CMS plugin. Ownership disputes become unresolvable. Second, Enhanced Match is disabled or partially configured. Pinterest uses hashed email, phone, and other identifiers to match conversions to logged-in Pinners; without it, match rates drop and Conversions API deduplication degrades. Third, value events fire in mixed currencies (USD on one product, EUR on another) because the dataLayer pulls from the wrong locale variable. The dashboard sums them anyway and reports a number that is mathematically meaningless.\n\nFor an agency citing Pinterest performance in a client deliverable, every one of these makes the citation harder to defend.',
+    howToFix:
+      '1. In Pinterest Events Manager, rename the tag to describe the integration and store (for example, "Shopify US Store Pinterest Tag") and set `partner_name` to the actual partner platform. 2. Enable Enhanced Match in the tag settings and confirm the site is passing hashed email, phone, or external_id on Checkout and Lead events; verify the match quality indicator in Events Manager. 3. Standardize value events on a single currency per property, or split the property if multi-currency is a real business requirement. 4. Send test Checkout and Lead events and confirm Events Manager shows correct `partner_name`, Enhanced Match status of Good or Great, and a single currency on value events.',
     example: 'Problem: partnerName = Main Tag, tagName = Main Tag, currencies = USD and EUR\nBetter: partnerName = Shopify, tagName = US Store Pinterest Tag, currency = USD',
+    citationTemplate:
+      'This Pinterest Tag has configuration quality issues that compromise the defensibility of its event data. Pinterest documentation specifies that `partner_name` should identify the integration platform, that Enhanced Match should be enabled to improve conversion attribution with hashed identifiers, and that value events should report a consistent currency per property. The audited account uses generic naming, has Enhanced Match disabled or partial, and reports value events in mixed currencies on the same property. None of this prevents events from firing; all of it prevents the resulting reports from being citable in a client performance review. Fix: rename the tag and `partner_name` to describe the integration, enable Enhanced Match with hashed Checkout and Lead identifiers, and standardize on one currency per property. Source: help.pinterest.com/en/business/article/install-the-pinterest-tag.',
+    references: [
+      {
+        label: 'Pinterest. Install the Pinterest Tag',
+        url: 'https://help.pinterest.com/en/business/article/install-the-pinterest-tag',
+      },
+      {
+        label: 'Pinterest. Enhanced Match',
+        url: 'https://help.pinterest.com/en/business/article/enhanced-match',
+      },
+      {
+        label: 'Pinterest. Track conversions with the Pinterest Tag',
+        url: 'https://help.pinterest.com/en/business/article/track-conversions-with-pinterest-tag',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['pinterest-conversion-api-parity', 'pinterest-checkout-missing-value'],
   },
   {
