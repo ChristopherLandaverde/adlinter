@@ -1195,6 +1195,230 @@ export const explainers: CheckExplainer[] = [
     relatedChecks: ['linkedin-missing-key-conversions', 'linkedin-unattached-conversions'],
   },
   {
+    id: 'linkedin-disabled-key-conversions',
+    name: 'LinkedIn Disabled Key Conversions',
+    source: 'linkedin',
+    severity: 'warning',
+    summary: 'Key LinkedIn conversion actions (Lead, Sign-Up, Purchase) are disabled.',
+    directAnswer:
+      'Your account has Lead, Sign-Up, or Purchase conversion actions sitting in a disabled state. Those three categories are the exact outcomes most LinkedIn campaigns are built to optimize for. When they are turned off, the campaigns either default to weaker proxy events or run blind, and nobody on the team can tell from a glance whether the disablement was deliberate or forgotten.',
+    why: 'LinkedIn lets you disable a conversion action without deleting it. That is useful when a launch ends, a form is retired, or a category gets restructured. The problem is that disabled actions still appear in the Account Asset list, still carry their Internal ID, and look almost identical to active ones until you read the status column carefully. Three months later, when a new manager picks up the account, the export shows a Lead conversion named "Book Demo" and they assume LinkedIn is recording demo requests. It is not. The Insight Tag would fire if the action were active, but a disabled action records nothing.\n\nThe second-order effect is on campaign attachment. A campaign can still reference a disabled conversion in its attachment list. Reporting against that campaign quietly drops to zero on the affected outcome, while the rest of the funnel looks normal. The team interprets the flat line as poor performance instead of a measurement gap.\n\nLead, Sign-Up, and Purchase are the categories where this hurts most because they are the categories LinkedIn campaigns most often optimize toward. A disabled Key Page View is mostly a reporting issue. A disabled Lead is an optimization issue.',
+    howToFix:
+      '1. Open Campaign Manager. Account Assets. Conversions. Filter the list by status to surface disabled actions. 2. For each disabled Lead, Sign-Up, or Purchase action, decide whether it is retired or paused by accident. Retired stays disabled, paused-by-accident gets re-enabled. 3. If you re-enable an action, check its Campaign Attachment list. Confirm the campaigns that should optimize toward it are still attached. Re-enabling alone does not restore attachments that were cleared during the disabled period. 4. For genuinely retired actions, consider renaming them with a "[retired YYYY-MM]" prefix so future audits can tell intent from accident. 5. Walk the Insight Tag in your browser to confirm re-enabled actions fire on the live site before you trust campaign reporting again.',
+    example: 'Disabled conversion: Book Demo (Lead)\nFix: re-enable in Campaign Manager and confirm campaign attachments are intact',
+    citationTemplate:
+      'This LinkedIn account has key Conversion Categories (Lead, Sign-Up, Purchase) in a disabled state. Per LinkedIn\'s conversion tracking documentation, disabled conversion actions stop recording entirely while remaining visible in the Account Asset list, which makes them easy to mistake for active actions during audits and handoffs. When a disabled action is also referenced by an active campaign attachment, the campaign reports zero for that outcome and the gap can be misread as poor performance rather than a measurement issue. Fix: review each disabled Lead, Sign-Up, and Purchase action, re-enable any that were paused by accident, confirm campaign attachments are intact after re-enabling, and rename genuinely retired actions so intent is unambiguous in future reviews. Source: linkedin.com/help/lms/answer/a425606.',
+    references: [
+      {
+        label: 'LinkedIn. Conversion tracking overview',
+        url: 'https://www.linkedin.com/help/lms/answer/a425606',
+      },
+      {
+        label: 'LinkedIn. Add a conversion tracking event',
+        url: 'https://www.linkedin.com/help/lms/answer/a425683',
+      },
+      {
+        label: 'LinkedIn. Install the LinkedIn Insight Tag',
+        url: 'https://www.linkedin.com/help/lms/answer/a420536',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['linkedin-missing-key-conversions', 'linkedin-no-active-conversions'],
+  },
+  {
+    id: 'linkedin-duplicate-conversions',
+    name: 'LinkedIn Duplicate Conversion Names',
+    source: 'linkedin',
+    severity: 'warning',
+    summary: 'Multiple LinkedIn conversion actions share the same name.',
+    directAnswer:
+      'Your account has two or more conversion actions with the same name. The Insight Tag fires correctly. The reporting export does not. When two actions both labeled "Demo Request" appear in a campaign report, no reader can tell which one represents the real funnel and which one is the duplicate, and the campaign-level totals split between them in ways that are hard to reconcile.',
+    why: 'LinkedIn does not enforce name uniqueness on conversion actions. Each action carries a distinct Internal ID, so the system always knows them apart, but the human-readable name is the only thing that shows up in most report views. When two actions share a name, three things go wrong.\n\nReporting becomes ambiguous. A campaign that attaches both will sum them in the campaign view, while a different campaign that attaches only one will report a smaller number, and the gap looks like a performance difference rather than a configuration artifact. Optimization splits. If campaigns are attached to different duplicates by accident, LinkedIn optimizes each campaign against a fraction of the real signal, slowing exit from learning. Handoffs break. The new account owner sees "Lead - Demo Request" twice in the asset list and cannot tell from the name which one is canonical, which means they either guess (and get it wrong half the time) or open both in Campaign Manager to compare configurations.\n\nDuplicates usually come from one of three places. A second tag rollout that did not check the existing inventory. A copy-and-edit workflow where someone duplicated an action to test a setting and forgot to rename. A migration where two team members ran the same setup in parallel.',
+    howToFix:
+      '1. Open Campaign Manager. Account Assets. Conversions. Sort by name to make duplicates land next to each other. 2. For each duplicate pair, compare Conversion Category, Click conversion window, View-through conversion window, value rules, and Campaign Attachment list. Pick the action that more campaigns rely on as the canonical one. 3. Move every campaign attachment from the duplicate to the canonical action. Save each campaign. 4. Disable the duplicate rather than deleting it, so historical data stays accessible by Internal ID. Rename it with a "[dup of #####]" prefix so the relationship is obvious in future audits. 5. Re-run the audit. The finding clears once each name appears exactly once in the active set.',
+    example: 'Active conversions:\n- Demo Request (Lead, attached to 4 campaigns)\n- Demo Request (Lead, attached to 1 campaign)\nFix: move the single attachment, disable and rename the second',
+    citationTemplate:
+      'This LinkedIn account has two or more conversion actions sharing the same name. Per LinkedIn\'s conversion tracking documentation, conversion actions are identified internally by Internal ID, but the human-readable name is what surfaces in campaign reports; duplicates produce ambiguous totals, split optimization signal when different campaigns attach to different duplicates, and make account handoffs error-prone. Fix: identify the canonical action for each duplicated name, move all campaign attachments to it, disable the duplicates rather than deleting them so historical data remains accessible, and rename retired duplicates so the relationship is obvious in future reviews. Source: linkedin.com/help/lms/answer/a425606.',
+    references: [
+      {
+        label: 'LinkedIn. Conversion tracking overview',
+        url: 'https://www.linkedin.com/help/lms/answer/a425606',
+      },
+      {
+        label: 'LinkedIn. Add a conversion tracking event',
+        url: 'https://www.linkedin.com/help/lms/answer/a425683',
+      },
+      {
+        label: 'Microsoft Learn. LinkedIn Insight Tag',
+        url: 'https://learn.microsoft.com/en-us/linkedin/marketing/insight-tag/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['linkedin-similar-conversion-names', 'linkedin-unattached-conversions'],
+  },
+  {
+    id: 'linkedin-missing-key-conversions',
+    name: 'LinkedIn Missing Key Conversions',
+    source: 'linkedin',
+    severity: 'critical',
+    summary: 'No active LinkedIn conversion actions in Lead, Sign-Up, Purchase, or Download categories.',
+    directAnswer:
+      'Your LinkedIn account has active conversion actions, but none of them represent a real business outcome. There is no Lead, no Sign-Up, no Purchase, and no Download in the active set. The Insight Tag is working. It is just measuring page views and side events instead of the things campaigns should optimize for.',
+    why: 'LinkedIn campaigns optimize against the conversion actions you attach to them. The categories that map to revenue or pipeline are Lead (form submits, qualified inquiries), Sign-Up (account creation, free trial start), Purchase (paid orders), and Download (gated assets like whitepapers or pricing PDFs). When none of those exist in the active inventory, the system has nothing to bid toward except whatever else is configured (often Key Page View or Other). The campaigns still run, they still spend, and they still report numbers, but the numbers describe upstream engagement rather than the outcomes the business actually cares about.\n\nThis pattern almost always comes from one of two places. The account was set up before the funnel was wired (Insight Tag installed, conversions deferred to a "later" that never came), or the original key conversions were disabled during a rebuild and replacements were never created. In both cases the dashboard looks populated, which is why the issue survives review.\n\nThe practical cost is that LinkedIn cannot help you find buyers. Optimization toward a Key Page View teaches the model to find page viewers. Optimization toward a Lead teaches it to find people who fill out forms. Those are not the same audience, and the difference shows up as a flat lead pipeline next to a healthy traffic graph.',
+    howToFix:
+      '1. Decide which Conversion Category represents the primary outcome for the account. Lead for most B2B demand gen. Sign-Up for product-led SaaS. Purchase for ecommerce. Download for content-driven funnels. 2. Open Campaign Manager. Account Assets. Conversions. Click Create Conversion. Pick the category, give it an unambiguous name, and configure the trigger (a thank-you URL, an event tag, or a CAPI event from Microsoft Learn\'s Insight Tag reference). 3. Set a Click conversion window that matches the real lag in the funnel (typically 30 days for B2B). 4. Attach the new conversion to every campaign that should optimize toward it under Campaign Attachment. 5. Confirm the action fires by completing a test conversion on the live site and watching Campaign Manager record it within an hour. Only then promote it as the primary signal.',
+    example: 'Current active conversions: Key Page View, Other\nFix: create Lead - Demo Request and attach to demand-gen campaigns',
+    citationTemplate:
+      'This LinkedIn account has zero active conversion actions in the Lead, Sign-Up, Purchase, or Download Conversion Categories. Per LinkedIn\'s conversion tracking documentation, campaigns optimize against the conversion actions attached to them; without a key business-outcome conversion in the active set, optimization defaults to upstream proxies like Key Page View or Other, and campaign performance describes engagement rather than pipeline or revenue. Fix: create at least one Lead, Sign-Up, Purchase, or Download conversion that maps to the primary business outcome, attach it to every campaign that should optimize toward it, set the Click conversion window to match the realistic click-to-conversion lag, and verify with a live test conversion before relying on the data. Source: linkedin.com/help/lms/answer/a425683.',
+    references: [
+      {
+        label: 'LinkedIn. Add a conversion tracking event',
+        url: 'https://www.linkedin.com/help/lms/answer/a425683',
+      },
+      {
+        label: 'LinkedIn. Conversion tracking overview',
+        url: 'https://www.linkedin.com/help/lms/answer/a425606',
+      },
+      {
+        label: 'Microsoft Learn. LinkedIn Insight Tag',
+        url: 'https://learn.microsoft.com/en-us/linkedin/marketing/insight-tag/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['linkedin-no-active-conversions', 'linkedin-disabled-key-conversions'],
+  },
+  {
+    id: 'linkedin-no-active-conversions',
+    name: 'LinkedIn No Active Conversions',
+    source: 'linkedin',
+    severity: 'critical',
+    summary: 'No active LinkedIn conversion actions with recorded volume.',
+    directAnswer:
+      'Your LinkedIn account has no active conversion action recording any volume. Either the Insight Tag is not installed, the conversion actions are configured but their triggers do not match the live site, or every active action is genuinely receiving zero traffic. In all three cases, campaigns cannot optimize and reporting cannot describe outcomes.',
+    why: 'A LinkedIn account in this state is effectively running unmeasured. Three configurations land here, and each has a different fix path.\n\nFirst, the Insight Tag may not be installed on the site. Campaign Manager will still let you create conversion actions, but no events fire because no tag is present to fire them. This is the most common cause on new accounts. Microsoft Learn\'s Insight Tag reference documents the install footprint (a single script tag in the site header, or a Tag Manager template) and you can verify it from the browser console by inspecting requests to px.ads.linkedin.com.\n\nSecond, the tag is present but the conversion actions are misconfigured. A URL-based trigger that does not match the live thank-you page. An Event-Specific Pixel that uses a different conversion ID than the one in the tag. A CAPI event that fires server-side but is not linked to the conversion in Campaign Manager. The Insight Tag fires on the site, but the actions stay at zero because nothing matches.\n\nThird, everything is wired correctly and traffic is genuinely zero. New campaigns that have not started, paused accounts, regional accounts during off-season. This case is rare but should not be conflated with the first two.\n\nThe symptom is the same in all three: campaigns run, dashboards populate with impressions and clicks, and the conversions column is permanently empty.',
+    howToFix:
+      '1. Confirm the Insight Tag is present. Open the live site in a browser, open the network tab, filter for px.ads.linkedin.com, and reload. A request should appear on every page load. If not, install the tag from Campaign Manager, Account Assets, Insight Tag, following the Install the LinkedIn Insight Tag help article. 2. If the tag is present, open each active conversion action and check its trigger. URL-based actions need a URL match that exists on the live site. Event-Specific actions need their event to actually fire in the page DOM. CAPI actions need a configured server endpoint sending events. 3. Trigger a real conversion end-to-end (submit the form, hit the thank-you page, complete the purchase) and watch Campaign Manager for recorded volume within an hour. 4. If nothing records, the issue is the trigger, not the tag. Compare the conversion action\'s configured trigger byte-for-byte against what the site actually does. 5. Only after at least one action records non-zero volume should you trust any LinkedIn reporting from this account.',
+    example: 'Insight Tag installed: yes\nActive conversions: 4\nConversions with volume in last 30 days: 0\nFix: walk each action\'s trigger against the live site and reconcile',
+    citationTemplate:
+      'This LinkedIn account has zero active conversion actions recording any volume. Per LinkedIn\'s Install the LinkedIn Insight Tag documentation and the Microsoft Learn Insight Tag reference, recorded volume requires the Insight Tag to be present on the site, conversion action triggers to match real site events, and at least one campaign or organic visit to satisfy those triggers; failure of any of these three steps produces the same empty-conversions symptom. Fix: verify the Insight Tag fires on the live site, walk each active conversion action\'s trigger against the actual page or event it should match, complete an end-to-end test conversion, and confirm Campaign Manager records the test before relying on campaign reporting. Source: linkedin.com/help/lms/answer/a420536.',
+    references: [
+      {
+        label: 'LinkedIn. Install the LinkedIn Insight Tag',
+        url: 'https://www.linkedin.com/help/lms/answer/a420536',
+      },
+      {
+        label: 'LinkedIn. Conversion tracking overview',
+        url: 'https://www.linkedin.com/help/lms/answer/a425606',
+      },
+      {
+        label: 'Microsoft Learn. LinkedIn Insight Tag',
+        url: 'https://learn.microsoft.com/en-us/linkedin/marketing/insight-tag/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['linkedin-missing-key-conversions', 'linkedin-zero-volume-conversions'],
+  },
+  {
+    id: 'linkedin-purchase-missing-value',
+    name: 'LinkedIn Purchase Missing Value',
+    source: 'linkedin',
+    severity: 'critical',
+    summary: 'LinkedIn Purchase conversion actions are recording without value data.',
+    directAnswer:
+      'Your LinkedIn Purchase conversion actions are firing without value or currency attached. The conversion records, the count goes up, the dashboard shows orders. The revenue column is empty. LinkedIn cannot tell whether a campaign drove a $50 trial signup or a $50,000 annual contract, and any ROAS figure derived from this account is fiction.',
+    why: 'Purchase is the only Conversion Category in LinkedIn whose value passes carry economic meaning. When a Purchase action is configured without a value rule, or when the trigger fires but the page does not expose order-total data to the Insight Tag, every recorded purchase lands at value=0 and currency=unset. The count is right. The economics are gone.\n\nThis pattern hurts in three specific ways. Reporting shows zero revenue against campaigns that are actually generating revenue, which makes the campaign look unprofitable even when it is the best-performing line in the account. Optimization cannot weigh outcomes by value, so a campaign that produces ten small orders looks identical to one that produces one large order, and bidding stops favoring the high-value buyers. Cross-channel analysis fails, because anyone trying to reconcile LinkedIn revenue against the CRM finds a zero where every other channel reports a real number.\n\nThe usual mechanical cause is that the conversion was set up with a static value rule (or no value rule) instead of a dynamic value pulled from the order. Static values record the same dollar amount for every purchase, which is almost always wrong. No value rule records zero, which is always wrong on Purchase.\n\nMicrosoft Learn\'s Insight Tag reference documents the dynamic value pattern. The site fires a JavaScript event on the order-confirmation page containing the real order total and currency, and the conversion action reads those values into LinkedIn.',
+    howToFix:
+      '1. Open the order-confirmation page in your site. Confirm the page exposes the order total and currency in a place a tag can read (a data layer object, a hidden DOM element, or a URL parameter). 2. Open Campaign Manager. Account Assets. Conversions. Open the Purchase conversion. Edit the value rule. Choose "Value defined by sender" or the equivalent dynamic option per the Add a conversion tracking event help article. 3. Update the Insight Tag implementation (or the Event-Specific Pixel) to pass `value` and `currency` parameters from the page on every Purchase fire. Currency must be a 3-letter ISO code. Value must be a number. 4. Complete a test purchase. Watch Campaign Manager for the recorded conversion. Inspect it and confirm both `value` and `currency` arrived. 5. Reconcile the next 7 days of LinkedIn Purchase revenue against CRM revenue. The numbers should agree within attribution-window slack. If they do not, the dynamic value is still not flowing.',
+    example: 'Purchase conversion: Checkout Complete\nValue recorded per event: 0\nFix: pass dynamic value and currency from the order-confirmation page',
+    citationTemplate:
+      'This LinkedIn account has Purchase conversion actions recording without value or currency data. Per LinkedIn\'s Add a conversion tracking event documentation and the Microsoft Learn Insight Tag reference, Purchase actions support dynamic value rules that read the real order total and currency from the confirmation page; without them, every purchase records at value=0 and any revenue or ROAS figure derived from the account is non-meaningful, optimization cannot weigh outcomes by value, and cross-channel reconciliation against the CRM fails. Fix: configure each Purchase action with a dynamic value rule, update the Insight Tag or Event-Specific Pixel to pass `value` and `currency` from the order-confirmation page, complete a test purchase, and reconcile LinkedIn Purchase revenue against CRM revenue before trusting reporting. Source: linkedin.com/help/lms/answer/a425683.',
+    references: [
+      {
+        label: 'LinkedIn. Add a conversion tracking event',
+        url: 'https://www.linkedin.com/help/lms/answer/a425683',
+      },
+      {
+        label: 'LinkedIn. Conversion tracking overview',
+        url: 'https://www.linkedin.com/help/lms/answer/a425606',
+      },
+      {
+        label: 'Microsoft Learn. LinkedIn Insight Tag',
+        url: 'https://learn.microsoft.com/en-us/linkedin/marketing/insight-tag/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['linkedin-missing-key-conversions', 'linkedin-zero-volume-conversions'],
+  },
+  {
+    id: 'linkedin-similar-conversion-names',
+    name: 'LinkedIn Similar Conversion Names',
+    source: 'linkedin',
+    severity: 'info',
+    summary: 'LinkedIn conversion actions have nearly identical names.',
+    directAnswer:
+      'Your account has conversion actions whose names differ by a character or a space. "Demo Request" and "Demo  Request" with two spaces. "Whitepaper Download" and "White paper Download". Each pair has its own Internal ID, so LinkedIn treats them as separate actions, but a human reading the export cannot tell them apart and almost certainly meant for them to be one thing.',
+    why: 'This is the soft version of the duplicate-conversion problem. Exact duplicates are easy to spot because the names match. Near-duplicates hide. They survive name-sort reviews because the strings differ. They survive eyeball checks because the eye treats "Whitepaper" and "White paper" as the same word. They cause the same downstream pain as exact duplicates (split attachments, ambiguous reporting, broken handoffs) and they accumulate faster because nobody notices.\n\nThe usual origins are predictable. A typo during initial setup that nobody caught. A copy-paste from a slide deck that introduced a non-breaking space. A second team member who created their own version of an action because they could not find the existing one in a long list. A migration from another platform that produced a renamed version of an action that already existed.\n\nThe severity is lower than exact duplicates because the audit can only flag the suspicion, not confirm the intent. Some near-duplicates are intentional (a "Demo Request" Lead and a "Demo Requested" Sign-Up that measure different funnel stages). Others are accidents. The check\'s job is to surface the pair and let you decide.',
+    howToFix:
+      '1. Open Campaign Manager. Account Assets. Conversions. For each flagged pair, open both actions and compare Conversion Category, Click conversion window, View-through conversion window, value rules, and Campaign Attachment list. 2. If the configurations are identical or near-identical, the pair is an accidental near-duplicate. Pick the canonical one (usually the one with more campaign attachments), migrate attachments off the other, and disable the other with a "[near-dup of #####]" rename. 3. If the configurations are genuinely different and the pair represents two separate funnel stages, rename them to be unambiguously distinct. "Demo Request (form submit)" and "Demo Request (qualified)" reads better than "Demo Request" and "Demo Requested". 4. Add a naming convention note to the account documentation so the next person who creates an action follows the same pattern. 5. Re-run the audit. Intentional pairs with clarified names will no longer trip the similarity threshold.',
+    example: 'Pair flagged:\n- "Demo Request"\n- "Demo  Request" (two spaces)\nLikely accidental; consolidate to one action',
+    citationTemplate:
+      'This LinkedIn account has conversion actions with near-identical names that differ only by whitespace, casing, or single-character variations. Per LinkedIn\'s conversion tracking documentation, conversion actions are identified by Internal ID rather than name, so near-duplicates coexist in the active inventory without any system-level warning; the practical effects mirror exact duplicates (split campaign attachments, ambiguous reporting, error-prone handoffs) and accumulate faster because the naming difference defeats sort-based review. Fix: open each flagged pair, compare configurations, consolidate accidental near-duplicates by migrating attachments to the canonical action and disabling the other with a rename that marks the relationship, and rename intentional pairs to be unambiguously distinct in reports. Source: linkedin.com/help/lms/answer/a425606.',
+    references: [
+      {
+        label: 'LinkedIn. Conversion tracking overview',
+        url: 'https://www.linkedin.com/help/lms/answer/a425606',
+      },
+      {
+        label: 'LinkedIn. Add a conversion tracking event',
+        url: 'https://www.linkedin.com/help/lms/answer/a425683',
+      },
+      {
+        label: 'Microsoft Learn. LinkedIn Insight Tag',
+        url: 'https://learn.microsoft.com/en-us/linkedin/marketing/insight-tag/',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['linkedin-duplicate-conversions', 'linkedin-unattached-conversions'],
+  },
+  {
+    id: 'linkedin-zero-volume-conversions',
+    name: 'LinkedIn Zero Volume Conversions',
+    source: 'linkedin',
+    severity: 'warning',
+    summary: 'Active LinkedIn conversion actions are recording zero conversions.',
+    directAnswer:
+      'Your account has active conversion actions that have recorded zero conversions over the reporting window. The actions are switched on. The Insight Tag is installed. Something between the trigger configuration and the live site is not connecting, or the campaign attached to the action is not driving the audience that would convert on it.',
+    why: 'A zero-volume active conversion is a quiet failure. It does not throw an error. It does not show up red in Campaign Manager. It just sits in the asset list looking healthy until somebody compares the conversion count against expected funnel volume and realizes the gap.\n\nThree patterns produce this finding. The trigger does not match the live site. A URL-based action looking for "/thank-you" when the live site uses "/thanks". An Event-Specific Pixel waiting on a `submit_lead` event that the form actually fires as `submitLead`. A CAPI event configured but never wired up to a server endpoint that sends. In every case the action is technically active and technically waiting to record, but the world is not sending the signal it is listening for.\n\nThe campaign attachment is empty or wrong. The action is attached to a paused campaign, an unfunded campaign, or no campaign at all, so the audience that would produce conversions never arrives at the trigger. This case overlaps with the unattached-conversions check, but it can also occur when the attachment exists and the campaign is genuinely not converting.\n\nThe action is new and the reporting window is too short. A conversion created yesterday on a B2B funnel may legitimately show zero for a week. This is the only innocent case, and it resolves itself.',
+    howToFix:
+      '1. Open Campaign Manager. Account Assets. Conversions. Sort by recorded volume. Open each zero-volume action. 2. Check the trigger. URL-based: confirm the URL pattern matches the live thank-you page byte-for-byte (paths, casing, trailing slashes). Event-Specific: confirm the event name and Conversion ID the page fires match what the action expects, via browser console. CAPI: confirm a server endpoint is configured and sending. 3. Check Campaign Attachment. If empty, attach the action to the campaigns that should drive it. If populated, confirm those campaigns are funded and running. 4. Complete a manual end-to-end conversion through the funnel. Wait one hour. Check Campaign Manager for the recorded conversion. If it does not appear, the trigger is wrong, not the campaign. 5. For actions less than 7 days old on slow funnels, document the creation date and defer judgment until a full sales cycle has passed.',
+    example: 'Active conversion: Demo Request\nRecorded volume (30 days): 0\nFix: walk the trigger against the live thank-you URL and complete a test submission',
+    citationTemplate:
+      'This LinkedIn account has active conversion actions that recorded zero conversions over the reporting window. Per LinkedIn\'s conversion tracking documentation, an active action with zero volume typically indicates a trigger mismatch (URL pattern, event name, or CAPI endpoint not aligned with the live site), an attachment problem (the action is not driving any funded campaign), or a recently created action whose first conversion has not yet landed. Fix: open each zero-volume action, walk its trigger against the live site, verify Campaign Attachment is populated with funded running campaigns, complete a manual end-to-end conversion and confirm it records within an hour, and defer judgment only for actions less than a full sales cycle old. Source: linkedin.com/help/lms/answer/a425606.',
+    references: [
+      {
+        label: 'LinkedIn. Conversion tracking overview',
+        url: 'https://www.linkedin.com/help/lms/answer/a425606',
+      },
+      {
+        label: 'LinkedIn. Add a conversion tracking event',
+        url: 'https://www.linkedin.com/help/lms/answer/a425683',
+      },
+      {
+        label: 'LinkedIn. Install the LinkedIn Insight Tag',
+        url: 'https://www.linkedin.com/help/lms/answer/a420536',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    relatedChecks: ['linkedin-no-active-conversions', 'linkedin-unattached-conversions'],
+  },
+  {
     id: 'conversion-linker-sequencing',
     name: 'Conversion Linker Sequencing',
     source: 'gtm',
