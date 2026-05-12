@@ -10,6 +10,19 @@ AdLint is built for ad-tech consultants who need defensible, citable findings to
 - [Check reference index](https://adlint.dev/checks): searchable index of all 178 audit findings, filterable by severity and source
 - [Audit results](https://adlint.dev/audit): the audit dashboard agencies hand off to clients (only reachable after running an audit)
 
+## Category landing pages (browse by source)
+
+- [Google Tag Manager checks](https://adlint.dev/sources/gtm): 29 GTM container audit findings
+- [Google Ads checks](https://adlint.dev/sources/ads): 34 Google Ads conversion-tracking audit findings
+- [Google Ads Performance Report checks](https://adlint.dev/sources/report): 30 statistical and signal-quality findings
+- [Cross-source consistency checks](https://adlint.dev/sources/cross): 15 checks comparing GTM, Google Ads, and Performance reports against each other
+- [Meta Pixel checks](https://adlint.dev/sources/meta): 10 Meta Pixel and Conversions API findings
+- [TikTok Pixel checks](https://adlint.dev/sources/tiktok): 10 TikTok Pixel and Events API findings
+- [LinkedIn Insight Tag checks](https://adlint.dev/sources/linkedin): 10 LinkedIn conversion-tracking findings
+- [Pinterest Tag checks](https://adlint.dev/sources/pinterest): 10 Pinterest Tag and Conversions API findings
+- [Twitter/X Pixel checks](https://adlint.dev/sources/twitter): 10 X Pixel conversion-tracking findings
+- [Snapchat Pixel checks](https://adlint.dev/sources/snapchat): 10 Snap Pixel and Conversions API findings
+
 ## Audit tools
 
 - [GTM Container Auditor](https://adlint.dev/tools/gtm-auditor): 29 checks across Google Tag Manager containers

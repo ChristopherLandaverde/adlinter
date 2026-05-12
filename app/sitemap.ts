@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { hasFullExplainer } from '@/lib/checks/explainers';
+import { explainerSources, hasFullExplainer } from '@/lib/checks/explainers';
 import { checkRegistry } from '@/lib/checks/registry.generated';
 import { tools } from '@/lib/tools';
 
@@ -29,6 +29,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.7,
     },
+    // Category landing pages, one per source. These target category-level
+    // search queries (e.g. "GTM audit checklist") and are the connective
+    // tissue between /checks and the individual /checks/<id> entries.
+    ...explainerSources.map((source) => ({
+      url: `${siteUrl}/sources/${source.key}`,
+      lastModified,
+      changeFrequency: 'monthly' as const,
+      priority: 0.75,
+    })),
     // Full editorial explainers get higher priority; stubs are still
     // indexable but signal lower depth to crawlers.
     ...checkRegistry.map((entry) => ({

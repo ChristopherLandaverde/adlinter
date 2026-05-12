@@ -290,15 +290,19 @@ export default async function CheckDetailPage({ params }: PageProps) {
       <div className="container mx-auto flex flex-1 px-4 py-12">
         <article className="mx-auto w-full max-w-3xl">
           <div className="mb-8">
-            {/* F9: smaller, quieter category chips. They whisper context, not shout */}
+            {/* F9: smaller, quieter category chips. They whisper context, not shout.
+                Source chip now links up to the category landing page (internal-link signal). */}
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted">
                 {sourceIcon[explainer.source]}
               </span>
               <span className="text-[11px] font-medium text-muted">·</span>
-              <span className="text-[11px] font-medium text-muted">
+              <Link
+                href={`/sources/${explainer.source}`}
+                className="text-[11px] font-medium text-muted underline-offset-2 hover:text-ink hover:underline"
+              >
                 {getSourceLabel(explainer.source)}
-              </span>
+              </Link>
               <span className="text-[11px] font-medium text-muted">·</span>
               <span
                 className={`rounded-sm px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${severityStyles[explainer.severity]}`}

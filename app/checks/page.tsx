@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { explainerCoverage, getAllExplainersOrStubs } from '@/lib/checks/explainers';
+import { explainerCoverage, explainerSources, getAllExplainersOrStubs } from '@/lib/checks/explainers';
 import { ChecksIndexClient } from './ChecksIndexClient';
 
 export const metadata: Metadata = {
@@ -23,6 +23,12 @@ export const metadata: Metadata = {
 export default function ChecksPage() {
   const all = getAllExplainersOrStubs();
   const { documented, total } = explainerCoverage();
+
+  // Per-source counts for the category-jump panel.
+  const countsBySource = explainerSources.map((source) => ({
+    ...source,
+    count: all.filter((e) => e.source === source.key).length,
+  }));
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
@@ -55,6 +61,26 @@ export default function ChecksPage() {
             a reference stub everywhere else.
           </p>
         </div>
+
+        <section aria-labelledby="browse-by-source" className="mb-10">
+          <h2 id="browse-by-source" className="mb-4 font-display text-base font-semibold text-ink">
+            Browse by source
+          </h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+            {countsBySource.map((src) => (
+              <Link
+                key={src.key}
+                href={`/sources/${src.key}`}
+                className="group flex flex-col rounded-md border border-border bg-surface px-3 py-2.5 transition-colors hover:border-ink/30"
+              >
+                <span className="text-sm font-medium text-ink group-hover:text-accent">
+                  {src.label}
+                </span>
+                <span className="text-[11px] text-muted">{src.count} checks</span>
+              </Link>
+            ))}
+          </div>
+        </section>
 
         <ChecksIndexClient explainers={all} documented={documented} total={total} />
       </div>
