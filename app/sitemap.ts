@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
-import { explainers } from '@/lib/checks/explainers';
+import { hasFullExplainer } from '@/lib/checks/explainers';
+import { checkRegistry } from '@/lib/checks/registry.generated';
 import { tools } from '@/lib/tools';
 
 const siteUrl = 'https://adlint.dev';
@@ -28,11 +29,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.7,
     },
-    ...explainers.map((explainer) => ({
-      url: `${siteUrl}/checks/${explainer.id}`,
+    // Full editorial explainers get higher priority; stubs are still
+    // indexable but signal lower depth to crawlers.
+    ...checkRegistry.map((entry) => ({
+      url: `${siteUrl}/checks/${entry.id}`,
       lastModified,
       changeFrequency: 'monthly' as const,
-      priority: 0.6,
+      priority: hasFullExplainer(entry.id) ? 0.6 : 0.4,
     })),
   ];
 }

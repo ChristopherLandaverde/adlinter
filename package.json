@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "gen:registry": "node scripts/generate-check-registry.mjs",
+    "prebuild": "node scripts/generate-check-registry.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

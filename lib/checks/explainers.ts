@@ -1,5 +1,25 @@
 export type ExplainerSource = 'gtm' | 'ads' | 'report' | 'cross' | 'meta' | 'tiktok' | 'linkedin' | 'pinterest' | 'twitter' | 'snapchat';
 
+export interface CheckReference {
+  label: string;
+  url: string;
+}
+
+export interface GTMTagListMockSpec {
+  kind: 'gtm-tag-list';
+  caption?: string;
+  containerLabel?: string;
+  rows: Array<{
+    name: string;
+    type: string;
+    firing: string;
+    highlight?: 'critical' | 'warning' | 'info' | 'pass';
+    note?: string;
+  }>;
+}
+
+export type CheckMockupSpec = GTMTagListMockSpec;
+
 export interface CheckExplainer {
   id: string;
   name: string;
@@ -10,6 +30,15 @@ export interface CheckExplainer {
   howToFix: string;
   example?: string;
   relatedChecks?: string[];
+  // v1.25 editorial fields. Optional so existing entries stay valid;
+  // a stub explainer is generated for IDs missing the full treatment.
+  directAnswer?: string;
+  citationTemplate?: string;
+  references?: CheckReference[];
+  lastUpdated?: string;
+  status?: 'full' | 'stub';
+  whyMockup?: CheckMockupSpec;
+  fixMockup?: CheckMockupSpec;
 }
 
 export const explainerSources: { key: ExplainerSource; label: string }[] = [
@@ -32,9 +61,99 @@ export const explainers: CheckExplainer[] = [
     source: 'gtm',
     severity: 'critical',
     summary: 'The GTM container does not have a Google Ads Conversion Linker firing on the site.',
-    why: 'The Conversion Linker writes and refreshes the first-party click identifiers Google Ads uses to connect ad clicks to later conversions. Without it, cross-domain funnels, cookie restrictions, and delayed purchases can lose attribution. That usually shows up as underreported conversions and ROAS, which can push budget away from campaigns that are actually working.',
-    howToFix: 'In Google Tag Manager, create a Google Ads Conversion Linker tag and set it to fire on All Pages. If checkout or lead capture happens on another domain, configure linker domains for every domain in the funnel. Preview the container, confirm the tag fires before conversion tags, then publish.',
-    example: 'Tag type: Google Ads Conversion Linker\nTrigger: All Pages\nCross-domain domains: example.com, checkout.example-payments.com',
+    directAnswer:
+      'The Conversion Linker is a GTM tag that captures Google Ads click identifiers (GCLID and friends) and writes them to a first-party cookie so later conversion tags can attribute the sale back to the ad click. If it is missing, every Google Ads conversion the site reports is at risk of being credited to the wrong source — or not credited at all.',
+    why: 'When a user clicks a Google Ads ad, Google appends a GCLID parameter to the landing-page URL. Conversion tags fired hours or days later need that GCLID to tie the conversion back to the ad. The Conversion Linker is the tag that reads the GCLID from the URL once and stores it in a first-party _gcl_aw cookie. Without it, downstream Google Ads conversion tags fall back to last-touch attribution inside Google\'s ecosystem — meaning conversions get assigned to the wrong campaign, ROAS reports lie, and Smart Bidding optimizes against noise. The damage is silent: tags still fire, dashboards still populate, but the signal feeding bidding is corrupted. Underreported conversions usually push budget toward campaigns that are easy to attribute (branded search, remarketing) and away from upper-funnel campaigns that actually drove the click.',
+    howToFix:
+      '1. In Google Tag Manager, click "New Tag" and choose the "Google Ads Conversion Linker" tag type. 2. Set the trigger to "All Pages." 3. If your funnel spans multiple domains (e.g. checkout on a separate Shopify or payment domain), open the Linker Settings and enable auto-link domains across every domain in the funnel. 4. Enter Preview mode, load any page on the site, and confirm the tag fires on every navigation. 5. Publish the workspace. After deploy, run an AdLint audit again — the finding should clear within one container version.',
+    example:
+      'Tag type: Google Ads Conversion Linker\nTrigger: All Pages\nCross-domain domains: example.com, checkout.example-payments.com',
+    citationTemplate:
+      'AdLint detected that the Google Ads Conversion Linker tag is not present in this GTM container. Per Google\'s documentation on the Conversion Linker, conversion tags require the GCLID to be captured into a first-party cookie within the user\'s session for accurate cross-page and cross-domain attribution. Without this tag, downstream Google Ads conversion measurements are at material risk of misattribution and Smart Bidding decisions are made against incomplete signal. Recommended remediation: add the Conversion Linker tag with an "All Pages" trigger and verify cross-domain configuration before re-publishing. Source: support.google.com/tagmanager/answer/7549390.',
+    references: [
+      {
+        label: 'Google Tag Manager — Conversion Linker tag',
+        url: 'https://support.google.com/tagmanager/answer/7549390',
+      },
+      {
+        label: 'Google Ads — About cross-domain measurement',
+        url: 'https://support.google.com/google-ads/answer/7521212',
+      },
+      {
+        label: 'Google Ads — GCLID and conversion attribution',
+        url: 'https://support.google.com/google-ads/answer/9744275',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
+    whyMockup: {
+      kind: 'gtm-tag-list',
+      containerLabel: 'GTM-AB12CDE · Workspace: Default',
+      caption:
+        'A container with Google Ads conversion tags but no Conversion Linker. The conversion tags fire, but downstream attribution relies on a GCLID that was never captured into a first-party cookie — so reported conversions are at risk of misattribution.',
+      rows: [
+        {
+          name: 'GA4 Configuration',
+          type: 'GA4 Configuration',
+          firing: 'All Pages',
+          highlight: 'pass',
+        },
+        {
+          name: 'Google Ads — Purchase Conversion',
+          type: 'Google Ads Conversion Tracking',
+          firing: 'purchase_success',
+          highlight: 'critical',
+          note: 'Fires without an upstream Conversion Linker — GCLID is not captured.',
+        },
+        {
+          name: 'Google Ads — Lead Conversion',
+          type: 'Google Ads Conversion Tracking',
+          firing: 'form_submit',
+          highlight: 'critical',
+          note: 'Same problem — attribution is at risk.',
+        },
+        {
+          name: 'Google Ads — Remarketing',
+          type: 'Google Ads Remarketing',
+          firing: 'All Pages',
+          highlight: 'warning',
+          note: 'Also benefits from the Conversion Linker for first-party identifiers.',
+        },
+      ],
+    },
+    fixMockup: {
+      kind: 'gtm-tag-list',
+      containerLabel: 'GTM-AB12CDE · Workspace: Default',
+      caption:
+        'Fixed: a Conversion Linker tag fires on All Pages, ahead of the conversion tags in the trigger sequence. GCLID is now captured into the _gcl_aw cookie and available to every downstream Google Ads tag.',
+      rows: [
+        {
+          name: 'Google Ads — Conversion Linker',
+          type: 'Conversion Linker',
+          firing: 'All Pages',
+          highlight: 'pass',
+          note: 'New tag — captures GCLID into the first-party _gcl_aw cookie.',
+        },
+        {
+          name: 'GA4 Configuration',
+          type: 'GA4 Configuration',
+          firing: 'All Pages',
+          highlight: 'pass',
+        },
+        {
+          name: 'Google Ads — Purchase Conversion',
+          type: 'Google Ads Conversion Tracking',
+          firing: 'purchase_success',
+          highlight: 'pass',
+        },
+        {
+          name: 'Google Ads — Lead Conversion',
+          type: 'Google Ads Conversion Tracking',
+          firing: 'form_submit',
+          highlight: 'pass',
+        },
+      ],
+    },
     relatedChecks: ['conversion-linker-sequencing', 'conversion-label-matching'],
   },
   {
@@ -518,4 +637,47 @@ export function getExplainer(id: string): CheckExplainer | undefined {
 
 export function getExplainersBySource(source: ExplainerSource): CheckExplainer[] {
   return explainers.filter((explainer) => explainer.source === source);
+}
+
+// Registry-backed helpers. The registry knows every check ID the audit
+// engine can emit; the explainers list only covers the ones with full
+// editorial treatment. Stub explainers close the coverage gap so every
+// finding has a Learn-more destination.
+
+import { checkRegistry, checkRegistryById, type CheckRegistryEntry } from './registry.generated';
+
+function stubFromRegistry(entry: CheckRegistryEntry): CheckExplainer {
+  return {
+    id: entry.id,
+    name: entry.title,
+    source: entry.source,
+    severity: entry.severity,
+    summary: `AdLint flags this check as ${entry.severity} when it fires against your ${explainerSources.find((s) => s.key === entry.source)?.label ?? entry.source} data.`,
+    why: 'A detailed editorial explainer for this check has not been published yet. The check is fully implemented in the AdLint audit engine — only the long-form documentation page is pending.',
+    howToFix: 'See the platform documentation referenced below, or open an issue if you would like this explainer prioritised. The finding itself is correct; only the long-form explanation is in progress.',
+    status: 'stub',
+  };
+}
+
+export function getExplainerOrStub(id: string): CheckExplainer | undefined {
+  const full = getExplainer(id);
+  if (full) return { ...full, status: full.status ?? 'full' };
+  const entry = checkRegistryById[id];
+  if (entry) return stubFromRegistry(entry);
+  return undefined;
+}
+
+export function getAllExplainersOrStubs(): CheckExplainer[] {
+  return checkRegistry.map((entry) => {
+    const full = getExplainer(entry.id);
+    return full ? { ...full, status: full.status ?? 'full' } : stubFromRegistry(entry);
+  });
+}
+
+export function hasFullExplainer(id: string): boolean {
+  return Boolean(getExplainer(id));
+}
+
+export function explainerCoverage(): { documented: number; total: number } {
+  return { documented: explainers.length, total: checkRegistry.length };
 }

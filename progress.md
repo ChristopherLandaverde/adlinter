@@ -1,5 +1,46 @@
 # AdLint — Progress Log
 
+## v1.25 — /checks AEO+SEO Foundation: Registry, Stubs, Flagship Template
+**Commit:** Pending
+
+The `/checks` reference becomes editorial-tier. Closes the 85%-dead-end gap (where most audit findings rendered no Learn-more link), upgrades the page template for AEO citation, and ships the first fully-treated GTM check page as the format reference. Week 1 of the GTM Flagship Sprint (see design doc `chrisland-main-design-20260512-092720.md`).
+
+### New
+- `scripts/generate-check-registry.mjs` — parses every check file in `lib/checks/` and emits a registry of all 178 check IDs the audit engine can emit. Runs in `prebuild`.
+- `lib/checks/registry.generated.ts` — auto-generated source of truth: `{ id, title, source, severity }` per check.
+- `components/mockups/GTMTagListMock.tsx` — first reusable platform-UI mockup component. Obviously-inspired-by-GTM, not pixel-faithful (trademark posture). Reusable across every GTM check page with different fake data.
+- `app/checks/ChecksIndexClient.tsx` — searchable, severity- and source-filterable index showing all 178 checks. Honest coverage indicator ("44 of 178 documented").
+
+### Schema upgrade (`lib/checks/explainers.ts`)
+- Added editorial fields: `directAnswer`, `citationTemplate`, `references`, `lastUpdated`, `status` (`full` | `stub`), `whyMockup`, `fixMockup`.
+- Added stub-fallback API: `getExplainerOrStub`, `getAllExplainersOrStubs`, `hasFullExplainer`, `explainerCoverage`. Every check ID now resolves to a renderable page even if the full explainer hasn't been written.
+- First fully-treated explainer: `missing-conversion-linker` rewritten with direct answer, citation template (copy-pasteable for client deliverables), 3 platform-doc references, and two GTM mockups (broken state + fixed state).
+
+### Page template (`app/checks/[id]/page.tsx`)
+- 5-section structure: Direct Answer → Why It Matters (with optional mockup) → How To Fix (with optional mockup) → Cite This Finding (citation template block) → References → Related Checks.
+- JSON-LD `TechArticle` schema on every page; `FAQPage` schema added for full editorial pages (drives LLM citation in answer engines).
+- Author byline ("Christopher Landaverde") and last-updated date for AEO authority signals.
+- Stub-aware rendering: stub pages render a softer "Reference stub" badge and skip FAQ schema.
+
+### Audit-page wiring (`components/CheckLearnMoreLink.tsx`)
+- Used to render only for the ~25% of findings with full explainers. Now renders for every check ID in the registry — "Learn more →" for full, "Reference →" for stubs. Dead-end findings eliminated.
+
+### Sitemap (`app/sitemap.ts`)
+- Now lists all 178 check pages. Full explainers get priority 0.6; stubs get 0.4 to signal lower depth to crawlers.
+
+### Why
+PRODUCT.md declared `/checks/<id>` "the flagship of the citation principle." The previous state didn't meet that bar — 44 of 178 explainers existed and the audit page silently dropped the Learn-more link for the other 134. v1.25 is the foundation pass: registry, schema, stubs, template, plus one flagship-quality page as the format reference. Weeks 2–5 will write the remaining 19 GTM explainers at the same depth.
+
+### Files modified
+- `app/checks/[id]/page.tsx`, `app/checks/page.tsx`, `app/sitemap.ts`
+- `components/CheckLearnMoreLink.tsx`, `components/mockups/GTMTagListMock.tsx` (new)
+- `lib/checks/explainers.ts`, `lib/checks/registry.generated.ts` (new)
+- `scripts/generate-check-registry.mjs` (new)
+- `app/checks/ChecksIndexClient.tsx` (new)
+- `package.json` (added `gen:registry` and `prebuild` scripts)
+
+---
+
 ## v1.23 — 10 New /checks Explainers (28 → 38)
 **Commit:** `uncommitted - git index is read-only in this workspace`
 
