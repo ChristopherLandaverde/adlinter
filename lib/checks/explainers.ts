@@ -1685,9 +1685,30 @@ export const explainers: CheckExplainer[] = [
     source: 'twitter',
     severity: 'critical',
     summary: 'Twitter/X website events do not use the expected tw-XXXX-XXXX event ID format.',
-    why: 'The event ID is the routing key that tells the Twitter/X website tag which configured event should receive the hit. If the ID is malformed, the tag can fire in the browser while the conversion never lands in the intended event. That creates a hard-to-spot failure where network activity exists but optimization and reporting are pointed at missing or incorrect conversion signals.',
-    howToFix: 'Copy the event ID directly from Twitter/X Ads Events Manager into the website tag or GTM template. Avoid hand-typing IDs or transforming them through variables unless there is a tested lookup table. Fire a test conversion and confirm the request contains the same tw-prefixed ID shown in the platform UI.',
-    example: 'Expected: tw-abc123-def456\nProblem: abc123-def456 or TW abc123 def456',
+    directAnswer:
+      'One or more X Pixel events on this site are firing with an event ID that does not match the `tw-XXXXX-XXXXX` shape X expects. The pixel still loads. The request still goes out. But the event ID is the routing key X uses to decide which configured conversion the hit belongs to. A malformed ID routes nowhere, so the Purchase you can see in the network tab never lands against the Purchase event you set up in Events Manager.',
+    why: 'When you configure a website event in X Ads Events Manager (PageView, ContentView, Search, AddToCart, AddToWishlist, CheckoutInitiated, Purchase, Lead, SignUp, Subscribe), X mints an event tag ID for it. That ID is the second argument in `twq(\'event\', \'tw-XXXXX-XXXXX\', {...})`. The pixel runtime parses it, matches it against your account\'s registered event tags, and only then attributes the hit. There is no fallback. If the string is `abc123-def456`, or `TW-abc123`, or somebody pasted a campaign ID in by mistake, the call fires cleanly and the conversion never lands.\n\nThis is the easiest Twitter/X measurement bug to ship and the hardest to notice. Your tag manager preview shows a 200. Your Network tab shows a request to the X analytics endpoint. The pixel helper goes green. The only place the failure surfaces is Events Manager, where the event volume column sits at zero while the site is clearly producing the action. Teams usually catch this weeks in, after a campaign launches against an event with no signal and the optimizer has nothing to bid against.\n\nThe other variant is hand-typing IDs into a GTM template, or pulling them through a Lookup Table that got edited by someone who did not realise the format mattered. Both produce the same outcome.',
+    howToFix:
+      '1. Open X Ads Events Manager and copy the event tag ID directly from the UI for each configured event. Do not retype. 2. Paste each ID into the corresponding tag (GTM template variable, hardcoded snippet, server-side template). Confirm every active conversion uses a `tw-` prefix followed by two hex-style segments. 3. If you route IDs through a Lookup Table or Data Layer Variable, audit the mapping table against Events Manager and remove any rows that do not match the expected shape. 4. Fire a test conversion in GTM Preview or a staging Purchase, and confirm the outgoing request payload carries the same ID Events Manager shows. 5. Re-check Events Manager 30 to 60 minutes later and confirm the event count for that conversion ticked up.',
+    example: 'Expected: tw-o1234-abcde\nProblem variants:\n  o1234-abcde (no tw- prefix)\n  TW abc123 def456 (spaces, wrong case)\n  tw-o1234 (truncated)\n  9876543210 (campaign ID pasted by mistake)',
+    citationTemplate:
+      'Your X Pixel is firing website events with IDs that do not match the platform-required `tw-XXXXX-XXXXX` format. Per X Ads Help Center documentation on the website tag and event tags, every configured website event is assigned a `tw-`-prefixed identifier in Events Manager, and the pixel uses that exact string as the routing key for attribution. Events fired with malformed IDs execute at the network layer but never land against the intended conversion, producing zero-volume events in Events Manager while site activity continues. The failure mode is invisible from the browser side and only surfaces in platform reporting, which means campaigns can launch against an event with no signal before anyone notices. Fix: copy event tag IDs directly from X Ads Events Manager into each pixel call or GTM template, audit any lookup tables that mediate the mapping, and verify a test conversion lands against the expected event before relying on the data for bidding. Source: business.twitter.com/en/help/campaign-measurement-and-analytics/twitter-pixel.html.',
+    references: [
+      {
+        label: 'X Ads Help Center. The X Pixel',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/twitter-pixel.html',
+      },
+      {
+        label: 'X Ads Help Center. Conversion tracking for websites',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html',
+      },
+      {
+        label: 'X Developer Platform. Web event tags reference',
+        url: 'https://developer.x.com/en/docs/twitter-ads-api/measurement/api-reference/web-event-tags',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['twitter-conversion-id-required', 'twitter-deduplication-conversion-id'],
   },
   {
@@ -1696,9 +1717,30 @@ export const explainers: CheckExplainer[] = [
     source: 'twitter',
     severity: 'warning',
     summary: 'Twitter/X conversion events are missing or reusing conversion_id values.',
-    why: 'Twitter/X uses conversion identifiers to recognize the same business event when it arrives from more than one path, such as browser and server. Without a stable conversion_id, repeated hits can inflate conversion counts, while missing IDs make server-side alignment harder to audit. Reused IDs across different orders or leads create the opposite risk by collapsing distinct events.',
-    howToFix: 'Generate a unique conversion_id from the order ID, lead ID, or another stable transaction identifier. Pass the same ID only when browser and server payloads represent the same event. Review recent events for missing IDs and for repeated IDs that span different users or conversion actions.',
-    example: 'Purchase order 10492\nBrowser conversion_id: 10492\nServer conversion_id: 10492',
+    directAnswer:
+      'Your X Pixel events either ship without a `conversion_id`, or they ship with `conversion_id` values that repeat across distinct orders. Either pattern breaks the dedupe contract. Missing IDs let the same Purchase get counted twice when the browser tag and the Conversions API both fire. Repeated IDs collapse two different orders into one event. Both directions break your reported Purchase count and the value attached to it.',
+    why: 'X uses `conversion_id` (sometimes paired with `event_id`) to recognise that a browser hit and a server hit describe the same business event. The dedupe window inside X looks for matching `conversion_id` on the same configured event tag and merges them. When the browser pixel fires a Purchase with `conversion_id: "10492"` and your Conversions API call fires the same Purchase with `conversion_id: "10492"`, X keeps one record. When the browser sends `conversion_id: "10492"` and the server sends nothing, X has no basis to merge and you get two Purchases. When two different orders both send `conversion_id: "ORDER"` because somebody hard-coded a literal, X collapses them into one and your Purchase volume drops by exactly the duplicate rate.\n\nThe stable pattern is to derive `conversion_id` from a per-event identifier you already have. Order ID for Purchase. Lead ID for Lead. Subscription ID for Subscribe. Then pass that same value from every path that reports the same event. The audit pain comes from teams that wire the browser tag and the CAPI integration separately, using different generators, so the IDs never match even when they are both populated.\n\nFor accounts running browser-only with no CAPI yet, `conversion_id` still matters because retries and double-firing inside the page can produce duplicates that dedupe against the same identifier.',
+    howToFix:
+      '1. Pick a stable per-event identifier. Order ID for Purchase, Lead ID for Lead, Subscription ID for Subscribe. Avoid timestamps, session IDs, or literals like "ORDER". 2. Update the browser pixel call so every conversion event passes the identifier as `conversion_id` in the parameters object, for example `twq(\'event\', \'tw-XXXXX-XXXXX\', { conversion_id: orderId, value: 129.00, currency: \'USD\' })`. 3. Update your Conversions API or server-side tag to send the same `conversion_id` on the same event for the same order. The browser value and the server value must be byte-for-byte identical. 4. Audit recent events in Ads Events Manager. Look for events with no `conversion_id` and for `conversion_id` values that repeat across different timestamps or users. 5. Validate by completing one test Purchase and confirming Events Manager reports a single deduped event rather than two.',
+    example: 'Purchase order 10492\n  Browser: twq(\'event\', \'tw-o1234-abcde\', { conversion_id: \'10492\', value: 129.00, currency: \'USD\' })\n  Server (CAPI): { event: \'Purchase\', conversion_id: \'10492\', value: 129.00, currency: \'USD\' }\nResult in Events Manager: 1 deduped Purchase, value $129.00',
+    citationTemplate:
+      'Your X Pixel conversion events are missing `conversion_id` values or reusing the same `conversion_id` across distinct transactions. Per X Ads Help Center documentation on website conversion tracking and the web event tags reference, `conversion_id` is the deduplication key X uses to merge matching browser and server-side events for the same business action. Missing IDs prevent the merge and produce double-counting when browser and Conversions API both fire, while repeated IDs collapse distinct events into one. Both patterns distort Purchase volume and reported conversion value, which then feeds back into optimisation. Fix: derive `conversion_id` from a stable per-event identifier such as order ID, pass the identical value from both browser and server paths for the same event, and verify in Ads Events Manager that a test transaction dedupes to a single record. Source: business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html.',
+    references: [
+      {
+        label: 'X Ads Help Center. Conversion tracking for websites',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html',
+      },
+      {
+        label: 'X Ads Help Center. Conversion tracking tag',
+        url: 'https://business.twitter.com/en/help/campaign-measurement-and-analytics/conversion-tracking-tag.html',
+      },
+      {
+        label: 'X Developer Platform. Web event tags reference',
+        url: 'https://developer.x.com/en/docs/twitter-ads-api/measurement/api-reference/web-event-tags',
+      },
+    ],
+    lastUpdated: '2026-05-12',
+    status: 'full',
     relatedChecks: ['twitter-conversion-id-required', 'twitter-event-id-format'],
   },
   {
