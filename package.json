@@ -1,6 +1,6 @@
 {
   "name": "adlint",
-  "version": "1.25.6",
+  "version": "1.26.2",
   "private": true,
   "scripts": {
     "dev": "next dev",

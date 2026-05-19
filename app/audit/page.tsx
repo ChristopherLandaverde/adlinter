@@ -494,31 +494,37 @@ function SeverityDonut({ data }: { data: { name: string; value: number; color: s
       <h3 className="text-sm font-semibold text-gray-900 mb-4">Issue Distribution</h3>
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
         <div className="w-36 h-36 shrink-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={40}
-                outerRadius={60}
-                dataKey="value"
-                stroke="#ffffff"
-                strokeWidth={2}
-              >
-                {data.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value) => {
-                  const v = typeof value === 'number' ? value : 0;
-                  return `${v} (${Math.round((v / total) * 100)}%)`;
-                }}
-                contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', color: '#374151', fontSize: '13px' }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          {/*
+            Parent is fixed 144x144 (w-36 h-36). Recharts' ResponsiveContainer
+            defaults minWidth/minHeight to 200, so a 144px parent triggers a
+            "width(-1) height(-1)" warning and a transient render failure that
+            can destabilize headless browser tests. Render PieChart at explicit
+            dimensions to bypass ResponsiveContainer's ResizeObserver entirely.
+          */}
+          <PieChart width={144} height={144}>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={40}
+              outerRadius={60}
+              dataKey="value"
+              stroke="#ffffff"
+              strokeWidth={2}
+              isAnimationActive={false}
+            >
+              {data.map((entry, i) => (
+                <Cell key={i} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(value) => {
+                const v = typeof value === 'number' ? value : 0;
+                return `${v} (${Math.round((v / total) * 100)}%)`;
+              }}
+              contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', color: '#374151', fontSize: '13px' }}
+            />
+          </PieChart>
         </div>
         <div className="w-full space-y-2 sm:flex-1">
           {data.map(d => (
@@ -551,7 +557,13 @@ function CategoryBarChart({ data }: { data: { name: string; critical: number; wa
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
       <h3 className="text-sm font-semibold text-gray-900 mb-4">Issues by Category</h3>
       <div className="h-40">
-        <ResponsiveContainer width="100%" height="100%">
+        {/*
+          minWidth/minHeight={0} disables Recharts' default 200x200 minimum,
+          which would otherwise cause `width(-1) height(-1)` warnings and a
+          transient render failure when the parent is narrower than 200px
+          (e.g., in a sidebar layout or on mobile).
+        */}
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <BarChart data={data} layout="vertical" margin={{ left: 10, right: 20 }}>
             <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
             <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#9ca3af' }} width={60} />
@@ -1807,30 +1819,6 @@ function AuditPageContent() {
           selectedCheck={selectedCheck}
           onSelectCheck={setSelectedCheck}
         />
-
-        <section className="mt-8 rounded-lg border border-border bg-surface p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase text-accent">
-                Need help fixing the root cause?
-              </p>
-              <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
-                Still seeing audit issues after reviewing this report? That usually means the problem is upstream.
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed text-muted">
-                I debug these stacks daily across GTM, Google Ads, Meta CAPI, Enhanced Conversions, LinkedIn Insight Tag, Pinterest Tag, Snap Pixel, and CRM validation. If the report surfaced {gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount + tiktokFailedCount + linkedinFailedCount + pinterestFailedCount + twitterFailedCount + snapchatFailedCount} live issue{gtmFailedCount + adsFailedCount + crossFailedCount + metaFailedCount + tiktokFailedCount + linkedinFailedCount + pinterestFailedCount + twitterFailedCount + snapchatFailedCount === 1 ? '' : 's'}, a short review will usually identify what to fix first.
-              </p>
-            </div>
-            <a
-              href="https://focosys.io/review"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center rounded-sm bg-accent px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
-            >
-              Book a free 30-min measurement review
-            </a>
-          </div>
-        </section>
       </main>
 
       {/* Slide-over detail panel */}

@@ -156,7 +156,11 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
         return next;
       });
 
-      setShowContextStep(true);
+      // Sample data has no user-specific context — the picker's answers tune
+      // severity to the user's real situation, which doesn't apply here. Skip
+      // the picker and go straight to results, equivalent to "Skip — use defaults".
+      sessionStorage.removeItem('auditContext');
+      router.push('/audit');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load sample data.';
       setSampleError(message);
@@ -172,7 +176,7 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
     } finally {
       setSampleLoading(false);
     }
-  }, [hasSamples, sampleLoading, samples, tool.fileSlots]);
+  }, [hasSamples, sampleLoading, samples, tool.fileSlots, router]);
 
   const requiredReady = useMemo(
     () =>

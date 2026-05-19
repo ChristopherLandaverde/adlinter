@@ -48,9 +48,16 @@ Current state of work toward a "finished, shipped to first users" project. Pick 
 
    Why deferred: content is shipped and indexed. Building the loop now would not change today's content; it would just measure it. Building it later is the same cost and we have real data to grade against.
 
+- [ ] **Per-tool synthetic test suite.** Three phases, ~6 hours total:
+   1. **Fill the check-test gap** (~1–2h). Write `__tests__/checks/{pinterest,twitter,snapchat}Checks.test.ts` matching the existing `linkedinChecks.test.ts` shape. Closes parity — every tool would then have unit coverage for its check logic.
+   2. **Synthetic per-tool end-to-end tests** (~3–4h). One file per tool at `__tests__/tools/<slug>.synthetic.test.ts` that loads the published `public/samples/*` fixture, drives parser → audit engine, and asserts: parses cleanly, ≥N findings, expected severities present, specific known check-IDs fire on the intentionally-broken parts of the sample, runtime under threshold (e.g. 200ms).
+   3. **Perf trend summary** (~1h). `scripts/audit-perf-summary.mjs` that aggregates Phase-2 timings into a console table after `npm test`. Catches 10× regressions the day they ship.
+
+   Why deferred: parsers + check logic already have unit tests (30+ test files). The synthetic layer is about end-to-end correctness on real fixtures + perf regression detection — high signal once the tool surface stabilizes, but premature while we're still iterating on UX.
+
 ## Known minor defects (not blockers)
 
-- Recharts logs `width(-1) height(-1)` console warning on first render of the score donut. Cosmetic; no user-visible impact. Likely fixable by setting an explicit `minHeight` on the chart container.
+- ~~Recharts logs `width(-1) height(-1)` console warning on first render of the score donut.~~ **Fixed in v1.26.1.** Root cause was Recharts' `ResponsiveContainer` 200×200 default minimum vs. the 144×144 donut parent; not actually cosmetic — destabilized rendering under heavy interaction. See `progress.md` v1.26.1 entry and `UX_AUDIT.md` G-03.
 - The `/checks` search + results pair is structurally a WAI-ARIA combobox-with-listbox. Current implementation has working keyboard nav and `aria-current`, but a screen-reader user typing in the input won't hear the result count change. Proper `role="combobox"` + `aria-controls` + `aria-activedescendant` wiring is a ~1-hour follow-up if/when an accessibility audit calls it out.
 
 ## Where to start next session

@@ -160,7 +160,7 @@ export function AuditContextPicker({
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm font-medium text-muted transition-colors hover:text-ink"
+          className="inline-flex h-10 items-center justify-center rounded-sm border border-border bg-surface px-6 text-sm font-medium text-ink transition-colors hover:border-ink/20 hover:bg-surface-2"
         >
           Skip — use defaults
         </button>

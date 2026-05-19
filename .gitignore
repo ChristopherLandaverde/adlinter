@@ -36,6 +36,9 @@ yarn-error.log*
 # test files with sensitive data
 test files/
 
+# UX audit screenshots (regenerated locally; UX_AUDIT.md references by filename)
+/screenshots/
+
 # internal docs
 /docs/
 /advanced/

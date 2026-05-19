@@ -108,6 +108,39 @@ describe('ToolWorkspace', () => {
     expect(mockParseGTMJSON).toHaveBeenCalledWith('{"containerVersion":{}}');
   });
 
+  it('bypasses the context picker and navigates straight to results when sample data is loaded', async () => {
+    // Sample data has no user-specific context, so the picker's severity-tuning
+    // answers don't apply. Clicking "Try with sample data" should run the audit
+    // with defaults — equivalent to clicking "Skip — use defaults" on the picker.
+    const user = userEvent.setup();
+    const sampleParsed = { containerVersion: { tag: [{ name: 'SampleTag' }] } } as unknown as ReturnType<typeof parseGTMJSON>;
+    mockParseGTMJSON.mockReturnValue(sampleParsed);
+    // Pre-populate auditContext to prove the sample path clears it.
+    sessionStorage.setItem('auditContext', JSON.stringify({ businessModel: 'saas' }));
+
+    const originalFetch = global.fetch;
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve('{"containerVersion":{}}'),
+    } as unknown as Response);
+    global.fetch = fetchMock as unknown as typeof global.fetch;
+
+    try {
+      renderTool('gtm-auditor');
+
+      await user.click(screen.getByRole('button', { name: /Try with sample data/ }));
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/audit');
+      });
+      expect(JSON.parse(sessionStorage.getItem('gtmData') ?? '{}')).toEqual(sampleParsed);
+      expect(sessionStorage.getItem('auditContext')).toBeNull();
+      expect(screen.queryByRole('heading', { name: 'Refine your audit' })).not.toBeInTheDocument();
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
   it('stores parsed single-file data in sessionStorage before showing context', async () => {
     const user = userEvent.setup();
     const parsed = { containerVersion: { tag: [{ name: 'Purchase' }] } } as unknown as ReturnType<typeof parseGTMJSON>;

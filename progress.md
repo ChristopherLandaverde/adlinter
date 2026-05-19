@@ -1,5 +1,126 @@
 # AdLint — Progress Log
 
+## v1.26.2 — Remove paid-consultation CTA from /audit (A-03)
+**Commit:** Pending
+
+Strategic decision from the UX audit. The "Book a free 30-min measurement
+review" CTA at the bottom of `/audit` (linking to `focosys.io/review`) made
+sense only in a world where AdLint already has cold-traffic credibility.
+With no users yet, a paid-consultation pitch from a tool a visitor just
+discovered creates the wrong signal — it asks for trust before the product
+has earned it. Removed entirely; revisit once GSC shows real impressions
+and we have testimonials to anchor the offer.
+
+### Changes
+- `app/audit/page.tsx` — removed the entire `<section>` containing the
+  "Need help fixing the root cause?" preheader, h2, paragraph, and outbound
+  link to `focosys.io/review` (~23 lines)
+- The audit page now ends cleanly with the findings table and the Passed
+  Checks expandable section
+- `FailedCount` variables (gtm/ads/cross/meta/tiktok/linkedin/pinterest/twitter/snapchat)
+  are still used by the per-source TabIssueBadge components — left intact
+
+### Tests
+- All 574 tests still pass ✓
+- Type-check clean ✓
+
+### Verification
+- Screenshot: `screenshots/audit-walkthrough/a03-fix-bottom.png` — audit
+  page bottom now ends with findings table, no consultation CTA
+
+### When to revisit
+After AdLint has:
+- Real GSC impressions (per BACKLOG #2)
+- At least 1–3 external users (per BACKLOG #9)
+- 1–2 testimonials or case studies to anchor the offer
+
+At that point, decide whether to bring the consultation back, productize it
+properly (with delivery process, scheduling, scope), or pass on it entirely
+and keep AdLint focused as the diagnostic per `PRODUCT.md`.
+
+---
+
+## v1.26.1 — Recharts container fix on /audit (G-03)
+**Commit:** Pending
+
+The audit page's Recharts charts logged `width(-1) height(-1)` warnings on
+first render and intermittently failed to paint, destabilizing headless
+browser tests and (likely) causing perceived first-paint jank for real
+users on slower devices.
+
+**Root cause:** Recharts' `ResponsiveContainer` defaults `minWidth` and
+`minHeight` to **200**. The audit page's score donut container is `w-36 h-36`
+(144×144px) — smaller than the minimum. Recharts internally computed -1×-1
+dimensions and either failed to render or rendered then re-rendered, causing
+accumulated render errors that crashed the page under heavy interaction
+(scroll + click + filter in rapid succession).
+
+### Changes
+- `app/audit/page.tsx#SeverityDonut` — replaced `ResponsiveContainer` with
+  explicit `<PieChart width={144} height={144}>` since the parent is fixed
+  144×144px. Bypasses ResizeObserver entirely, eliminates the race condition.
+  Added `isAnimationActive={false}` on the `<Pie>` for stable first paint
+- `app/audit/page.tsx#CategoryBarChart` — kept `ResponsiveContainer` (width
+  is fluid here) but added `minWidth={0} minHeight={0}` to disable the
+  200×200 minimum
+
+### Verification
+- Type-check ✓, all 574 tests pass ✓
+- Headless browser regression: previously-failing interactions on `/audit`
+  (View details click → drawer opens, Search "consent" → table filters,
+  scroll → captures cleanly) now all work in a single headless session
+  without browser destabilization. Console errors check returns
+  "(no console errors)" — the Recharts warning is resolved
+- Screenshots in `screenshots/audit-walkthrough/g03-fix-*.png`
+
+### Docs
+- `UX_AUDIT.md` — G-03 marked fixed
+- `BACKLOG.md` — Recharts `width(-1) height(-1)` known defect removed
+
+---
+
+## v1.26.0 — Sample-data path skips the context picker (G-01, G-02)
+**Commit:** Pending
+
+Audit-driven UX fix. The "Try with sample data" path on every tool used to
+land on the 5-question `AuditContextPicker` before showing any audit result.
+Sample data has no user-specific context — the picker's answers tune severity
+to the *user's* situation, which doesn't apply to synthetic data. The picker
+between demo intent and demo payoff was friction, not UX.
+
+This fix lands across all 10 tools because they share `ToolWorkspace`. Full
+friction inventory in `UX_AUDIT.md` (13 surfaces audited, 1 Critical + 4
+Friction + 5 Polish findings).
+
+### Changes
+- `components/ToolWorkspace.tsx` — `handleSampleLoad` no longer sets
+  `showContextStep(true)` after loading samples. Instead, it clears
+  `sessionStorage['auditContext']` and navigates directly to `/audit`,
+  identical to a user clicking "Skip — use defaults" on the picker. Real
+  file uploads still go through the picker (user context legitimately tunes
+  severity for real data)
+- `components/AuditContextPicker.tsx` — "Skip — use defaults" promoted from a
+  text-only link to a real secondary button (same h-10 dimensions, bordered
+  surface variant) so it visually equals "Continue to results" rather than
+  reading as a deprioritized escape hatch
+
+### Tests
+- New test in `__tests__/components/ToolWorkspace.test.tsx`: clicking the
+  sample-data button bypasses the picker, clears any prior `auditContext`,
+  populates the parsed sample in sessionStorage, and navigates to `/audit`
+- All 574 tests still pass
+
+### Verification
+- Headless browser regression test (`/browse` skill) on GTM, Meta, and
+  Full-Stack: click "Try with sample data" lands on `/audit` directly with
+  the score donut and findings list rendered. Screenshots in `screenshots/`
+
+### Docs
+- `UX_AUDIT.md` created in this session — 13 surfaces audited end-to-end,
+  prioritized fix backlog at the bottom
+
+---
+
 ## v1.25.6 — 100% Coverage: Every Check ID Now Has a Full-Treatment Explainer
 **Commit:** Pending
 
