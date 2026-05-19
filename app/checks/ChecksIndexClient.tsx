@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   explainerSources,
   type CheckExplainer,
@@ -58,8 +58,10 @@ export function ChecksIndexClient({
   total: number;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState('');
+  // Seed query from ?q= so the homepage search routes a real pre-filtered result.
+  const [query, setQuery] = useState(() => searchParams?.get('q') ?? '');
   const [activeSeverities, setActiveSeverities] = useState<Set<Severity>>(new Set());
   const [activeSources, setActiveSources] = useState<Set<ExplainerSource>>(new Set());
   const [showStubs, setShowStubs] = useState(true);

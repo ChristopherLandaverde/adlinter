@@ -59,8 +59,8 @@ export const tools: ToolConfig[] = [
   },
   {
     slug: 'performance-analyzer',
-    name: 'Performance Report Analyzer',
-    description: 'Analyze conversion performance data for anomalies, ROAS issues, and attribution drift.',
+    name: 'Google Ads Performance Report',
+    description: 'Analyze Google Ads conversion performance data for anomalies, ROAS issues, and attribution drift.',
     iconName: 'LineChart',
     category: 'google-ads',
     enabled: true,
@@ -74,8 +74,8 @@ export const tools: ToolConfig[] = [
   },
   {
     slug: 'full-audit',
-    name: 'Full-Stack Audit',
-    description: 'Run all checks across GTM, Google Ads, and performance data with cross-source analysis.',
+    name: 'Google Full-Stack Audit',
+    description: 'Run all checks across GTM, Google Ads, and Google Ads performance reports with cross-source analysis.',
     iconName: 'Search',
     category: 'gtm',
     enabled: true,

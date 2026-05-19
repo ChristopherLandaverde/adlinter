@@ -1,19 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { AuditHistoryLink } from '@/components/AuditHistoryLink';
 import { getToolIcon } from '@/components/icons';
-import { tools, categories, type ToolConfig, type ToolCategory } from '@/lib/tools';
+import { tools, type ToolConfig } from '@/lib/tools';
 
 const siteUrl = 'https://adlint.dev';
 const authorName = 'Christopher Landaverde';
 
-// SoftwareApplication is the canonical Schema.org type for browser-based
-// utility apps, and is what Google, Bing, and LLM crawlers map to "tool"
-// entities in their knowledge graphs. WebApplication is a sub-type but
-// less specific; we promote to SoftwareApplication and keep the audit
-// suite enumerated as featureList for AEO grounding.
 const softwareSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
@@ -29,8 +25,8 @@ const softwareSchema = {
   featureList: [
     'Google Tag Manager Container Auditor (29 checks)',
     'Google Ads Linter (34 checks)',
-    'Performance Report Analyzer (30 checks)',
-    'Full-Stack Audit (all Google sources + cross-source consistency)',
+    'Google Ads Performance Report (30 checks)',
+    'Google Full-Stack Audit (all Google sources + cross-source consistency)',
     'Meta Pixel Auditor (10 checks)',
     'TikTok Pixel Auditor (10 checks)',
     'LinkedIn Insight Tag Auditor (10 checks)',
@@ -49,8 +45,6 @@ const softwareSchema = {
   sameAs: ['https://github.com/ChristopherLandaverde/adlinter'],
 };
 
-// Organization schema gives LLMs a stable entity to anchor mentions of
-// "AdLint" against (rather than falling back to disambiguation guesses).
 const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
@@ -65,9 +59,6 @@ const organizationSchema = {
   sameAs: ['https://github.com/ChristopherLandaverde/adlinter'],
 };
 
-// WebSite schema with the search action enables the "sitelinks search box"
-// in Google results AND gives LLMs a structured way to express that the
-// /checks reference is searchable.
 const websiteWithSearchSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
@@ -84,63 +75,101 @@ const websiteWithSearchSchema = {
 
 const homepageSchemas = [softwareSchema, organizationSchema, websiteWithSearchSchema];
 
-function ToolCard({ tool }: { tool: ToolConfig }) {
-  const Icon = getToolIcon(tool.iconName);
+// Curated example prompts — each routes to a real destination.
+const suggestedPrompts: { label: string; href: string }[] = [
+  { label: 'Audit my GTM container', href: '/tools/gtm-auditor' },
+  { label: 'Check Google Ads conversions', href: '/tools/google-ads-linter' },
+  { label: 'Run a full Google audit', href: '/tools/full-audit' },
+  { label: 'Why is my ROAS off?', href: '/checks?q=ROAS' },
+];
 
-  const card = (
-    <div
-      className={`group relative rounded-md border border-border bg-surface p-6 transition-colors ${
-        tool.enabled
-          ? 'cursor-pointer hover:border-ink/20'
-          : 'opacity-60 cursor-default'
-      }`}
-    >
-      <div className="flex h-full flex-col">
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <Icon className="h-6 w-6 text-ink" />
-          {!tool.enabled && (
-            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted">
-              Coming Soon
-            </span>
-          )}
-          {tool.enabled && tool.checkCount > 0 && (
-            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted">
-              {tool.checkCount} checks
-            </span>
-          )}
-        </div>
+// Brand aliases so "google" matches GTM + Ads, "x" matches Twitter, etc.
+const toolAliases: Record<string, string[]> = {
+  'gtm-auditor': ['google', 'tag manager', 'gtm', 'container'],
+  'google-ads-linter': ['google', 'ads', 'adwords', 'conversion'],
+  'performance-analyzer': ['report', 'performance', 'roas'],
+  'full-audit': ['full', 'stack', 'all', 'cross', 'everything'],
+  'meta-auditor': ['meta', 'facebook', 'fb', 'pixel', 'instagram'],
+  'tiktok-auditor': ['tiktok', 'tt', 'bytedance'],
+  'linkedin-auditor': ['linkedin', 'insight', 'b2b'],
+  'pinterest-auditor': ['pinterest', 'pin'],
+  'twitter-auditor': ['twitter', 'x', 'tweet'],
+  'snapchat-auditor': ['snap', 'snapchat'],
+};
 
-        <h3 className="mb-2 font-display text-lg font-semibold text-ink">{tool.name}</h3>
-        <p className="mb-5 line-clamp-2 text-sm leading-6 text-muted">{tool.description}</p>
-
-        {tool.enabled && (
-          <div className="mt-auto flex items-center text-sm font-medium text-muted transition-colors group-hover:text-ink">
-            Open tool
-            <span className="ml-1 group-hover:translate-x-1 transition-transform" aria-hidden="true">
-              &rarr;
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  if (!tool.enabled) return card;
-
-  return (
-    <Link href={`/tools/${tool.slug}`} className="block">
-      {card}
-    </Link>
-  );
+function matchTool(tool: ToolConfig, q: string): boolean {
+  if (!q) return true;
+  const needle = q.toLowerCase();
+  if (tool.name.toLowerCase().includes(needle)) return true;
+  if (tool.description?.toLowerCase().includes(needle)) return true;
+  const aliases = toolAliases[tool.slug] ?? [];
+  return aliases.some((a) => a.includes(needle) || needle.includes(a));
 }
 
 export default function Home() {
-  const [filter, setFilter] = useState<'all' | ToolCategory>('all');
+  const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const filtered = filter === 'all' ? tools : tools.filter((t) => t.category === filter);
+  const enabledTools = useMemo(() => tools.filter((t) => t.enabled), []);
+
+  const matches = useMemo(
+    () => enabledTools.filter((t) => matchTool(t, query.trim())),
+    [enabledTools, query],
+  );
+
+  // Reset highlight whenever the result set changes.
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [query]);
+
+  // Close on outside click.
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!wrapperRef.current) return;
+      if (!wrapperRef.current.contains(e.target as Node)) setIsOpen(false);
+    }
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
+  function goToActive() {
+    const q = query.trim();
+    if (matches.length > 0) {
+      const target = matches[Math.min(activeIndex, matches.length - 1)];
+      router.push(`/tools/${target.slug}`);
+      return;
+    }
+    // No tool match — fall through to the check reference search.
+    router.push(q ? `/checks?q=${encodeURIComponent(q)}` : '/checks');
+  }
+
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    goToActive();
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setIsOpen(true);
+      setActiveIndex((i) => Math.min(i + 1, Math.max(matches.length - 1, 0)));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
+  }
+
+  const showDropdown = isOpen && (matches.length > 0 || query.trim().length > 0);
 
   return (
-    <main className="min-h-screen bg-bg">
+    <main className="relative flex min-h-screen flex-col bg-bg">
       {homepageSchemas.map((schema, i) => (
         <script
           key={i}
@@ -149,93 +178,147 @@ export default function Home() {
         />
       ))}
 
-      {/* Header */}
-      <header className="border-b border-border bg-surface/85 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <Link href="/" className="font-display text-2xl font-semibold text-accent transition-colors hover:text-accent-hover">
-            AdLint
-          </Link>
-          <div className="flex items-center gap-4">
-            <AuditHistoryLink />
-            <Link
-              href="/checks"
-              className="inline-flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-ink"
+      {/* Minimal corner links — no top nav bar. */}
+      <div className="absolute right-4 top-4 z-10 flex items-center gap-4 text-sm text-muted">
+        <AuditHistoryLink />
+        <Link
+          href="/checks"
+          className="transition-colors hover:text-ink"
+        >
+          Check reference
+        </Link>
+      </div>
+
+      <section className="flex flex-1 items-center justify-center px-4 py-16 sm:py-24">
+        <div className="w-full max-w-2xl">
+          <div className="mb-10 text-center">
+            <p className="mb-4 font-display text-xl font-semibold tracking-tight text-accent sm:text-2xl">
+              AdLint
+            </p>
+            <h1 className="text-balance font-display text-4xl font-semibold leading-tight text-ink sm:text-5xl">
+              Find what&apos;s actually broken in your tracking.
+            </h1>
+          </div>
+
+          <div ref={wrapperRef} className="relative">
+            <form
+              onSubmit={handleSubmit}
+              role="search"
+              aria-label="Search tools and audit findings"
             >
-              Check reference
-            </Link>
-            <p className="hidden text-sm text-muted sm:block">
-              Ad Tracking Audit Tools
-            </p>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="container mx-auto px-4 pt-20 pb-14 text-center">
-        <h1 className="mx-auto mb-5 max-w-4xl text-balance font-display text-4xl font-semibold leading-tight text-ink sm:text-5xl">
-          Find what&apos;s actually broken in your tracking.
-        </h1>
-        <p className="mx-auto mb-8 max-w-3xl text-lg leading-8 text-muted">
-          Audit GTM, Google Ads, Meta Pixel, TikTok Pixel, LinkedIn Insight Tag, Pinterest Tag, Twitter/X Pixel, Snapchat Pixel, and performance reports in 60 seconds. Everything runs in your browser &mdash; your data never leaves your machine.
-        </p>
-        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link
-            href="/tools/full-audit"
-            className="inline-flex h-10 items-center justify-center rounded-sm bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
-          >
-            Try with sample data &rarr;
-          </Link>
-          <a
-            href="#tools"
-            className="inline-flex h-10 items-center justify-center rounded-sm border border-border bg-surface px-5 text-sm font-medium text-ink transition-colors hover:border-ink/20"
-          >
-            Browse tools ↓
-          </a>
-        </div>
-      </section>
-
-      <section id="tools" className="scroll-mt-6">
-        {/* Filter Pills */}
-        <div className="container mx-auto mb-8 max-w-4xl px-4">
-          <div className="flex flex-wrap justify-center gap-2">
-            {categories.map((cat) => (
-              <button
-                key={cat.key}
-                onClick={() => setFilter(cat.key as 'all' | ToolCategory)}
-                className={`rounded-sm px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
-                  filter === cat.key
-                    ? 'bg-accent text-white'
-                    : 'border border-border bg-surface text-muted hover:text-ink'
-                }`}
+              <label htmlFor="home-search" className="sr-only">
+                What do you want to audit?
+              </label>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted"
               >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-        </div>
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+              <input
+                ref={inputRef}
+                id="home-search"
+                type="search"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setIsOpen(true);
+                }}
+                onFocus={() => setIsOpen(true)}
+                onKeyDown={handleKeyDown}
+                placeholder="What do you want to audit?"
+                autoComplete="off"
+                role="combobox"
+                aria-expanded={showDropdown}
+                aria-controls="home-search-listbox"
+                aria-autocomplete="list"
+                aria-activedescendant={
+                  showDropdown && matches.length > 0
+                    ? `home-search-option-${matches[Math.min(activeIndex, matches.length - 1)].slug}`
+                    : undefined
+                }
+                className="block w-full rounded-md border border-border bg-surface py-4 pl-12 pr-4 text-base text-ink shadow-sm transition-colors placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+              />
+            </form>
 
-        {/* Tool Grid */}
-        <div className="container mx-auto max-w-5xl px-4 pb-16">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((tool) => (
-              <ToolCard key={tool.slug} tool={tool} />
-            ))}
+            {showDropdown && (
+              <div
+                ref={dropdownRef}
+                id="home-search-listbox"
+                role="listbox"
+                className="absolute left-0 right-0 top-full z-20 mt-2 max-h-96 overflow-y-auto rounded-md border border-border bg-surface shadow-lg"
+              >
+                {matches.length > 0 ? (
+                  <ul className="py-2">
+                    {matches.map((tool, i) => {
+                      const Icon = getToolIcon(tool.iconName);
+                      const isActive = i === Math.min(activeIndex, matches.length - 1);
+                      return (
+                        <li
+                          key={tool.slug}
+                          id={`home-search-option-${tool.slug}`}
+                          role="option"
+                          aria-selected={isActive}
+                        >
+                          <Link
+                            href={`/tools/${tool.slug}`}
+                            onMouseEnter={() => setActiveIndex(i)}
+                            onClick={() => setIsOpen(false)}
+                            className={`flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                              isActive ? 'bg-surface-2' : 'hover:bg-surface-2'
+                            }`}
+                          >
+                            <Icon className="h-5 w-5 shrink-0 text-ink" />
+                            <span className="flex-1 truncate text-sm font-medium text-ink">
+                              {tool.name}
+                            </span>
+                            {tool.checkCount > 0 && (
+                              <span className="shrink-0 text-xs text-muted">
+                                {tool.checkCount} checks
+                              </span>
+                            )}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <div className="px-4 py-3 text-sm text-muted">
+                    No tools match &ldquo;{query}&rdquo;.{' '}
+                    <Link
+                      href={`/checks?q=${encodeURIComponent(query.trim())}`}
+                      className="text-accent hover:underline"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Search 178 findings for &ldquo;{query.trim()}&rdquo;
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {filtered.length === 0 && (
-            <p className="text-center text-gray-400 py-12">
-              No tools in this category yet.
-            </p>
-          )}
+          <ul className="mt-6 flex flex-wrap justify-center gap-x-3 gap-y-2">
+            {suggestedPrompts.map((p) => (
+              <li key={p.label}>
+                <Link
+                  href={p.href}
+                  className="inline-flex items-center rounded-full border border-border bg-surface px-3 py-1.5 text-sm text-muted transition-colors hover:border-ink/20 hover:text-ink"
+                >
+                  {p.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border py-6">
-        <div className="container mx-auto px-4 text-center text-xs text-muted">
-          AdLint &mdash; Free auditors for GTM, Google Ads, Meta Pixel, TikTok Pixel, and LinkedIn. All processing happens in your browser.
-        </div>
-      </footer>
     </main>
   );
 }

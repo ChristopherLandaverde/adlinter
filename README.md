@@ -10,8 +10,8 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 
 - **GTM Container Auditor** — 30 checks
 - **Google Ads Linter** — 27 checks
-- **Performance Report Analyzer** — 11 checks
-- **Full-Stack Audit** — 82 checks across GTM, Ads, and performance reports
+- **Google Ads Performance Report** — 11 checks
+- **Google Full-Stack Audit** — 82 checks across GTM, Ads, and performance reports
 - **Meta Pixel Auditor** — 10 checks
 - **TikTok Pixel Auditor** — 10 checks
 - **LinkedIn Insight Tag Auditor** — 10 checks

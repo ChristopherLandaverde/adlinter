@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { explainerCoverage, explainerSources, getAllExplainersOrStubs } from '@/lib/checks/explainers';
 import { ChecksIndexClient } from './ChecksIndexClient';
 
@@ -59,7 +60,15 @@ export default function ChecksPage() {
           </h1>
         </div>
 
-        <ChecksIndexClient explainers={all} documented={documented} total={total} />
+        {/*
+          Suspense boundary required because ChecksIndexClient calls
+          useSearchParams() to seed the search query from `?q=` (set by the
+          homepage Perplexity-style search). Next.js static pre-rendering
+          requires this for any component that reads URL params.
+        */}
+        <Suspense fallback={null}>
+          <ChecksIndexClient explainers={all} documented={documented} total={total} />
+        </Suspense>
 
         <section aria-labelledby="browse-by-source" className="mt-14 border-t border-border pt-10">
           <h2 id="browse-by-source" className="mb-4 text-[10px] font-semibold uppercase tracking-wider text-muted">
