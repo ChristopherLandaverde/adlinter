@@ -1,5 +1,57 @@
 # AdLint — Progress Log
 
+## v1.27.1 — Editorial humanization pass continued (cross-source, pixel platforms)
+**Commit:** Pending
+
+Second wave of the humanization work from v1.27.0. Pushes total
+critical-severity coverage to ~40 of 48 entries. Remaining ~8 critical
+entries are short and already in good shape (mostly contraction tweaks
+left); they can be batched in v1.27.2 or absorbed during template-lift
+work.
+
+### Entries humanized in this wave (18)
+
+**Cross-source critical:**
+- conversion-callbacks, cross-zero-volume-active,
+  enhanced-conversions-user-data
+
+**Platform criticals:**
+- meta-missing-pageview, meta-missing-conversion-events,
+  meta-purchase-missing-value
+- tiktok-base-events-active, tiktok-completepayment-missing-value
+- linkedin-no-active-conversions, linkedin-purchase-missing-value
+- pinterest-checkout-missing-value, pinterest-missing-pagevisit
+- snapchat-missing-page-view
+
+**GTM critical:**
+- conversion-linker-sequencing, conversion-error-handling
+
+**Performance / ads critical (touched in v1.27.0 second pass):**
+- ecommerce-datalayer-structure, zero-value-purchases, perf-negative-values
+- ads-conversion-missing-gtm-tag, mismatched-values
+
+### Pattern fixes applied (same as v1.27.0)
+
+- Rule-of-Three "First X, Second Y, Third Z" structures broken into
+  natural prose flow
+- Parallel "That is the X" closers killed
+- Copula avoidance fixed
+- Contractions applied where natural
+- Citation templates kept formal
+
+### Tests + verification
+- All 574 tests pass
+- Type-check clean
+- Technical accuracy preserved (cookie names, parameter names, URLs intact)
+
+### Remaining critical entries (8 deferred)
+ghost-conversions, volume-weighted-duplicates, perf-value-without-volume,
+signal-micro-as-primary, signal-micro-pollution, signal-zero-value-primary,
+conversion-label-matching, tiktok-missing-conversion-events. Most are
+short with minimal prose, so the marginal improvement is small.
+
+---
+
 ## v1.27.0 — Editorial humanization pass (critical-severity explainers)
 **Commit:** Pending
 
