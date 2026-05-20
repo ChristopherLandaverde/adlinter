@@ -1,5 +1,61 @@
 # AdLint — Progress Log
 
+## v1.27.0 — Editorial humanization pass (critical-severity explainers)
+**Commit:** Pending
+
+Audit-driven prose work on the highest-traffic `/checks/[id]` editorial pages.
+The content was already practitioner-voiced (specific cookie names, real URL
+patterns, concrete examples), but it carried several AI-pattern tells that
+made it read as machine-generated to a discerning reader: Rule-of-Three
+constructions ("First X, Second Y, Third Z"), parallel "That is the X"
+closers, copula avoidance ("It is the failure mode" instead of "The failure
+mode is"), and "does not / cannot / it is" formality where contractions
+would read more naturally.
+
+This pass targets the 20 highest-traffic explainers (6 featured on `/checks`
+landing + 14 critical-severity entries) with structural and contraction-level
+rewrites. Remaining ~28 critical entries deferred to v1.27.1.
+
+### Entries humanized (20 total)
+
+**Featured 6** (shown on `/checks` empty state):
+- missing-conversion-linker, consent-violations, duplicate-conversions,
+  currency-consistency, enhanced-conversions-missing-data, no-primary-conversion
+
+**Additional critical (14)**:
+- ecommerce-datalayer-structure, zero-value-purchases, perf-negative-values,
+  ads-conversion-missing-gtm-tag, mismatched-values
+- meta-missing-pageview, meta-missing-conversion-events, meta-purchase-missing-value
+- tiktok-base-events-active, tiktok-completepayment-missing-value
+- linkedin-no-active-conversions, linkedin-purchase-missing-value
+- conversion-linker-sequencing, conversion-error-handling
+
+### Pattern fixes applied
+
+- **Rule-of-Three reduction**: "First X, Second Y, Third Z" structures broken
+  into natural prose flow ("X. The compounding problem is Y. And Z").
+- **Parallel "That is the X" closers** killed (consent-violations and others).
+- **Copula avoidance** corrected: "It is the failure mode that..." → "This
+  failure mode..." etc.
+- **Contractions** applied where natural: "is not" → "isn't", "does not" →
+  "doesn't", "cannot" → "can't", "you will" → "you'll".
+- **Citation templates** kept formal (designed to be quoted verbatim in
+  agency deliverables) but tightened where dense subordinate clauses
+  obscured the point.
+
+### Tests
+- All 574 tests still pass — editorial copy isn't covered by assertions,
+  so prose changes are transparent to the test surface.
+- Type-check clean. Production build clean. 178 check pages still
+  pre-render correctly.
+
+### Deferred to v1.27.1
+~28 remaining critical-severity entries (cross-source advanced checks,
+Pinterest, Twitter, Snapchat, edge-case findings). Same pattern fixes,
+just more entries to walk. Tracked in BACKLOG.
+
+---
+
 ## v1.26.2 — Remove paid-consultation CTA from /audit (A-03)
 **Commit:** Pending
 
