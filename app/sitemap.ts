@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { explainerSources, hasFullExplainer } from '@/lib/checks/explainers';
 import { checkRegistry } from '@/lib/checks/registry.generated';
+import { getPublishedPosts } from '@/lib/blog';
 import { tools } from '@/lib/tools';
 
 const siteUrl = 'https://adlint.dev';
@@ -21,6 +22,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.6,
     },
+    {
+      url: `${siteUrl}/blog`,
+      lastModified,
+      changeFrequency: 'weekly' as const,
+      priority: 0.65,
+    },
+    ...getPublishedPosts().map((post) => ({
+      url: `${siteUrl}/blog/${post.slug}`,
+      lastModified: new Date(`${post.updatedAt ?? post.publishedAt}T00:00:00.000Z`),
+      changeFrequency: 'monthly' as const,
+      priority: 0.55,
+    })),
     ...tools
       .filter((tool) => tool.enabled)
       .map((tool) => ({

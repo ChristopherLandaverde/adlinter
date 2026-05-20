@@ -182,6 +182,12 @@ export default function Home() {
       <div className="absolute right-4 top-4 z-10 flex items-center gap-4 text-sm text-muted">
         <AuditHistoryLink />
         <Link
+          href="/blog"
+          className="transition-colors hover:text-ink"
+        >
+          Backchannel
+        </Link>
+        <Link
           href="/checks"
           className="transition-colors hover:text-ink"
         >

@@ -41,6 +41,8 @@ test files/
 
 # internal docs
 /docs/
+!/docs/
+!/docs/backchannel-feature.md
 /advanced/
 /cursorrules/
 
