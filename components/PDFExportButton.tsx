@@ -602,10 +602,16 @@ function UnlockModal({
                   className="w-full rounded-sm border border-border px-4 py-3 text-ink placeholder-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
                   required
                   disabled={isSubmitting}
+                  aria-describedby="email-disclosure"
                 />
                 {error && (
                   <p className="mt-2 text-sm text-red-600">{error}</p>
                 )}
+                <p id="email-disclosure" className="mt-3 text-sm leading-6 text-muted">
+                  This sends your email address to MailerLite, our email provider, and adds it
+                  to the AdLint mailing list. Nothing from your audit is sent. Your files and
+                  results stay in this browser.
+                </p>
               </div>
 
               <button

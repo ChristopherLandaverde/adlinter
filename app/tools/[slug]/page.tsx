@@ -77,7 +77,7 @@ export default async function Page({ params }: PageProps) {
     applicationCategory: 'BusinessApplication',
     applicationSubCategory: 'Ad-tech tracking audit tool',
     operatingSystem: 'Web Browser',
-    description: `${tool.description} Runs ${tool.checkCount} checks. 100% client-side — nothing is uploaded.`,
+    description: `${tool.description} Runs ${tool.checkCount} checks. Audits run in your browser; your files are never uploaded.`,
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
     isAccessibleForFree: true,
     browserRequirements: 'Requires JavaScript. Modern browser.',

@@ -20,7 +20,7 @@ const softwareSchema = {
   applicationSubCategory: 'Ad-tech tracking audit tool',
   operatingSystem: 'Web Browser',
   description:
-    'Privacy-respecting ad-tracking auditor. Audits Google Tag Manager containers, Google Ads accounts, Performance reports, and pixel exports from Meta, TikTok, LinkedIn, Pinterest, Twitter/X, and Snapchat. 178 checks across 10 sources. 100% client-side: nothing is uploaded.',
+    'Privacy-respecting ad-tracking auditor. Audits Google Tag Manager containers, Google Ads accounts, Performance reports, and pixel exports from Meta, TikTok, LinkedIn, Pinterest, Twitter/X, and Snapchat. 178 checks across 10 sources. Audits run in the browser; export files are never uploaded.',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
   featureList: [
     'Google Tag Manager Container Auditor (29 checks)',

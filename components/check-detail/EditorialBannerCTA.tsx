@@ -52,8 +52,8 @@ export function EditorialBannerCTA({
         </p>
         <p className="text-sm leading-6 text-white/80">
           {leads[variant]} against your GTM, Google Ads, Meta, TikTok,
-          LinkedIn, Pinterest, Twitter/X, and Snapchat exports. Everything stays in your
-          browser. No uploads, no accounts.
+          LinkedIn, Pinterest, Twitter/X, and Snapchat exports. Files are audited in your
+          browser and never uploaded. No account needed.
         </p>
       </div>
       <Link

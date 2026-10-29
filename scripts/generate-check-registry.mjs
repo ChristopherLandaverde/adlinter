@@ -84,3 +84,10 @@ export const checkRegistryById: Record<string, CheckRegistryEntry> = Object.from
 
 writeFileSync(outFile, body);
 console.log(`Wrote ${entries.length} check entries to ${outFile}`);
+
+// Per-source counts, so docs can point here instead of hardcoding numbers.
+const bySource = {};
+for (const e of entries) bySource[e.source] = (bySource[e.source] ?? 0) + 1;
+for (const [source, count] of Object.entries(bySource).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))) {
+  console.log(`  ${source.padEnd(10)} ${count}`);
+}
