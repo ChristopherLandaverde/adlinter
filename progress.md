@@ -1,7 +1,129 @@
 # AdLint — Progress Log
 
+## v1.28.0 — Editorial check pages, accurate privacy claims, honest check counts
+**Commit:** Pending (Christopher tags `v1.28.0` and publishes the GitHub release after the release PR merges)
+
+First tagged release since v1.25.6. It ships everything merged since then,
+including the work logged below as v1.26.0–v1.27.1, which was never tagged.
+The version is 1.28.0 rather than the 1.27.1 already in `package.json`:
+1.27.1 was the label for the second explainer-humanization commit
+(5ea669a), and new features merged after it (the editorial template for
+check pages, among others). Under this log's convention a feature bumps the
+minor version.
+
+### What's new for you (release notes)
+
+**Check pages read like a short article.** Every `/checks/<id>` page now
+opens with a TL;DR card that answers the question. The "Why it matters"
+text is set in readable paragraphs. Fix steps are numbered cards, related
+checks sit in a row at the end, and a banner links to the tool that runs
+the check. Identifiers in explainer text (`gclid`, `event_id`, tag names)
+show as code instead of literal backticks.
+
+**Privacy claims you can repeat to a client.** AdLint used to say "100%
+private" and "no data ever leaves your machine". It now says exactly what
+happens. Your audit files are parsed in your browser and never uploaded.
+Audit history stays in your browser. The one thing that leaves is the
+optional email address for PDF export, which goes to MailerLite, our email
+provider, with no audit data. The PDF unlock form says this before you
+submit.
+
+**Check counts that match the audit.** Tool cards and pages showed check
+counts that were out of date. The Google Ads Linter said 27 and runs 42.
+The Performance Report said 11 and runs 26. The Google Full-Stack Audit
+said 82 and runs 119. Every count is now computed from the checks the
+engine actually runs, and a test fails if one drifts (#46).
+
+**Clearer PDF export rule.** The locked Download PDF button used to say
+"Complete 5 audits to unlock". In fact, PDF export is free for your first
+4 audits and asks for an email from the fifth. The tooltip now says so.
+The unlock dialog was clipped off the top of the screen. It now fits on
+phones and desktops, follows the AdLint design system, and works with the
+keyboard: Escape closes it, focus stays inside it, and every control has a
+label (#47).
+
+**Faster first look.** "Try with sample data" goes straight to results,
+without the five-question context picker. Real uploads still get the
+picker, because your answers tune severity.
+
+**Search-first home page and /checks.** Search for a platform or a problem
+from the home page. "google" finds GTM and Ads, "x" finds Twitter/X. The
+`/checks` index is a ranked, keyboard-navigable search. Tools carry their
+platform icons, and two Google tools have clearer names: Google Full-Stack
+Audit, and Google Ads Performance Report.
+
+**Browse checks by platform.** Ten category pages at `/sources/<platform>`
+list every check for GTM, Google Ads, Performance reports, cross-source
+consistency, Meta, TikTok, LinkedIn, Pinterest, Twitter/X and Snapchat.
+
+**Also new:** sharing a check link shows a card with its severity and name.
+There is an `/about` author page and a Backchannel blog at `/blog`.
+Explainer prose was rewritten for 38 critical checks. The paid-consultation
+call to action is gone from the audit page. Charts on the audit page render
+reliably.
+
+**Security and maintenance.** Next.js 16.2.6 → 16.4.1, with
+dependency updates for dompurify, sharp, nanoid, postcss, fflate,
+brace-expansion, js-yaml, browserslist, baseline-browser-mapping and
+@humanfs/node (Dependabot #24–#36).
+
+### Merged since v1.25.6 (`git log v1.25.6..HEAD`)
+- AEO scaffolding: robots.txt AI-crawler allow-list, `llms.txt`, richer
+  home schema (0ee9eb6); `/sources/<key>` pages (481e4b2); `/about` and
+  Person cross-references (66983a0); per-tool schema and search-first
+  `/checks` (c1cbc45); AEO fields on 11 explainers (cf7e8c2); per-check OG
+  images (0fa946e, 4b34890); `/checks` heading and `aria-current` fixes
+  (043f585)
+- Search-first home page, brand icons, Google tool renames (b8547b9)
+- v1.26.0–v1.26.2 audit-driven UX fixes (ab0d1ff), Backchannel blog
+  (b47ff75), v1.27.0–v1.27.1 explainer humanization (64bdded, 5ea669a),
+  planning docs (861dfde)
+- Editorial template lift for check pages, A1 (#37, 7eed668)
+- Privacy claims made exact (#39), inline code in explainers (#38),
+  README rewrite (#45) (2fdcc77)
+- Dependabot: #24, #25, #26, #27, #28, #29, #30, #31, #33, #34, #35, #36
+- Check counts derived from the registry (#46); PDF unlock dialog on
+  DESIGN.md tokens (#47)
+
+### Check counts (#46)
+- `scripts/generate-check-registry.mjs` records `modules` (the check files
+  that emit each ID) and reads files in sorted order.
+- `lib/tools.ts` declares each tool's `checkModules`, and `checkCount` is
+  derived from them. The home JSON-LD and search, about page, `/checks`
+  placeholder, editorial banner, `/sources/<key>` copy (`{count}`
+  placeholders) and `llms.txt` match the registry.
+- Fixed a tool slug that did not exist (`performance-report-analyzer` →
+  `performance-analyzer`) in `llms.txt` and in the `/sources/report` CTA.
+- Known quirk: `duplicate-conversions` is one check ID emitted by both the
+  GTM and Google Ads check files. It counts once in the 178 total and once
+  per tool that runs it.
+
+### PDF unlock dialog (#47)
+- Portalled to `<body>`. The sticky audit header's backdrop filter had made
+  it the containing block for the fixed overlay.
+- DESIGN.md tokens: `rounded-lg` card, hairline border, no shadow, no blur,
+  no ✓ glyphs, no icon in a circle. Dialog ARIA, focus trap, Escape.
+
+### New files
+- `lib/checks/counts.ts`
+- `__tests__/lib/checkCounts.test.ts`
+
+### Modified files (behavior changed)
+- `scripts/generate-check-registry.mjs`, `lib/checks/registry.generated.ts`
+- `lib/tools.ts`, `lib/checks/sourceContent.ts`, `lib/hooks/useAuditCounter.ts`
+- `app/page.tsx`, `app/about/page.tsx`, `app/checks/ChecksIndexClient.tsx`,
+  `app/sources/[key]/page.tsx`, `components/check-detail/EditorialBannerCTA.tsx`
+- `components/PDFExportButton.tsx`, `public/llms.txt`
+- `package.json` and `package-lock.json` (version 1.28.0)
+
+### Tests + verification
+- `npx tsc --noEmit` clean; `npx jest --ci` 40 suites, 626 tests pass;
+  `npm run build` passes.
+
+---
+
 ## v1.27.1 — Editorial humanization pass continued (cross-source, pixel platforms)
-**Commit:** Pending
+**Commit:** 5ea669a (untagged; ships in v1.28.0)
 
 Second wave of the humanization work from v1.27.0. Pushes total
 critical-severity coverage to ~40 of 48 entries. Remaining ~8 critical
@@ -53,7 +175,7 @@ short with minimal prose, so the marginal improvement is small.
 ---
 
 ## v1.27.0 — Editorial humanization pass (critical-severity explainers)
-**Commit:** Pending
+**Commit:** 64bdded (untagged; ships in v1.28.0)
 
 Audit-driven prose work on the highest-traffic `/checks/[id]` editorial pages.
 The content was already practitioner-voiced (specific cookie names, real URL
@@ -109,7 +231,7 @@ just more entries to walk. Tracked in BACKLOG.
 ---
 
 ## v1.26.2 — Remove paid-consultation CTA from /audit (A-03)
-**Commit:** Pending
+**Commit:** ab0d1ff (untagged; ships in v1.28.0)
 
 Strategic decision from the UX audit. The "Book a free 30-min measurement
 review" CTA at the bottom of `/audit` (linking to `focosys.io/review`) made
@@ -149,7 +271,7 @@ and keep AdLint focused as the diagnostic per `PRODUCT.md`.
 ---
 
 ## v1.26.1 — Recharts container fix on /audit (G-03)
-**Commit:** Pending
+**Commit:** ab0d1ff (untagged; ships in v1.28.0)
 
 The audit page's Recharts charts logged `width(-1) height(-1)` warnings on
 first render and intermittently failed to paint, destabilizing headless
@@ -188,7 +310,7 @@ accumulated render errors that crashed the page under heavy interaction
 ---
 
 ## v1.26.0 — Sample-data path skips the context picker (G-01, G-02)
-**Commit:** Pending
+**Commit:** ab0d1ff (untagged; ships in v1.28.0)
 
 Audit-driven UX fix. The "Try with sample data" path on every tool used to
 land on the 5-question `AuditContextPicker` before showing any audit result.

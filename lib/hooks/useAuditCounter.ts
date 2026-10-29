@@ -4,7 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 
 const AUDIT_COUNT_KEY = 'adlint_audit_count';
 const SUBSCRIBED_KEY = 'adlint_subscribed';
-const UNLOCK_THRESHOLD = 5;
+/** From this audit on, PDF export needs an email unless already subscribed. */
+export const UNLOCK_THRESHOLD = 5;
+/** Audits with free PDF export before the email ask. */
+export const FREE_PDF_AUDITS = UNLOCK_THRESHOLD - 1;
 
 interface UseAuditCounterReturn {
   auditCount: number;

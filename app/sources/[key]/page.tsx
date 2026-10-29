@@ -8,7 +8,7 @@ import {
   type CheckExplainer,
   type ExplainerSource,
 } from '@/lib/checks/explainers';
-import { sourceContent } from '@/lib/checks/sourceContent';
+import { getSourceContent } from '@/lib/checks/sourceContent';
 import { tools } from '@/lib/tools';
 
 type PageProps = {
@@ -35,7 +35,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { key } = await params;
   if (!isValidSource(key)) return { title: 'Not found' };
-  const content = sourceContent[key];
+  const content = getSourceContent(key);
   return {
     title: `${content.headline} — ${content.tagline}`,
     description: content.intro.split('\n')[0],
@@ -57,7 +57,7 @@ export default async function SourceCategoryPage({ params }: PageProps) {
   const { key } = await params;
   if (!isValidSource(key)) notFound();
 
-  const content = sourceContent[key];
+  const content = getSourceContent(key);
   const all = getAllExplainersOrStubs();
   const checks = all.filter((e) => e.source === key);
 

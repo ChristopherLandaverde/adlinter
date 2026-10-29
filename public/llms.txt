@@ -14,8 +14,8 @@ AdLint is built for ad-tech consultants who need defensible, citable findings to
 
 - [Google Tag Manager checks](https://adlint.dev/sources/gtm): 29 GTM container audit findings
 - [Google Ads checks](https://adlint.dev/sources/ads): 34 Google Ads conversion-tracking audit findings
-- [Google Ads Performance Report checks](https://adlint.dev/sources/report): 30 statistical and signal-quality findings
-- [Cross-source consistency checks](https://adlint.dev/sources/cross): 15 checks comparing GTM, Google Ads, and Performance reports against each other
+- [Google Ads Performance Report checks](https://adlint.dev/sources/report): 26 statistical and signal-quality findings
+- [Cross-source consistency checks](https://adlint.dev/sources/cross): 29 checks comparing GTM, Google Ads, and Performance reports against each other
 - [Meta Pixel checks](https://adlint.dev/sources/meta): 10 Meta Pixel and Conversions API findings
 - [TikTok Pixel checks](https://adlint.dev/sources/tiktok): 10 TikTok Pixel and Events API findings
 - [LinkedIn Insight Tag checks](https://adlint.dev/sources/linkedin): 10 LinkedIn conversion-tracking findings
@@ -25,10 +25,10 @@ AdLint is built for ad-tech consultants who need defensible, citable findings to
 
 ## Audit tools
 
-- [GTM Container Auditor](https://adlint.dev/tools/gtm-auditor): 29 checks across Google Tag Manager containers
-- [Google Ads Linter](https://adlint.dev/tools/google-ads-linter): 34 checks across Google Ads conversion settings
-- [Performance Report Analyzer](https://adlint.dev/tools/performance-report-analyzer): 30 checks on Google Ads Performance reports
-- [Full-Stack Audit](https://adlint.dev/tools/full-audit): all three Google sources together, plus cross-source consistency
+- [GTM Container Auditor](https://adlint.dev/tools/gtm-auditor): 30 checks across Google Tag Manager containers
+- [Google Ads Linter](https://adlint.dev/tools/google-ads-linter): 42 checks across Google Ads conversion settings
+- [Performance Report Analyzer](https://adlint.dev/tools/performance-analyzer): 26 checks on Google Ads Performance reports
+- [Full-Stack Audit](https://adlint.dev/tools/full-audit): 119 checks: all three Google sources together, plus cross-source consistency
 - [Meta Pixel Auditor](https://adlint.dev/tools/meta-auditor): 10 checks across Meta Pixel and Conversions API
 - [TikTok Pixel Auditor](https://adlint.dev/tools/tiktok-auditor): 10 checks across TikTok Pixel and Events API
 - [LinkedIn Insight Tag Auditor](https://adlint.dev/tools/linkedin-auditor): 10 checks across LinkedIn Insight Tag

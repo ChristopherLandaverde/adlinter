@@ -8,6 +8,7 @@ import {
   type CheckExplainer,
   type ExplainerSource,
 } from '@/lib/checks/explainers';
+import { totalCheckCount } from '@/lib/checks/counts';
 
 type Severity = CheckExplainer['severity'];
 
@@ -157,7 +158,7 @@ export function ChecksIndexClient({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search 178 checks — try “consent”, “gclid”, or “tROAS”"
+            placeholder={`Search ${totalCheckCount} checks — try “consent”, “gclid”, or “tROAS”`}
             aria-label="Search AdLint checks"
             className="w-full rounded-lg border border-border bg-surface py-4 pl-14 pr-14 text-lg font-medium text-ink placeholder:font-normal placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:py-5 sm:text-xl"
           />

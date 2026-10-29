@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AuditHistoryLink } from '@/components/AuditHistoryLink';
 import { getToolIcon } from '@/components/icons';
 import { tools, type ToolConfig } from '@/lib/tools';
+import { checkSourceCount, totalCheckCount } from '@/lib/checks/counts';
 
 const siteUrl = 'https://adlint.dev';
 const authorName = 'Christopher Landaverde';
@@ -20,19 +21,14 @@ const softwareSchema = {
   applicationSubCategory: 'Ad-tech tracking audit tool',
   operatingSystem: 'Web Browser',
   description:
-    'Privacy-respecting ad-tracking auditor. Audits Google Tag Manager containers, Google Ads accounts, Performance reports, and pixel exports from Meta, TikTok, LinkedIn, Pinterest, Twitter/X, and Snapchat. 178 checks across 10 sources. Audits run in the browser; export files are never uploaded.',
+    `Privacy-respecting ad-tracking auditor. Audits Google Tag Manager containers, Google Ads accounts, Performance reports, and pixel exports from Meta, TikTok, LinkedIn, Pinterest, Twitter/X, and Snapchat. ${totalCheckCount} checks across ${checkSourceCount} sources. Audits run in the browser; export files are never uploaded.`,
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
   featureList: [
-    'Google Tag Manager Container Auditor (29 checks)',
-    'Google Ads Linter (34 checks)',
-    'Google Ads Performance Report (30 checks)',
-    'Google Full-Stack Audit (all Google sources + cross-source consistency)',
-    'Meta Pixel Auditor (10 checks)',
-    'TikTok Pixel Auditor (10 checks)',
-    'LinkedIn Insight Tag Auditor (10 checks)',
-    'Pinterest Tag Auditor (10 checks)',
-    'Twitter/X Pixel Auditor (10 checks)',
-    'Snapchat Pixel Auditor (10 checks)',
+    ...tools.map((tool) =>
+      tool.slug === 'full-audit'
+        ? `${tool.name} (${tool.checkCount} checks: all Google sources + cross-source consistency)`
+        : `${tool.name} (${tool.checkCount} checks)`
+    ),
     'Tracking Health Score (0-100)',
     'Audit history with diff view',
     'Per-finding citation templates for client deliverables',
@@ -303,7 +299,7 @@ export default function Home() {
                       className="text-accent hover:underline"
                       onClick={() => setIsOpen(false)}
                     >
-                      Search 178 findings for &ldquo;{query.trim()}&rdquo;
+                      Search {totalCheckCount} findings for &ldquo;{query.trim()}&rdquo;
                     </Link>
                   </div>
                 )}
