@@ -668,7 +668,7 @@ function IssuesTable({
             value={search}
             onChange={e => onSearchChange(e.target.value)}
             placeholder="Search issues..."
-            className="w-full rounded-sm border border-border bg-surface py-2 pl-9 pr-3 text-sm text-ink placeholder-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
+            className="w-full rounded-sm border border-input-border bg-surface py-2 pl-9 pr-3 text-sm text-ink placeholder-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
           />
         </div>
         {/* Severity toggles */}

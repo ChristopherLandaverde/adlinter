@@ -621,7 +621,7 @@ function UnlockModal({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@agency.com"
-                className="h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                className="h-10 w-full rounded-sm border border-input-border bg-surface px-3 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                 required
                 disabled={isSubmitting}
                 aria-invalid={error ? true : undefined}

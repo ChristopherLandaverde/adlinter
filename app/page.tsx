@@ -246,7 +246,7 @@ export default function Home() {
                     ? `home-search-option-${matches[Math.min(activeIndex, matches.length - 1)].slug}`
                     : undefined
                 }
-                className="block w-full rounded-md border border-border bg-surface py-4 pl-12 pr-4 text-base text-ink shadow-sm transition-colors placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+                className="block w-full rounded-md border border-input-border bg-surface py-4 pl-12 pr-4 text-base text-ink shadow-sm transition-colors placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
               />
             </form>
 
