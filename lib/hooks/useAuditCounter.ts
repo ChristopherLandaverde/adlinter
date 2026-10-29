@@ -16,6 +16,7 @@ interface UseAuditCounterReturn {
   incrementAuditCount: () => number;
   markAsSubscribed: () => void;
   dismissUnlockModal: () => void;
+  openUnlockModal: () => void;
   canExportPDF: boolean;
 }
 
@@ -73,6 +74,11 @@ export function useAuditCounter(): UseAuditCounterReturn {
     setShouldShowUnlockModal(false);
   }, []);
 
+  // Reopen the unlock dialog after it was dismissed (locked PDF button click).
+  const openUnlockModal = useCallback(() => {
+    setShouldShowUnlockModal(true);
+  }, []);
+
   // PDF export is available before the unlock threshold, or after subscribing.
   const canExportPDF = auditCount < UNLOCK_THRESHOLD || isSubscribed;
 
@@ -83,6 +89,7 @@ export function useAuditCounter(): UseAuditCounterReturn {
     incrementAuditCount,
     markAsSubscribed,
     dismissUnlockModal,
+    openUnlockModal,
     canExportPDF,
   };
 }

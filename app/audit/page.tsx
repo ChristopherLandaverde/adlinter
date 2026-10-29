@@ -1147,6 +1147,7 @@ function AuditPageContent() {
     incrementAuditCount,
     markAsSubscribed,
     dismissUnlockModal,
+    openUnlockModal,
   } = useAuditCounter();
 
   // Track if we've already counted this audit session
@@ -1431,6 +1432,7 @@ function AuditPageContent() {
               shouldShowUnlockModal={shouldShowUnlockModal}
               onSubscribe={markAsSubscribed}
               onDismissModal={dismissUnlockModal}
+              onRequestUnlock={openUnlockModal}
             />
             <button
               onClick={() => {

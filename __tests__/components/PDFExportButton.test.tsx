@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PDFExportButton } from '@/components/PDFExportButton';
+import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
 import type { AuditResults } from '@/lib/types';
 
 const saveMock = jest.fn();
@@ -64,6 +65,7 @@ function renderButton(props: Partial<React.ComponentProps<typeof PDFExportButton
       shouldShowUnlockModal={false}
       onSubscribe={jest.fn()}
       onDismissModal={jest.fn()}
+      onRequestUnlock={jest.fn()}
       {...props}
     />,
   );
@@ -91,13 +93,51 @@ describe('PDFExportButton', () => {
     });
   });
 
-  it('should show the locked tooltip instead of downloading when access is gated', async () => {
+  it('should request the unlock dialog instead of downloading when access is gated', async () => {
     const user = userEvent.setup();
-    renderButton({ canExportPDF: false });
+    const onRequestUnlock = jest.fn();
+    renderButton({ canExportPDF: false, onRequestUnlock });
 
     await user.click(screen.getByRole('button', { name: /download pdf/i }));
 
-    expect(screen.getByText(/PDF export is free for your first 4 audits\. Run your next audit to unlock it with your email\./)).toBeInTheDocument();
+    expect(onRequestUnlock).toHaveBeenCalledTimes(1);
+    expect(saveMock).not.toHaveBeenCalled();
+  });
+
+  it('reopens the unlock dialog from the PDF button after it was dismissed', async () => {
+    const user = userEvent.setup();
+    localStorage.clear();
+    localStorage.setItem('adlint_audit_count', '4');
+
+    function Harness() {
+      const counter = useAuditCounter();
+      return (
+        <>
+          <button type="button" onClick={counter.incrementAuditCount}>
+            run audit
+          </button>
+          <PDFExportButton
+            results={results}
+            auditType="Google Ads"
+            canExportPDF={counter.canExportPDF}
+            shouldShowUnlockModal={counter.shouldShowUnlockModal}
+            onSubscribe={counter.markAsSubscribed}
+            onDismissModal={counter.dismissUnlockModal}
+            onRequestUnlock={counter.openUnlockModal}
+          />
+        </>
+      );
+    }
+
+    render(<Harness />);
+    await user.click(screen.getByRole('button', { name: 'run audit' }));
+    expect(screen.getByRole('dialog', { name: 'Unlock professional PDF reports' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /download pdf/i }));
+    expect(screen.getByRole('dialog', { name: 'Unlock professional PDF reports' })).toBeInTheDocument();
     expect(saveMock).not.toHaveBeenCalled();
   });
 
@@ -156,6 +196,7 @@ describe('PDFExportButton', () => {
         shouldShowUnlockModal={false}
         onSubscribe={jest.fn()}
         onDismissModal={jest.fn()}
+        onRequestUnlock={jest.fn()}
       />,
     );
 
