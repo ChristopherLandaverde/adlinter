@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { computeHealthScore } from '@/lib/healthScore';
 import { FREE_PDF_AUDITS } from '@/lib/hooks/useAuditCounter';
 import { AuditResults, AuditCheck, Severity } from '@/lib/types';
@@ -73,14 +74,6 @@ function IconSpinner() {
     <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-    </svg>
-  );
-}
-
-function IconGift() {
-  return (
-    <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
     </svg>
   );
 }
@@ -520,127 +513,151 @@ function UnlockModal({
     }
   };
 
-  if (!isOpen) return null;
+  // Escape closes; focus moves into the dialog on open and back on close.
+  const onCloseRef = useRef(onClose);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+  useEffect(() => {
+    if (!isOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    inputRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onCloseRef.current();
+        return;
+      }
+      // Keep Tab inside the dialog while it is open.
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled])')
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (!dialogRef.current.contains(document.activeElement)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      previouslyFocused?.focus?.();
+    };
+  }, [isOpen]);
 
-  return (
+  if (!isOpen || typeof document === 'undefined') return null;
+
+  // Portal to <body>: the audit header is sticky with a backdrop filter,
+  // which makes it the containing block for fixed children and clipped the
+  // dialog off the top of the screen.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-ink/40" aria-hidden="true" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-slideIn">
-        {/* Close button */}
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="unlock-pdf-title"
+        aria-describedby="unlock-pdf-intro"
+        className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-lg border border-border bg-surface p-6"
+      >
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Close"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-sm text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           <IconX />
         </button>
 
         {success ? (
-          // Success state
-          <div className="text-center py-6">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <div className="text-green-600">
-                <IconCheck />
-              </div>
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">You&apos;re all set!</h2>
-            <p className="text-gray-600">PDF export is now unlocked. Enjoy!</p>
+          <div className="py-2 pr-8" role="status" aria-live="polite">
+            <h2 id="unlock-pdf-title" className="flex items-center gap-2 font-display text-xl font-semibold text-ink">
+              <span className="text-pass" aria-hidden="true"><IconCheck /></span>
+              PDF export is unlocked
+            </h2>
+            <p id="unlock-pdf-intro" className="mt-2 text-sm leading-6 text-muted">
+              Download a PDF report from this audit or any audit you run next.
+            </p>
           </div>
         ) : (
-          // Form state
           <>
-            {/* Icon */}
-            <div className="text-center mb-4">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent/10 text-accent">
-                <IconGift />
-              </div>
-            </div>
-
-            {/* Header */}
-            <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
-                Unlock Professional PDF Reports
+            <div className="mb-6 pr-8">
+              <h2 id="unlock-pdf-title" className="font-display text-xl font-semibold text-ink">
+                Unlock professional PDF reports
               </h2>
-              <p className="text-gray-600 text-sm">
-                You&apos;ve run 5 audits! Enter your email to unlock the PDF export feature for free.
+              <p id="unlock-pdf-intro" className="mt-2 text-sm leading-6 text-muted">
+                PDF export is free for your first {FREE_PDF_AUDITS} audits. Enter your email to
+                keep exporting.
               </p>
             </div>
 
-            {/* Features list */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-green-600 shrink-0">✓</span>
-                  Export detailed audit reports as PDF
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-600 shrink-0">✓</span>
-                  Share professional reports with clients
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-600 shrink-0">✓</span>
-                  Keep records for compliance
-                </li>
-              </ul>
-            </div>
+            <ul className="mb-6 list-disc space-y-1 rounded-md bg-surface-2 py-4 pl-8 pr-4 text-sm leading-6 text-ink marker:text-muted">
+              <li>Export detailed audit reports as PDF</li>
+              <li>Share professional reports with clients</li>
+              <li>Keep records for compliance</li>
+            </ul>
 
-            {/* Form */}
             <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label htmlFor="email" className="sr-only">Email address</label>
-                <input
-                  ref={inputRef}
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="w-full rounded-sm border border-border px-4 py-3 text-ink placeholder-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
-                  required
-                  disabled={isSubmitting}
-                  aria-describedby="email-disclosure"
-                />
-                {error && (
-                  <p className="mt-2 text-sm text-red-600">{error}</p>
-                )}
-                <p id="email-disclosure" className="mt-3 text-sm leading-6 text-muted">
-                  This sends your email address to MailerLite, our email provider, and adds it
-                  to the AdLint mailing list. Nothing from your audit is sent. Your files and
-                  results stay in this browser.
+              <label htmlFor="email" className="mb-2 block text-sm font-medium text-ink">
+                Email address
+              </label>
+              <input
+                ref={inputRef}
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@agency.com"
+                className="h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                required
+                disabled={isSubmitting}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? 'email-error email-disclosure' : 'email-disclosure'}
+              />
+              {error && (
+                <p id="email-error" role="alert" className="mt-2 text-sm text-critical">
+                  {error}
                 </p>
-              </div>
+              )}
+              <p id="email-disclosure" className="mt-3 text-sm leading-6 text-muted">
+                This sends your email address to MailerLite, our email provider, and adds it
+                to the AdLint mailing list. Nothing from your audit is sent. Your files and
+                results stay in this browser.
+              </p>
 
               <button
                 type="submit"
                 disabled={isSubmitting || !email}
-                className="flex w-full items-center justify-center gap-2 rounded-sm bg-accent px-4 py-3 font-medium text-white transition-colors hover:bg-accent-hover disabled:bg-muted/40"
+                className="mt-6 flex h-10 w-full items-center justify-center gap-2 rounded-sm bg-accent px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>
                     <IconSpinner />
-                    Unlocking...
+                    Unlocking…
                   </>
                 ) : (
-                  <>
-                    Unlock PDF Export
-                  </>
+                  'Unlock PDF export'
                 )}
               </button>
             </form>
 
-            {/* Footer note */}
-            <p className="text-center text-xs text-gray-500 mt-4">
-              No spam, ever. Unsubscribe anytime.
-            </p>
+            <p className="mt-4 text-sm text-muted">No spam, ever. Unsubscribe anytime.</p>
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -684,8 +701,10 @@ export function PDFExportButton({
       {/* Export Button */}
       <div className="relative">
         <button
+          type="button"
           onClick={handleExport}
           disabled={isGenerating}
+          aria-label={isGenerating ? 'Generating PDF' : 'Download PDF'}
           className={`
             flex h-10 w-10 items-center justify-center gap-2 rounded-sm px-0 text-sm font-medium transition-colors sm:w-auto sm:px-4
             ${canExportPDF
@@ -715,9 +734,11 @@ export function PDFExportButton({
 
         {/* Locked tooltip */}
         {showLockedTooltip && !canExportPDF && (
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap">
+          <div
+            role="status"
+            className="absolute right-0 top-full z-30 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-sm bg-ink px-3 py-2 text-sm leading-5 text-surface"
+          >
             {lockedTooltipText}
-            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45" />
           </div>
         )}
       </div>

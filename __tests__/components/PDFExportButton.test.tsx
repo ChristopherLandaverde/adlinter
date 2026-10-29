@@ -126,10 +126,10 @@ describe('PDFExportButton', () => {
     });
 
     await user.type(screen.getByLabelText('Email address'), 'person@example.com');
-    await user.click(screen.getByRole('button', { name: 'Unlock PDF Export' }));
+    await user.click(screen.getByRole('button', { name: 'Unlock PDF export' }));
 
     await waitFor(() => {
-      expect(screen.getByText("You're all set!")).toBeInTheDocument();
+      expect(screen.getByText('PDF export is unlocked')).toBeInTheDocument();
     });
 
     act(() => {
@@ -177,10 +177,60 @@ describe('PDFExportButton', () => {
     });
 
     await user.type(screen.getByLabelText('Email address'), 'person@example.com');
-    await user.click(screen.getByRole('button', { name: 'Unlock PDF Export' }));
+    await user.click(screen.getByRole('button', { name: 'Unlock PDF export' }));
 
     expect(await screen.findByText('Network error. Please check your connection and try again.')).toBeInTheDocument();
     expect(onSubscribe).not.toHaveBeenCalled();
     expect(saveMock).not.toHaveBeenCalled();
+  });
+
+  it('renders the unlock form as a labelled modal dialog outside the sticky header', () => {
+    const { container } = renderButton({ canExportPDF: false, shouldShowUnlockModal: true });
+
+    const dialog = screen.getByRole('dialog', { name: 'Unlock professional PDF reports' });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(dialog).toHaveAccessibleDescription(/free for your first 4 audits/);
+    // Portalled to <body>, not rendered inside the button's container.
+    expect(container).not.toContainElement(dialog);
+    expect(screen.getByLabelText('Email address')).toHaveFocus();
+  });
+
+  it('closes the unlock dialog on Escape and from the labelled close button', async () => {
+    const user = userEvent.setup();
+    const onDismissModal = jest.fn();
+    renderButton({ canExportPDF: false, shouldShowUnlockModal: true, onDismissModal });
+
+    await user.keyboard('{Escape}');
+    expect(onDismissModal).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onDismissModal).toHaveBeenCalledTimes(2);
+  });
+
+  it('announces a submission error and ties it to the email field', async () => {
+    const user = userEvent.setup();
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      json: jest.fn().mockResolvedValue({ error: 'Please enter a valid email address.' }),
+    });
+    renderButton({ canExportPDF: false, shouldShowUnlockModal: true });
+
+    await user.type(screen.getByLabelText('Email address'), 'person@example.com');
+    await user.click(screen.getByRole('button', { name: 'Unlock PDF export' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Please enter a valid email address.');
+    expect(screen.getByLabelText('Email address')).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('keeps keyboard focus inside the unlock dialog', async () => {
+    const user = userEvent.setup();
+    renderButton({ canExportPDF: false, shouldShowUnlockModal: true });
+    const dialog = screen.getByRole('dialog');
+
+    // Submit is disabled while the field is empty: Tab wraps to Close.
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(dialog).toContainElement(document.activeElement as HTMLElement);
   });
 });
