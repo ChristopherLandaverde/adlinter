@@ -1,117 +1,122 @@
 # AdLint
 
-**Free, privacy-first audit suite for ad-tech tracking — GTM, Google Ads, Meta Pixel, TikTok Pixel, LinkedIn, Pinterest, Twitter/X, Snapchat, and performance reports.**
+**Find what's actually broken in your ad tracking, from the exports you already have.**
 
-AdLint analyzes your ad-tech exports to surface tracking issues before they cost you money. Your export files are parsed and audited in the browser and never uploaded. The optional PDF-export unlock sends the email address you enter to MailerLite (see Privacy).
+[![CI](https://github.com/ChristopherLandaverde/adlinter/actions/workflows/ci.yml/badge.svg)](https://github.com/ChristopherLandaverde/adlinter/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## What It Does
+[Live demo](https://adlinter.vercel.app) · [Quick start](#quick-start) · [What it audits](#what-it-audits) · [Privacy](#privacy) · [Development](#development)
 
-Upload your files, choose the right audit, and get a diagnostic report in seconds:
+AdLint is for agencies and freelancers auditing ad tracking they didn't build, and for in-house marketers who suspect their tracking is off. Upload a GTM container, a Google Ads conversion export, a performance report or a pixel export from Meta, TikTok, LinkedIn, Pinterest, Twitter/X or Snapchat. You get a 0-100 Tracking Health Score and a severity-ranked list of findings, each linked to a `/checks/<id>` page with the fix and a citation you can paste into a client report. The audit runs in your browser and your files are never uploaded.
 
-- **GTM Container Auditor** — 30 checks
-- **Google Ads Linter** — 27 checks
-- **Google Ads Performance Report** — 11 checks
-- **Google Full-Stack Audit** — 82 checks across GTM, Ads, and performance reports
-- **Meta Pixel Auditor** — 10 checks
-- **TikTok Pixel Auditor** — 10 checks
-- **LinkedIn Insight Tag Auditor** — 10 checks
-- **Pinterest Tag Auditor** — 10 checks
-- **Twitter/X Pixel Auditor** — 10 checks
-- **Snapchat Pixel Auditor** — 10 checks
+![AdLint audit results for the bundled Google Full-Stack sample: a Tracking Health Score of 73 out of 100 marked "Needs work", 90 of 119 checks passed, with the three most critical findings listed below](docs/images/audit-sample.png)
 
-## Features
+## Quick start
 
-- Tabbed audit dashboard with Overview, Checks, and Export views
-- PDF export (from the fifth audit, unlocking it asks for an email address; see Privacy)
-- Tracking Health Score: a single 0-100 anchor with a shareable badge, computed from weighted severity
-- Audit diff: compare any two audits side-by-side with a score delta and a categorized change list (regressions, fixes, severity shifts, new checks, removed checks)
-- Source and severity filtering
-- Audit history saved in localStorage; revisit and compare past audits
-- Try-with-sample-data button on every tool: see the audit in 5 seconds without exporting anything
-- Audit context picker: tune severity rules to your business model, value strategy, sales cycle, and consent requirements
-- Context-aware severity based on business model, sales cycle, value strategy, and consent requirements
-- /checks reference: 50+ per-check documentation pages with why-it-matters and how-to-fix guidance
+**No install:** open the [live demo](https://adlinter.vercel.app), pick a tool (for example **Google Full-Stack Audit**), and click **Try with sample data**. The bundled sample files load and you land on the audit results page, the screen shown above. Every tool has a sample.
 
-### Check Coverage
-
-| Category | Checks | Examples |
-|----------|--------|---------|
-| GTM Core | 12 | Conversion Linker, consent violations, duplicate tags, enhanced conversions, naming conventions |
-| GTM Advanced | 18 | DataLayer analysis, tag sequencing, circular dependencies, trigger overlap, container complexity |
-| Ads Core | 12 | Duplicate conversions, zero-value purchases, counting methods, attribution windows, disabled conversions |
-| Ads Advanced | 15 | Value outliers, ROAS feasibility, Smart Bidding readiness, primary conversion designation |
-| Performance Report | 11 | ROAS sanity, ghost conversions, attribution drift, signal pollution, whale conversions |
-| Cross-Platform | 4 | Tag-to-conversion matching, value mismatches, tag count parity |
-| Cross Advanced | 10 | Dynamic value passing, conversion label matching, transaction ID deduplication, funnel coverage |
-| Meta Pixel | 10 | Missing PageView, missing conversion events, duplicate event names, similar event names, zero volume active events, custom events with standard alternatives, purchase value tracking, e-commerce funnel events, event volume concentration, disabled conversion events |
-| TikTok Pixel | 10 | Base pixel active events, missing conversion events, duplicate event names, similar event names, zero volume active events, custom events with standard alternatives, CompletePayment value tracking, e-commerce funnel events, event volume concentration, disabled conversion events |
-| LinkedIn Insight Tag | 10 | No active conversions, missing key conversions, duplicate conversion names, similar conversion names, zero volume active conversions, Other category overuse, purchase value tracking, short conversion windows, unattached conversions, disabled key conversions |
-| Pinterest Tag | 10 | Missing PageVisit, missing conversion events, duplicate event names, zero volume active events, standard event naming, Checkout value tracking, e-commerce funnel events, Conversion API parity, enhanced match, currency consistency |
-| Twitter/X Pixel | 10 | Event ID format, conversion_id coverage, deduplication, conversion window mismatches, Tweet engagements vs conversion events, missing conversion events, duplicate event names, zero volume active events, purchase value tracking |
-| Snapchat Pixel | 10 | Pixel ID format, missing PAGE_VIEW, missing conversion events, standard event names, duplicate event names, zero volume active events, purchase value tracking, e-commerce funnel events, Conversions API alignment, currency mismatch |
-
-## Getting Started
+**Run it locally** (Node 20, the version CI uses):
 
 ```bash
-npm install
+git clone https://github.com/ChristopherLandaverde/adlinter.git
+cd adlinter
+npm ci
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and upload your files.
+Open <http://localhost:3000>, pick a tool and click **Try with sample data**, or upload your own export.
 
-### How to Get Your Files
+## What it audits
 
-**GTM Container Export:**
-1. Open Google Tag Manager
-2. Go to **Admin** > **Export Container**
-3. Choose the latest version and save the `.json` file
+| Tool | Input | Source(s) in the check registry |
+|---|---|---|
+| GTM Container Auditor | GTM container export (`.json`) | `gtm` |
+| Google Ads Linter | Google Ads conversions export (`.csv`) | `ads` |
+| Google Ads Performance Report | Performance report (`.json`) | `report` |
+| Google Full-Stack Audit | All three Google files | `gtm`, `ads`, `report`, plus `cross` (consistency between them) |
+| Meta, TikTok, LinkedIn, Pinterest, Twitter/X, Snapchat auditors | Each platform's event or conversion export (`.csv` or `.json`) | one source per platform |
 
-**Google Ads Conversions:**
-1. Open Google Ads
-2. Go to **Tools** > **Conversions**
-3. Click **Download** and select CSV format
-
-**Meta Pixel Events:**
-Export from Meta Events Manager > Diagnostics or Test Events; supports CSV and JSON.
-
-**TikTok Pixel Events:**
-Export from TikTok Events Manager > Web Events > Export; supports CSV and JSON.
-
-**LinkedIn Conversion Actions:**
-Export from LinkedIn Campaign Manager > Account Assets > Conversions > Export; supports CSV and JSON.
-
-**Pinterest Tag Events:**
-Export from Pinterest Ads Manager > Conversions; supports CSV and JSON.
-
-**Twitter/X Pixel Events:**
-Export from Twitter/X Ads Manager > Events Manager; supports CSV and JSON.
-
-**Snapchat Pixel Events:**
-Export from Snapchat Ads Manager > Events Manager; supports CSV and JSON.
-
-## Running Tests
+**Check counts.** Every check ID the engine can emit is listed in [`lib/checks/registry.generated.ts`](lib/checks/registry.generated.ts), generated from the check files on every build. To see the current total and the count per source:
 
 ```bash
-npm test
+npm run gen:registry
 ```
 
-Tests cover checks, parsers, integration scenarios, edge cases, hooks, and components.
+The live [`/checks`](https://adlinter.vercel.app/checks) index lists every check with its explainer page.
 
-## Tech Stack
+<details>
+<summary>Example checks per source</summary>
 
-- Next.js 16 / React 19
-- TypeScript
-- Tailwind CSS
-- General Sans + Instrument Sans + Geist Mono typography
-- lucide-react line icon style
-- Jest (testing)
+| Source | Examples |
+|---|---|
+| GTM | Missing Conversion Linker, GDPR consent, preview/debug tags in production, mixed Data Layer versions, circular tag dependencies, trigger conflicts, unused triggers and variables |
+| Google Ads | Duplicate conversion actions, no primary conversion, counting method vs category, attribution window analysis, value data for ROAS bidding, Smart Bidding volume |
+| Performance report | ROAS sanity, ghost conversions, attribution drift, signal pollution, value concentration, whale check |
+| Cross-source | Ads conversions missing GTM tags, conversion ID/label matching, settings vs report counts, configured vs actual value, currency consistency |
+| Meta Pixel | Missing PageView, missing conversion events, duplicate or similar event names, purchase value tracking, e-commerce funnel events |
+| TikTok Pixel | Base pixel active events, CompletePayment value tracking, duplicate or similar event names, zero-volume events |
+| LinkedIn Insight Tag | No active conversions, missing key conversions, Other category overuse, short conversion windows, unattached conversions |
+| Pinterest Tag | Missing PageVisit, Checkout value tracking, Conversion API parity, duplicate event names, tag configuration quality |
+| Twitter/X Pixel | Missing `conversion_id`, deduplication, event ID format, Tweet engagements used instead of conversions |
+| Snapchat Pixel | Pixel ID format, missing PAGE_VIEW, standard event names, CAPI deduplication and currency alignment |
+
+</details>
+
+## Features
+
+- **Tracking Health Score:** one 0-100 number computed from weighted severity, with a shareable badge.
+- **Severity-ranked findings:** critical, warning and info, the three most critical first, filterable by source and severity.
+- **`/checks/<id>` explainers:** why it matters, how to fix it, references to platform documentation and a citation paragraph for client reports.
+- **Audit context:** tune severity to your business model, value strategy, sales cycle and consent requirements.
+- **History and diff:** audits are saved in this browser; compare any two for a score delta and a list of regressions, fixes and severity shifts.
+- **PDF export:** generated in the browser. From the fifth audit, unlocking it asks for an email address (see [Privacy](#privacy)).
+
+<details>
+<summary>How to get each export</summary>
+
+**GTM container:** Google Tag Manager → **Admin** → **Export Container** → choose the latest version and save the `.json` file.
+
+**Google Ads conversions:** Google Ads → **Tools** → **Conversions** → **Download** → CSV.
+
+**Meta Pixel events:** Meta Events Manager → Diagnostics or Test Events. CSV or JSON.
+
+**TikTok Pixel events:** TikTok Events Manager → Web Events → Export. CSV or JSON.
+
+**LinkedIn conversion actions:** Campaign Manager → Account Assets → Conversions → Export. CSV or JSON.
+
+**Pinterest Tag events:** Pinterest Ads Manager → Conversions. CSV or JSON.
+
+**Twitter/X Pixel events:** Twitter/X Ads Manager → Events Manager. CSV or JSON.
+
+**Snapchat Pixel events:** Snapchat Ads Manager → Events Manager. CSV or JSON.
+
+</details>
+
+## Known limits
+
+- AdLint audits **exports, not live sites**. It can't see whether a tag actually fires on a page, what a consent banner does at runtime, or anything the export leaves out.
+- Findings are about configuration correctness and policy. AdLint doesn't predict CTR, ROAS or conversions.
+- History, audit context and the PDF unlock state live in one browser's localStorage. Clearing site data or switching browsers loses them.
+- The check registry is generated by pattern-matching the check source files (`scripts/generate-check-registry.mjs`), so a check written in an unusual shape could be missed from the count.
 
 ## Privacy
 
-Every audit runs in the browser: the export files you choose (GTM, Google Ads, performance reports and pixel exports) are parsed and analyzed by JavaScript on the page and are never uploaded. Audit history is stored in your browser's localStorage.
+- **Your files stay in your browser.** Exports are parsed and audited by JavaScript on the page and never uploaded. Audit history is stored in your browser's localStorage. PDFs are generated in the browser.
+- **Email for PDF export (optional).** From your fifth audit, PDF export asks for an email address. The form says this before you submit: the address is sent to AdLint's `/api/subscribe` route ([`app/api/subscribe/route.ts`](app/api/subscribe/route.ts)), which forwards it to MailerLite, the email provider, tagged as a PDF-export sign-up. No audit data is sent with it.
+- **Third-party requests.** The site loads its display fonts from Fontshare (`api.fontshare.com`). It loads no analytics scripts.
 
-From your fifth audit, PDF export asks for an email address. That address is sent to AdLint's `/api/subscribe` route, which forwards it to MailerLite, the email provider, and adds it to the AdLint list. No audit data is sent with it. The hosted site also loads fonts from Fontshare.
+## Development
+
+```bash
+npx tsc --noEmit    # type check
+npx jest --ci       # tests: checks, parsers, integration scenarios, hooks, components
+npm run build       # regenerates the check registry, then builds
+```
+
+These are the commands CI runs on every push and pull request to `main`. Release steps are in [RELEASING.md](RELEASING.md); version history is in [progress.md](progress.md).
+
+Stack: Next.js 16, React 19, TypeScript, Tailwind CSS, Jest. Design system: [DESIGN.md](DESIGN.md). Product principles: [PRODUCT.md](PRODUCT.md).
 
 ## License
 
-MIT
+[MIT](LICENSE)
