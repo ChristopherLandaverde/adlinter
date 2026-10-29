@@ -9,6 +9,8 @@ export interface CheckRegistryEntry {
   title: string;
   source: ExplainerSource;
   severity: 'critical' | 'warning' | 'info';
+  /** Check files (lib/checks/<module>.ts) that emit this ID. */
+  modules: string[];
 }
 
 export const checkRegistry: CheckRegistryEntry[] = [
@@ -16,1069 +18,1604 @@ export const checkRegistry: CheckRegistryEntry[] = [
     "id": "ads-conversion-missing-gtm-tag",
     "title": "Google Ads Conversions Missing GTM Tags",
     "source": "cross",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "crossChecks"
+    ]
   },
   {
     "id": "all-vs-primary-gap",
     "title": "Primary Gap",
     "source": "report",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "adsReportChecks"
+    ]
   },
   {
     "id": "attribution-window-mismatch",
     "title": "Attribution Window Analysis",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "circular-tag-dependencies",
     "title": "Circular Tag Dependencies",
     "source": "gtm",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "consent-violations",
     "title": "GDPR Consent Check",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "gtmChecks"
+    ]
   },
   {
     "id": "container-size-score",
     "title": "Container Complexity Score",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "conversion-callbacks",
     "title": "Conversion Callback Implementation",
     "source": "cross",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "advancedCrossChecks"
+    ]
   },
   {
     "id": "conversion-concentration",
     "title": "Concentration Risk",
     "source": "report",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "adsReportChecks"
+    ]
   },
   {
     "id": "conversion-delay-impact",
     "title": "Conversion Delay Analysis",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "conversion-error-handling",
     "title": "Conversion Tags Missing Error Handling",
     "source": "gtm",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "gtmChecks"
+    ]
   },
   {
     "id": "conversion-funnel-coverage",
     "title": "Conversion Tracking Funnel Coverage",
     "source": "cross",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "advancedCrossChecks"
+    ]
   },
   {
     "id": "conversion-label-matching",
     "title": "Conversion ID/Label Matching",
     "source": "cross",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "advancedCrossChecks"
+    ]
   },
   {
     "id": "conversion-linker-sequencing",
     "title": "Conversion Linker Sequencing",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "conversion-name-quality",
     "title": "Conversion Name Quality",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "conversion-naming-alignment",
     "title": "GTM-Ads Conversion Naming Alignment",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedCrossChecks"
+    ]
   },
   {
     "id": "conversion-source-consistency",
     "title": "Conversion Source Analysis",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "cross-category-mismatch",
     "title": "Category Mismatch Between Settings and Report",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "settingsReportCrossChecks"
+    ]
   },
   {
     "id": "cross-count-mismatch",
     "title": "Settings vs Report Conversion Count",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "settingsReportCrossChecks"
+    ]
   },
   {
     "id": "cross-disabled-with-volume",
     "title": "Disabled Conversions with Active Volume",
     "source": "cross",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "settingsReportCrossChecks"
+    ]
   },
   {
     "id": "cross-domain-tracking",
     "title": "Cross-Domain Tracking",
     "source": "gtm",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "gtmChecks"
+    ]
   },
   {
     "id": "cross-orphaned-report-metrics",
     "title": "Report Metrics Without Settings Configuration",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "settingsReportCrossChecks"
+    ]
   },
   {
     "id": "cross-possible-renames",
     "title": "Possible Renamed Conversions",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "settingsReportCrossChecks"
+    ]
   },
   {
     "id": "cross-value-config-mismatch",
     "title": "Configured Value vs Actual Value Mismatch",
     "source": "cross",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "settingsReportCrossChecks"
+    ]
   },
   {
     "id": "cross-zero-volume-active",
     "title": "Active Conversions with Zero Report Volume",
     "source": "cross",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "settingsReportCrossChecks"
+    ]
   },
   {
     "id": "currency-consistency",
     "title": "Currency Code Consistency",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "currency-consistency-cross",
     "title": "Currency Code Consistency",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedCrossChecks"
+    ]
   },
   {
     "id": "data-driven-eligibility",
     "title": "Data-Driven Attribution Eligibility",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "datalayer-dependencies",
     "title": "DataLayer Variable Dependencies",
     "source": "gtm",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "gtmChecks"
+    ]
   },
   {
     "id": "datalayer-naming-inconsistency",
     "title": "Inconsistent Data Layer Variable Naming",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "datalayer-version-conflicts",
     "title": "Mixed Data Layer Versions",
     "source": "gtm",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "debug-tags-in-production",
     "title": "Preview/Debug Tags in Production",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "gtmChecks"
+    ]
   },
   {
     "id": "disabled-high-value-conversions",
     "title": "Disabled High-Value Conversions",
     "source": "ads",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "adsChecks"
+    ]
   },
   {
     "id": "duplicate-conversions",
     "title": "Duplicate Conversion Actions",
     "source": "ads",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "adsChecks",
+      "gtmChecks"
+    ]
   },
   {
     "id": "duplicate-datalayer-paths",
     "title": "Duplicate Data Layer Variable Paths",
     "source": "gtm",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "dynamic-value-passing",
     "title": "Dynamic Value Passing Check",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedCrossChecks"
+    ]
   },
   {
     "id": "ecommerce-datalayer-structure",
     "title": "E-commerce Data Layer Structure",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "edge-all-round-values",
     "title": "Static Round Value Detection",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "edgeCaseChecks"
+    ]
   },
   {
     "id": "edge-extreme-window-mismatch",
     "title": "Extreme Attribution Window Configuration",
     "source": "cross",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "edgeCaseChecks"
+    ]
   },
   {
     "id": "edge-high-value-wrong-counting",
     "title": "High-Value Conversions with Wrong Counting Method",
     "source": "cross",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "edgeCaseChecks"
+    ]
   },
   {
     "id": "edge-micro-dominating",
     "title": "Micro-Conversion Dominance",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "edgeCaseChecks"
+    ]
   },
   {
     "id": "edge-only-all-conversions",
     "title": "Secondary-Only Volume",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "edgeCaseChecks"
+    ]
   },
   {
     "id": "edge-purchase-disabled-others-enabled",
     "title": "Purchase Conversions Disabled While Others Enabled",
     "source": "cross",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "edgeCaseChecks"
+    ]
   },
   {
     "id": "edge-single-category-dominance",
     "title": "Category Diversity",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "edgeCaseChecks"
+    ]
   },
   {
     "id": "edge-very-long-window",
     "title": "Very Long Attribution Windows",
     "source": "cross",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "edgeCaseChecks"
+    ]
   },
   {
     "id": "enhanced-conversions-missing-data",
     "title": "Enhanced Conversions User Data",
     "source": "gtm",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "gtmChecks"
+    ]
   },
   {
     "id": "enhanced-conversions-user-data",
     "title": "Enhanced Conversions User Data",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedCrossChecks"
+    ]
   },
   {
     "id": "excessive-custom-html",
     "title": "Excessive Custom HTML Tags",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "excessive-sequencing-depth",
     "title": "Excessive Tag Sequencing Depth",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "first-party-data-completeness",
     "title": "First-Party Data Collection Completeness",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedCrossChecks"
+    ]
   },
   {
     "id": "fixed-value-dynamic-revenue",
     "title": "Fixed vs Dynamic Value Check",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "funnel-volume-inversion",
     "title": "Leak Detector",
     "source": "report",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "adsReportChecks"
+    ]
   },
   {
     "id": "ghost-conversions",
     "title": "Ghost Conversions",
     "source": "report",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "adsReportChecks"
+    ]
   },
   {
     "id": "gtm-tag-not-in-ads",
     "title": "GTM Conversion Tags Not in Ads",
     "source": "cross",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "crossChecks"
+    ]
   },
   {
     "id": "inconsistent-attribution-models",
     "title": "Inconsistent Attribution Models",
     "source": "ads",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "adsChecks"
+    ]
   },
   {
     "id": "invalid-css-selectors",
     "title": "Invalid CSS Selectors in Triggers",
     "source": "gtm",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "lead-conversions-with-values",
     "title": "Lead Conversions with Unexpected Values",
     "source": "ads",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "adsChecks"
+    ]
   },
   {
     "id": "linkedin-conversion-window-too-short",
     "title": "Conversion Window Length",
     "source": "linkedin",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "linkedinChecks"
+    ]
   },
   {
     "id": "linkedin-disabled-key-conversions",
     "title": "Disabled Key Conversion Actions",
     "source": "linkedin",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "linkedinChecks"
+    ]
   },
   {
     "id": "linkedin-duplicate-conversions",
     "title": "Duplicate Conversion Names",
     "source": "linkedin",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "linkedinChecks"
+    ]
   },
   {
     "id": "linkedin-missing-key-conversions",
     "title": "Missing Key Conversion Actions",
     "source": "linkedin",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "linkedinChecks"
+    ]
   },
   {
     "id": "linkedin-no-active-conversions",
     "title": "No Active LinkedIn Conversions",
     "source": "linkedin",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "linkedinChecks"
+    ]
   },
   {
     "id": "linkedin-other-category-overuse",
     "title": "Other Category Overuse",
     "source": "linkedin",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "linkedinChecks"
+    ]
   },
   {
     "id": "linkedin-purchase-missing-value",
     "title": "Purchase Conversion Value Tracking",
     "source": "linkedin",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "linkedinChecks"
+    ]
   },
   {
     "id": "linkedin-similar-conversion-names",
     "title": "Similar Conversion Names",
     "source": "linkedin",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "linkedinChecks"
+    ]
   },
   {
     "id": "linkedin-unattached-conversions",
     "title": "Unattached Conversion Actions",
     "source": "linkedin",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "linkedinChecks"
+    ]
   },
   {
     "id": "linkedin-zero-volume-conversions",
     "title": "Zero Volume Active Conversions",
     "source": "linkedin",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "linkedinChecks"
+    ]
   },
   {
     "id": "long-attribution-windows",
     "title": "Overly Long Attribution Windows",
     "source": "ads",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "adsChecks"
+    ]
   },
   {
     "id": "many-inactive-conversions",
     "title": "Many Inactive Conversions",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "adsChecks"
+    ]
   },
   {
     "id": "meta-custom-event-standard-alternative",
     "title": "Custom Events May Have Standard Alternatives",
     "source": "meta",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "metaChecks"
+    ]
   },
   {
     "id": "meta-disabled-conversions",
     "title": "Disabled Conversion Events",
     "source": "meta",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "metaChecks"
+    ]
   },
   {
     "id": "meta-duplicate-events",
     "title": "Duplicate Event Names",
     "source": "meta",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "metaChecks"
+    ]
   },
   {
     "id": "meta-ecommerce-funnel",
     "title": "E-commerce Funnel Events",
     "source": "meta",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "metaChecks"
+    ]
   },
   {
     "id": "meta-event-concentration",
     "title": "Event Volume Concentration",
     "source": "meta",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "metaChecks"
+    ]
   },
   {
     "id": "meta-missing-conversion-events",
     "title": "Missing Conversion Events",
     "source": "meta",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "metaChecks"
+    ]
   },
   {
     "id": "meta-missing-pageview",
     "title": "Missing PageView Event",
     "source": "meta",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "metaChecks"
+    ]
   },
   {
     "id": "meta-purchase-missing-value",
     "title": "Purchase Event Value Tracking",
     "source": "meta",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "metaChecks"
+    ]
   },
   {
     "id": "meta-similar-event-names",
     "title": "Similar Event Names",
     "source": "meta",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "metaChecks"
+    ]
   },
   {
     "id": "meta-zero-volume-events",
     "title": "Zero Volume Events",
     "source": "meta",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "metaChecks"
+    ]
   },
   {
     "id": "micro-conversion-pollution",
     "title": "Signal Pollution",
     "source": "report",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "adsReportChecks"
+    ]
   },
   {
     "id": "mismatched-values",
     "title": "Mismatched Conversion Values",
     "source": "cross",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "crossChecks"
+    ]
   },
   {
     "id": "missing-conversion-linker",
     "title": "Missing Google Ads Conversion Linker",
     "source": "gtm",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "gtmChecks"
+    ]
   },
   {
     "id": "missing-datalayer-variables",
     "title": "Tags Reference Undefined Variables",
     "source": "gtm",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "missing-descriptions",
     "title": "Documentation Completeness",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "missing-primary-conversion",
     "title": "Missing Primary Conversion",
     "source": "ads",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "adsChecks"
+    ]
   },
   {
     "id": "model-attribution-drift",
     "title": "Attribution Drift",
     "source": "report",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "adsReportChecks"
+    ]
   },
   {
     "id": "naming-conventions",
     "title": "Tag Naming Conventions",
     "source": "gtm",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "gtmChecks"
+    ]
   },
   {
     "id": "no-primary-conversion",
     "title": "No Primary Conversion Designated",
     "source": "ads",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "orphaned-tag-sequences",
     "title": "Orphaned Tag Sequence References",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "overlapping-triggers",
     "title": "Overlapping Trigger Conditions",
     "source": "gtm",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "perf-identical-volumes",
     "title": "Identical Conversion Volumes",
     "source": "report",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "performanceChecks"
+    ]
   },
   {
     "id": "perf-negative-values",
     "title": "Problematic Conversion Values",
     "source": "report",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "performanceChecks"
+    ]
   },
   {
     "id": "perf-pareto-concentration",
     "title": "Value Concentration (Pareto)",
     "source": "report",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "performanceChecks"
+    ]
   },
   {
     "id": "perf-perfect-roas",
     "title": "Suspiciously Perfect ROAS",
     "source": "report",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "performanceChecks"
+    ]
   },
   {
     "id": "perf-roas-outliers",
     "title": "ROAS Statistical Outliers",
     "source": "report",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "performanceChecks"
+    ]
   },
   {
     "id": "perf-value-variance",
     "title": "Value per Conversion Variance",
     "source": "report",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "performanceChecks"
+    ]
   },
   {
     "id": "perf-value-without-volume",
     "title": "Conversion Value Without Conversions",
     "source": "report",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "performanceChecks"
+    ]
   },
   {
     "id": "perf-vtc-only",
     "title": "View-Through Only Conversions",
     "source": "report",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "performanceChecks"
+    ]
   },
   {
     "id": "performance-heavy-triggers",
     "title": "Performance-Heavy Triggers",
     "source": "gtm",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "pinterest-checkout-missing-value",
     "title": "Checkout Event Value Tracking",
     "source": "pinterest",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "pinterestChecks"
+    ]
   },
   {
     "id": "pinterest-conversion-api-parity",
     "title": "Pinterest Conversion API Parity",
     "source": "pinterest",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "pinterestChecks"
+    ]
   },
   {
     "id": "pinterest-duplicate-events",
     "title": "Duplicate Event Names",
     "source": "pinterest",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "pinterestChecks"
+    ]
   },
   {
     "id": "pinterest-ecommerce-funnel",
     "title": "E-commerce Funnel Events",
     "source": "pinterest",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "pinterestChecks"
+    ]
   },
   {
     "id": "pinterest-missing-conversion-events",
     "title": "Missing Conversion Events",
     "source": "pinterest",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "pinterestChecks"
+    ]
   },
   {
     "id": "pinterest-missing-pagevisit",
     "title": "Missing PageVisit Event",
     "source": "pinterest",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "pinterestChecks"
+    ]
   },
   {
     "id": "pinterest-similar-event-names",
     "title": "Similar Event Names",
     "source": "pinterest",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "pinterestChecks"
+    ]
   },
   {
     "id": "pinterest-standard-event-names",
     "title": "Custom Events May Have Standard Alternatives",
     "source": "pinterest",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "pinterestChecks"
+    ]
   },
   {
     "id": "pinterest-tag-configuration-quality",
     "title": "Pinterest Tag Configuration Quality",
     "source": "pinterest",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "pinterestChecks"
+    ]
   },
   {
     "id": "pinterest-zero-volume-events",
     "title": "Zero Volume Active Events",
     "source": "pinterest",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "pinterestChecks"
+    ]
   },
   {
     "id": "remarketing-tag-issues",
     "title": "Remarketing Tag Issues",
     "source": "gtm",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "gtmChecks"
+    ]
   },
   {
     "id": "roas-feasibility",
     "title": "Insufficient Value Data for ROAS Bidding",
     "source": "ads",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "roas-sanity",
     "title": "ROAS Sanity",
     "source": "report",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "adsReportChecks"
+    ]
   },
   {
     "id": "short-attribution-windows",
     "title": "Short Attribution Windows",
     "source": "ads",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "adsChecks"
+    ]
   },
   {
     "id": "signal-cross-account-import",
     "title": "Cross-Account Imported Conversions",
     "source": "report",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "signalQualityChecks"
+    ]
   },
   {
     "id": "signal-micro-as-primary",
     "title": "Micro-Conversion Used as Primary",
     "source": "report",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "signalQualityChecks"
+    ]
   },
   {
     "id": "signal-micro-pollution",
     "title": "Micro-Conversion Signal Pollution",
     "source": "report",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "signalQualityChecks"
+    ]
   },
   {
     "id": "signal-primary-dilution",
     "title": "Primary Conversion Dilution",
     "source": "report",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "signalQualityChecks"
+    ]
   },
   {
     "id": "signal-secondary-leakage",
     "title": "Secondary Conversion Leakage",
     "source": "report",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "signalQualityChecks"
+    ]
   },
   {
     "id": "signal-window-overkill",
     "title": "Attribution Window Overkill",
     "source": "report",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "signalQualityChecks"
+    ]
   },
   {
     "id": "signal-zero-value-primary",
     "title": "Zero-Value Primary Conversions",
     "source": "report",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "signalQualityChecks"
+    ]
   },
   {
     "id": "smart-bidding-volume",
     "title": "Limited Conversions for Smart Bidding",
     "source": "ads",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "snapchat-capi-dedup-currency",
     "title": "Snap CAPI, Deduplication, and Currency Alignment",
     "source": "snapchat",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "snapchatChecks"
+    ]
   },
   {
     "id": "snapchat-duplicate-events",
     "title": "Duplicate Event Names",
     "source": "snapchat",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "snapchatChecks"
+    ]
   },
   {
     "id": "snapchat-ecommerce-funnel",
     "title": "E-commerce Funnel Events",
     "source": "snapchat",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "snapchatChecks"
+    ]
   },
   {
     "id": "snapchat-missing-conversion-events",
     "title": "Missing Conversion Events",
     "source": "snapchat",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "snapchatChecks"
+    ]
   },
   {
     "id": "snapchat-missing-page-view",
     "title": "Missing PAGE_VIEW Event",
     "source": "snapchat",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "snapchatChecks"
+    ]
   },
   {
     "id": "snapchat-pixel-id-format",
     "title": "Snap Pixel ID Format",
     "source": "snapchat",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "snapchatChecks"
+    ]
   },
   {
     "id": "snapchat-purchase-missing-value",
     "title": "Purchase Event Value Tracking",
     "source": "snapchat",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "snapchatChecks"
+    ]
   },
   {
     "id": "snapchat-similar-event-names",
     "title": "Similar Event Names",
     "source": "snapchat",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "snapchatChecks"
+    ]
   },
   {
     "id": "snapchat-standard-event-names",
     "title": "Snap Standard Event Names",
     "source": "snapchat",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "snapchatChecks"
+    ]
   },
   {
     "id": "snapchat-zero-volume-events",
     "title": "Zero Volume Active Events",
     "source": "snapchat",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "snapchatChecks"
+    ]
   },
   {
     "id": "stale-tags",
     "title": "Potentially Stale Tags",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "struct-all-last-click",
     "title": "Last-Click Attribution Opportunity",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "structureChecks"
+    ]
   },
   {
     "id": "struct-attribution-chaos",
     "title": "Attribution Model Configuration",
     "source": "ads",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "structureChecks"
+    ]
   },
   {
     "id": "struct-category-name-mismatch",
     "title": "Category Does Not Match Conversion Name",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "structureChecks"
+    ]
   },
   {
     "id": "struct-counting-category-mismatch",
     "title": "Counting Method vs Category Mismatch",
     "source": "ads",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "structureChecks"
+    ]
   },
   {
     "id": "struct-duplicate-static-values",
     "title": "Multiple Conversions with Same Static Value",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "structureChecks"
+    ]
   },
   {
     "id": "struct-naming-convention",
     "title": "Naming Convention Consistency",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "structureChecks"
+    ]
   },
   {
     "id": "struct-semantic-duplicates",
     "title": "Semantic Duplicate Conversions",
     "source": "ads",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "structureChecks"
+    ]
   },
   {
     "id": "struct-window-asymmetry",
     "title": "Attribution Window Asymmetry",
     "source": "ads",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "structureChecks"
+    ]
   },
   {
     "id": "suboptimal-attribution-model",
     "title": "Attribution Model Optimization",
     "source": "ads",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "tag-count-mismatch",
     "title": "Tag Count Mismatch",
     "source": "cross",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "crossChecks"
+    ]
   },
   {
     "id": "tiktok-base-events-active",
     "title": "Base Pixel Active Events",
     "source": "tiktok",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "tiktokChecks"
+    ]
   },
   {
     "id": "tiktok-completepayment-missing-value",
     "title": "CompletePayment Event Value Tracking",
     "source": "tiktok",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "tiktokChecks"
+    ]
   },
   {
     "id": "tiktok-custom-event-standard-alternative",
     "title": "Custom Events May Have Standard Alternatives",
     "source": "tiktok",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "tiktokChecks"
+    ]
   },
   {
     "id": "tiktok-disabled-conversions",
     "title": "Disabled Conversion Events",
     "source": "tiktok",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "tiktokChecks"
+    ]
   },
   {
     "id": "tiktok-duplicate-events",
     "title": "Duplicate Event Names",
     "source": "tiktok",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "tiktokChecks"
+    ]
   },
   {
     "id": "tiktok-ecommerce-funnel",
     "title": "E-commerce Funnel Events",
     "source": "tiktok",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "tiktokChecks"
+    ]
   },
   {
     "id": "tiktok-event-concentration",
     "title": "Event Volume Concentration",
     "source": "tiktok",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "tiktokChecks"
+    ]
   },
   {
     "id": "tiktok-missing-conversion-events",
     "title": "Missing Conversion Events",
     "source": "tiktok",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "tiktokChecks"
+    ]
   },
   {
     "id": "tiktok-similar-event-names",
     "title": "Similar Event Names",
     "source": "tiktok",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "tiktokChecks"
+    ]
   },
   {
     "id": "tiktok-zero-volume-events",
     "title": "Zero Volume Events",
     "source": "tiktok",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "tiktokChecks"
+    ]
   },
   {
     "id": "transaction-id-deduplication",
     "title": "Transaction ID Deduplication",
     "source": "cross",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedCrossChecks"
+    ]
   },
   {
     "id": "trigger-conflicts",
     "title": "Trigger Conflicts",
     "source": "gtm",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "gtmChecks"
+    ]
   },
   {
     "id": "twitter-conversion-id-required",
     "title": "Missing conversion_id",
     "source": "twitter",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "twitterChecks"
+    ]
   },
   {
     "id": "twitter-conversion-window-mismatch",
     "title": "Conversion Window Mismatches",
     "source": "twitter",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "twitterChecks"
+    ]
   },
   {
     "id": "twitter-deduplication-conversion-id",
     "title": "Deduplication via conversion_id",
     "source": "twitter",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "twitterChecks"
+    ]
   },
   {
     "id": "twitter-duplicate-events",
     "title": "Duplicate Event Names",
     "source": "twitter",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "twitterChecks"
+    ]
   },
   {
     "id": "twitter-engagements-vs-conversions",
     "title": "Tweet Engagements Used Instead of Conversions",
     "source": "twitter",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "twitterChecks"
+    ]
   },
   {
     "id": "twitter-event-id-format",
     "title": "Invalid Event ID Format",
     "source": "twitter",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "twitterChecks"
+    ]
   },
   {
     "id": "twitter-missing-conversion-events",
     "title": "Missing Conversion Events",
     "source": "twitter",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "twitterChecks"
+    ]
   },
   {
     "id": "twitter-purchase-missing-value",
     "title": "Purchase Event Value Tracking",
     "source": "twitter",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "twitterChecks"
+    ]
   },
   {
     "id": "twitter-similar-event-names",
     "title": "Similar Event Names",
     "source": "twitter",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "twitterChecks"
+    ]
   },
   {
     "id": "twitter-zero-volume-events",
     "title": "Zero Volume Active Events",
     "source": "twitter",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "twitterChecks"
+    ]
   },
   {
     "id": "unused-datalayer-variables",
     "title": "Unused Data Layer Variables",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "unused-triggers",
     "title": "Unused Triggers",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedGTMChecks"
+    ]
   },
   {
     "id": "unused-variables",
     "title": "Unused Variables",
     "source": "gtm",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "gtmChecks"
+    ]
   },
   {
     "id": "unusual-categories",
     "title": "Unusual Conversion Categories",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "adsChecks"
+    ]
   },
   {
     "id": "user-id-consistency",
     "title": "Inconsistent User ID Implementation",
     "source": "cross",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "advancedCrossChecks"
+    ]
   },
   {
     "id": "value-consistency-by-category",
     "title": "Value Consistency Within Categories",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "value-instability",
     "title": "Value Instability",
     "source": "report",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "adsReportChecks"
+    ]
   },
   {
     "id": "value-outliers",
     "title": "Conversion Value Outlier Detection",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "view-through-window-analysis",
     "title": "View-Through Attribution Window Analysis",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   },
   {
     "id": "volume-weighted-duplicates",
     "title": "Active Duplicates",
     "source": "report",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "adsReportChecks"
+    ]
   },
   {
     "id": "vtc-click-ratio",
     "title": "Greedy Impression Index",
     "source": "report",
-    "severity": "warning"
+    "severity": "warning",
+    "modules": [
+      "adsReportChecks"
+    ]
   },
   {
     "id": "whale-conversion",
     "title": "Whale Check",
     "source": "report",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "adsReportChecks"
+    ]
   },
   {
     "id": "wrong-counting-method",
     "title": "Wrong Counting Method",
     "source": "ads",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "adsChecks"
+    ]
   },
   {
     "id": "zero-value-purchases",
     "title": "Purchase Conversions with $0 Value",
     "source": "ads",
-    "severity": "info"
+    "severity": "info",
+    "modules": [
+      "adsChecks"
+    ]
   },
   {
     "id": "zero-value-with-count",
     "title": "Revenue Conversions Without Value",
     "source": "ads",
-    "severity": "critical"
+    "severity": "critical",
+    "modules": [
+      "advancedAdsChecks"
+    ]
   }
 ];
 

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ExplainerSource } from '@/lib/checks/explainers';
+import { totalCheckCount } from '@/lib/checks/counts';
 
 // The most specific tool that runs checks from each source. Cross-source
 // checks need GTM + Ads + report together, so they go to the full audit.
@@ -26,8 +27,8 @@ const headings = {
 } as const;
 
 const leads = {
-  check: 'AdLint runs this check (and 177 others)',
-  audit: 'AdLint runs 178 checks',
+  check: `AdLint runs this check (and ${totalCheckCount - 1} others)`,
+  audit: `AdLint runs ${totalCheckCount} checks`,
 } as const;
 
 // Full-width conversion banner for editorial templates (UX_AUDIT CD-01).

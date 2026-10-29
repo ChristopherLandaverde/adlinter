@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { computeHealthScore } from '@/lib/healthScore';
+import { FREE_PDF_AUDITS } from '@/lib/hooks/useAuditCounter';
 import { AuditResults, AuditCheck, Severity } from '@/lib/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -643,6 +644,11 @@ function UnlockModal({
   );
 }
 
+// The real rule (lib/hooks/useAuditCounter.ts): PDF export is free for the
+// first FREE_PDF_AUDITS audits; from the next audit on, the unlock form asks
+// for an email when an audit loads.
+export const lockedTooltipText = `PDF export is free for your first ${FREE_PDF_AUDITS} audits. Run your next audit to unlock it with your email.`;
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function PDFExportButton({
@@ -710,7 +716,7 @@ export function PDFExportButton({
         {/* Locked tooltip */}
         {showLockedTooltip && !canExportPDF && (
           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap">
-            Complete 5 audits to unlock PDF export
+            {lockedTooltipText}
             <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45" />
           </div>
         )}

@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
+import { FREE_PDF_AUDITS, useAuditCounter } from '@/lib/hooks/useAuditCounter';
 
 describe('useAuditCounter', () => {
   beforeEach(() => {
@@ -132,5 +132,21 @@ describe('useAuditCounter', () => {
     rerender();
 
     expect(result.current.canExportPDF).toBe(true);
+  });
+
+  // The locked tooltip in PDFExportButton describes this rule; keep them in step.
+  it('allows PDF export for the first FREE_PDF_AUDITS audits and gates it from the next one', async () => {
+    expect(FREE_PDF_AUDITS).toBe(4);
+
+    localStorage.setItem('adlint_audit_count', String(FREE_PDF_AUDITS));
+    const free = renderHook(() => useAuditCounter());
+    await waitFor(() => expect(free.result.current.auditCount).toBe(FREE_PDF_AUDITS));
+    expect(free.result.current.canExportPDF).toBe(true);
+    free.unmount();
+
+    localStorage.setItem('adlint_audit_count', String(FREE_PDF_AUDITS + 1));
+    const gated = renderHook(() => useAuditCounter());
+    await waitFor(() => expect(gated.result.current.auditCount).toBe(FREE_PDF_AUDITS + 1));
+    expect(gated.result.current.canExportPDF).toBe(false);
   });
 });

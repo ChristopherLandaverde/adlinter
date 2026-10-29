@@ -1,3 +1,5 @@
+import { checkCountForModules, type CheckModule } from './checks/counts';
+
 export type ToolCategory = 'gtm' | 'google-ads' | 'meta' | 'tiktok' | 'linkedin' | 'pinterest' | 'twitter' | 'snapchat';
 
 export interface ToolFileSlot {
@@ -21,12 +23,15 @@ export interface ToolConfig {
   iconName: string;
   category: ToolCategory;
   enabled: boolean;
+  /** Check files this tool's audit runs (see lib/auditEngine.ts). */
+  checkModules: CheckModule[];
+  /** Derived from the check registry via checkModules. Never hardcode. */
   checkCount: number;
   fileSlots: ToolFileSlot[];
   samples?: ToolSample[];
 }
 
-export const tools: ToolConfig[] = [
+const toolDefinitions: Omit<ToolConfig, 'checkCount'>[] = [
   {
     slug: 'gtm-auditor',
     name: 'GTM Container Auditor',
@@ -34,7 +39,7 @@ export const tools: ToolConfig[] = [
     iconName: 'Tag',
     category: 'gtm',
     enabled: true,
-    checkCount: 30,
+    checkModules: ['gtmChecks', 'advancedGTMChecks'],
     fileSlots: [
       { key: 'gtmData', label: 'GTM Container JSON', accept: '.json', required: true, parser: 'gtm' },
     ],
@@ -49,7 +54,7 @@ export const tools: ToolConfig[] = [
     iconName: 'DollarSign',
     category: 'google-ads',
     enabled: true,
-    checkCount: 27,
+    checkModules: ['adsChecks', 'advancedAdsChecks', 'structureChecks', 'edgeCaseChecks'],
     fileSlots: [
       { key: 'adsData', label: 'Google Ads Conversions CSV', accept: '.csv', required: true, parser: 'ads' },
     ],
@@ -64,7 +69,7 @@ export const tools: ToolConfig[] = [
     iconName: 'LineChart',
     category: 'google-ads',
     enabled: true,
-    checkCount: 11,
+    checkModules: ['adsReportChecks', 'performanceChecks', 'signalQualityChecks'],
     fileSlots: [
       { key: 'reportData', label: 'Performance Report (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'report' },
     ],
@@ -79,7 +84,12 @@ export const tools: ToolConfig[] = [
     iconName: 'Search',
     category: 'gtm',
     enabled: true,
-    checkCount: 82,
+    checkModules: [
+      'gtmChecks', 'advancedGTMChecks',
+      'adsChecks', 'advancedAdsChecks', 'structureChecks', 'edgeCaseChecks',
+      'adsReportChecks', 'performanceChecks', 'signalQualityChecks',
+      'crossChecks', 'advancedCrossChecks', 'settingsReportCrossChecks',
+    ],
     fileSlots: [
       { key: 'gtmData', label: 'GTM Container JSON', accept: '.json', required: true, parser: 'gtm' },
       { key: 'adsData', label: 'Google Ads Conversions CSV', accept: '.csv', required: true, parser: 'ads' },
@@ -98,7 +108,7 @@ export const tools: ToolConfig[] = [
     iconName: 'Facebook',
     category: 'meta',
     enabled: true,
-    checkCount: 10,
+    checkModules: ['metaChecks'],
     fileSlots: [
       { key: 'metaData', label: 'Meta Events Export (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'meta' },
     ],
@@ -113,7 +123,7 @@ export const tools: ToolConfig[] = [
     iconName: 'Music2',
     category: 'tiktok',
     enabled: true,
-    checkCount: 10,
+    checkModules: ['tiktokChecks'],
     fileSlots: [
       { key: 'tiktokData', label: 'TikTok Events Export (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'tiktok' },
     ],
@@ -128,7 +138,7 @@ export const tools: ToolConfig[] = [
     iconName: 'Linkedin',
     category: 'linkedin',
     enabled: true,
-    checkCount: 10,
+    checkModules: ['linkedinChecks'],
     fileSlots: [
       { key: 'linkedinData', label: 'LinkedIn Conversions Export', accept: '.csv,.json', required: true, parser: 'linkedin' },
     ],
@@ -143,7 +153,7 @@ export const tools: ToolConfig[] = [
     iconName: 'Bookmark',
     category: 'pinterest',
     enabled: true,
-    checkCount: 10,
+    checkModules: ['pinterestChecks'],
     fileSlots: [
       { key: 'pinterestData', label: 'Pinterest Events Export (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'pinterest' },
     ],
@@ -158,7 +168,7 @@ export const tools: ToolConfig[] = [
     iconName: 'Twitter',
     category: 'twitter',
     enabled: true,
-    checkCount: 10,
+    checkModules: ['twitterChecks'],
     fileSlots: [
       { key: 'twitterData', label: 'Twitter/X Events Export (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'twitter' },
     ],
@@ -173,7 +183,7 @@ export const tools: ToolConfig[] = [
     iconName: 'Camera',
     category: 'snapchat',
     enabled: true,
-    checkCount: 10,
+    checkModules: ['snapchatChecks'],
     fileSlots: [
       { key: 'snapchatData', label: 'Snapchat Events Export (CSV or JSON)', accept: '.csv,.json', required: true, parser: 'snapchat' },
     ],
@@ -182,6 +192,11 @@ export const tools: ToolConfig[] = [
     ],
   },
 ];
+
+export const tools: ToolConfig[] = toolDefinitions.map((tool) => ({
+  ...tool,
+  checkCount: checkCountForModules(tool.checkModules),
+}));
 
 export function getToolBySlug(slug: string): ToolConfig | undefined {
   return tools.find((t) => t.slug === slug);

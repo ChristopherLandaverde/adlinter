@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { checkSourceCount, totalCheckCount } from '@/lib/checks/counts';
 
 const siteUrl = 'https://adlint.dev';
 const authorName = 'Christopher Landaverde';
@@ -8,7 +9,7 @@ const authorInitials = 'CL';
 export const metadata: Metadata = {
   title: `About ${authorName} — Creator of AdLint`,
   description:
-    'Christopher Landaverde is an ad-tech tracking specialist and the creator of AdLint, the privacy-respecting audit suite that runs 178 checks across GTM, Google Ads, Meta, TikTok, LinkedIn, Pinterest, Twitter/X, and Snapchat.',
+    `Christopher Landaverde is an ad-tech tracking specialist and the creator of AdLint, the privacy-respecting audit suite that runs ${totalCheckCount} checks across GTM, Google Ads, Meta, TikTok, LinkedIn, Pinterest, Twitter/X, and Snapchat.`,
   openGraph: {
     title: `About ${authorName}`,
     description: 'Creator of AdLint. Ad-tech tracking specialist.',
@@ -131,7 +132,7 @@ export default function AboutPage() {
           </h2>
           <ul className="space-y-2 text-sm leading-7 text-muted">
             <li>
-              <strong className="text-ink">178 checks</strong> across 10 sources (GTM, Google Ads,
+              <strong className="text-ink">{totalCheckCount} checks</strong> across {checkSourceCount} sources (GTM, Google Ads,
               Performance Reports, Cross-Source, Meta, TikTok, LinkedIn, Pinterest, X/Twitter,
               Snapchat).
             </li>

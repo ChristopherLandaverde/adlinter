@@ -97,7 +97,7 @@ describe('PDFExportButton', () => {
 
     await user.click(screen.getByRole('button', { name: /download pdf/i }));
 
-    expect(screen.getByText('Complete 5 audits to unlock PDF export')).toBeInTheDocument();
+    expect(screen.getByText(/PDF export is free for your first 4 audits\. Run your next audit to unlock it with your email\./)).toBeInTheDocument();
     expect(saveMock).not.toHaveBeenCalled();
   });
 
