@@ -14,31 +14,36 @@ import { GTMTagListMock } from '@/components/mockups/GTMTagListMock';
 import { GTMTriggerListMock } from '@/components/mockups/GTMTriggerListMock';
 import { CopyButton } from '@/components/check-detail/CopyButton';
 import { PageTOC, type TOCEntry } from '@/components/check-detail/PageTOC';
+import { SeverityChip } from '@/components/check-detail/SeverityChip';
+import { TldrCard } from '@/components/check-detail/TldrCard';
+import { HowToFixSteps } from '@/components/check-detail/HowToFixSteps';
+import { RelatedChecksRow } from '@/components/check-detail/RelatedChecksRow';
+import { EditorialBannerCTA } from '@/components/check-detail/EditorialBannerCTA';
+import { parseNumberedList, splitParagraphs } from '@/components/check-detail/prose';
 
-// Some explainers write howToFix as "1. step. 2. step. 3. step." in a single
-// string. Render those as a real <ol>. Falls back to <p> for prose paragraphs.
-// Match a leading "1." plus subsequent " N." (or "\nN.") to detect a list.
-function parseNumberedList(text: string): string[] | null {
-  const trimmed = text.trim();
-  if (!/^1\.\s/.test(trimmed)) return null;
-  const parts = trimmed.split(/\s+(?=\d+\.\s)/);
-  if (parts.length < 2) return null;
-  return parts.map((p) => p.replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
-}
-
-function ProseOrList({ text, listClassName = '' }: { text: string; listClassName?: string }) {
+// "Why" prose: one <p> per paragraph with a little more leading than body
+// default, capped at DESIGN.md's 72ch prose width. A few entries write why as
+// a numbered list; those keep list rendering.
+function WhyProse({ text }: { text: string }) {
   const list = parseNumberedList(text);
   if (list) {
     return (
-      <ol className={`list-decimal space-y-2 pl-6 marker:font-mono marker:text-xs marker:text-muted ${listClassName}`}>
+      <ol className="max-w-[72ch] list-decimal space-y-2 pl-6 marker:font-mono marker:text-xs marker:text-muted">
         {list.map((item, i) => (
           <li key={i}>{item}</li>
         ))}
       </ol>
     );
   }
-  // Preserve any embedded paragraph breaks (\n\n) and single newlines.
-  return <p className="whitespace-pre-line">{text}</p>;
+  return (
+    <div className="max-w-[72ch] space-y-5">
+      {splitParagraphs(text).map((p, i) => (
+        <p key={i} className="whitespace-pre-line">
+          {p}
+        </p>
+      ))}
+    </div>
+  );
 }
 
 function renderMockup(spec: CheckMockupSpec, beforeAfter?: 'before' | 'after') {
@@ -74,12 +79,6 @@ const authorName = 'Christopher Landaverde';
 const authorInitials = 'CL';
 const authorRole = 'Creator of AdLint · ad-tech tracking specialist';
 const defaultLastUpdated = '2026-05-12';
-
-const severityStyles: Record<CheckExplainer['severity'], string> = {
-  critical: 'bg-critical/10 text-critical',
-  warning: 'bg-warning/10 text-warning',
-  info: 'bg-info/10 text-info',
-};
 
 const sourceIcon: Record<ExplainerSource, string> = {
   gtm: 'GTM',
@@ -147,7 +146,7 @@ function Section({
   if (variant === 'reference') {
     return (
       <section id={id} className="border-t border-border pt-6 scroll-mt-24">
-        <h2 className="mb-3 font-display text-xs font-semibold uppercase tracking-wider text-muted">
+        <h2 className="mb-4 font-display text-xs font-semibold uppercase tracking-wider text-muted">
           {title}
         </h2>
         <div className="text-sm leading-6 text-muted">{children}</div>
@@ -163,8 +162,8 @@ function Section({
   }
   return (
     <section id={id} className="border-t border-border pt-8 scroll-mt-24">
-      <h2 className="mb-3 font-display text-xl font-semibold text-ink">{title}</h2>
-      <div className="text-base leading-7 text-muted">{children}</div>
+      <h2 className="mb-4 font-display text-2xl font-semibold text-ink sm:text-3xl">{title}</h2>
+      <div className="text-base leading-8 text-muted">{children}</div>
     </section>
   );
 }
@@ -290,51 +289,41 @@ export default async function CheckDetailPage({ params }: PageProps) {
 
       <div className="container mx-auto flex flex-1 px-4 py-12">
         <article className="mx-auto w-full max-w-3xl">
-          <div className="mb-8">
-            {/* F9: smaller, quieter category chips. They whisper context, not shout.
-                Source chip now links up to the category landing page (internal-link signal). */}
-            <div className="mb-5 flex flex-wrap items-center gap-2">
-              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted">
+          <header className="mb-10">
+            {/* 1. Source breadcrumb + severity chip. The chip is the most
+                saturated element above the title so severity reads first.
+                Source links up to its category landing page. */}
+            <div className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-2 text-xs text-muted">
+              <SeverityChip severity={explainer.severity} />
+              <span className="font-mono font-medium uppercase tracking-wider">
                 {sourceIcon[explainer.source]}
               </span>
-              <span className="text-[11px] font-medium text-muted">·</span>
+              <span aria-hidden="true">·</span>
               <Link
                 href={`/sources/${explainer.source}`}
-                className="text-[11px] font-medium text-muted underline-offset-2 hover:text-ink hover:underline"
+                className="font-medium underline-offset-2 hover:text-ink hover:underline"
               >
                 {getSourceLabel(explainer.source)}
               </Link>
-              <span className="text-[11px] font-medium text-muted">·</span>
-              <span
-                className={`rounded-sm px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${severityStyles[explainer.severity]}`}
-              >
-                {explainer.severity}
-              </span>
               {isStub && (
-                <span className="rounded-sm border border-dashed border-border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted">
+                <span className="rounded-sm border border-dashed border-border px-2 py-0.5 font-medium uppercase tracking-wider">
                   Reference stub
                 </span>
               )}
             </div>
 
-            <h1 className="mb-5 font-display text-3xl font-semibold leading-tight text-ink sm:text-4xl">
+            {/* 2. Title. */}
+            <h1 className="font-display text-3xl font-semibold leading-tight text-ink sm:text-4xl">
               {explainer.name}
             </h1>
 
-            {/* F4: Direct answer gets lead-paragraph treatment. Larger, slightly
-                heavier, with an accent left rule. The page should make the first
-                paragraph feel like the lede of an article, not just body text. */}
-            <p className="border-l-2 border-l-accent/60 pl-4 text-lg font-medium leading-8 text-ink sm:text-xl sm:leading-9">
-              {explainer.directAnswer ?? explainer.summary}
-            </p>
-
-            {/* F7: avatar + byline. Small monogram circle gives the page
-                an author identity instead of a flat text strip.
-                Byline links to /about for AEO Person-entity grounding. */}
-            <div className="mt-6 flex flex-wrap items-center gap-3 text-xs text-muted">
+            {/* 3. Byline directly under the title, quiet (UX_AUDIT CD-02 left
+                open: revisit placement with traffic data). Links to /about for
+                AEO Person-entity grounding. */}
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted">
               <Link
                 href="/about"
-                className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-white transition-opacity hover:opacity-90"
+                className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-medium text-white transition-opacity duration-150 hover:opacity-90"
                 aria-label={`About ${authorName}`}
               >
                 {authorInitials}
@@ -364,28 +353,37 @@ export default async function CheckDetailPage({ params }: PageProps) {
                 the editorial explainer has not been written yet.
               </div>
             )}
-          </div>
 
-          <div className="space-y-8">
+            {/* 4. TL;DR card: the 10-second exit ramp. */}
+            <div className="mt-8">
+              <TldrCard>{explainer.directAnswer ?? explainer.summary}</TldrCard>
+            </div>
+          </header>
+
+          <div className="space-y-10">
+            {/* 5–6. Why prose, then the broken-state mockup beside it. */}
             <Section id="why" title="Why It Matters">
-              <ProseOrList text={explainer.why} />
-              {/* F5: Before/After indicator differentiates the two mockups. */}
-              {explainer.whyMockup && renderMockup(explainer.whyMockup, 'before')}
-              {/* F13: legend explaining color semantics in the mockup. */}
+              <WhyProse text={explainer.why} />
               {explainer.whyMockup && (
-                <p className="mt-2 text-xs text-muted">
-                  Coloured rows show the configuration AdLint flags.
-                </p>
+                <div className="mt-6">
+                  {renderMockup(explainer.whyMockup, 'before')}
+                  <p className="mt-2 text-xs text-muted">
+                    Coloured rows show the configuration AdLint flags.
+                  </p>
+                </div>
               )}
             </Section>
 
+            {/* 8–9. Fix steps as cards, then the corrected-state mockup. */}
             <Section id="fix" title="How To Fix It">
-              <ProseOrList text={explainer.howToFix} />
-              {explainer.fixMockup && renderMockup(explainer.fixMockup, 'after')}
+              <HowToFixSteps text={explainer.howToFix} />
               {explainer.fixMockup && (
-                <p className="mt-2 text-xs text-muted">
-                  Green rows show the corrected state after the fix.
-                </p>
+                <div className="mt-6">
+                  {renderMockup(explainer.fixMockup, 'after')}
+                  <p className="mt-2 text-xs text-muted">
+                    Green rows show the corrected state after the fix.
+                  </p>
+                </div>
               )}
             </Section>
 
@@ -449,44 +447,17 @@ export default async function CheckDetailPage({ params }: PageProps) {
               </Section>
             )}
 
+            {/* 12. Related checks as a row of compact cards. */}
             {related.length > 0 && (
               <Section id="related" title="Related Checks" variant="reference">
-                <ul className="grid gap-2 md:grid-cols-2">
-                  {related.map((relatedExplainer) => (
-                    <li key={relatedExplainer.id}>
-                      <Link
-                        href={`/checks/${relatedExplainer.id}`}
-                        className="text-xs leading-6 text-accent transition-colors hover:text-accent-hover hover:underline"
-                      >
-                        {relatedExplainer.name}
-                        {relatedExplainer.status === 'stub' && (
-                          <span className="ml-1 text-[10px] font-normal text-muted">(stub)</span>
-                        )}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                <RelatedChecksRow checks={related} />
               </Section>
             )}
 
-            {/* F11: closing CTA. After 1500 words of editorial, the reader is
-                now informed. Give them a path forward. */}
-            <section className="mt-12 rounded-md border border-border bg-surface p-6">
-              <p className="mb-2 font-display text-base font-semibold text-ink">
-                Audit your own files for this check
-              </p>
-              <p className="mb-4 text-sm leading-relaxed text-muted">
-                AdLint runs this check (and 177 others) against your GTM, Google Ads,
-                Meta, TikTok, LinkedIn, Pinterest, Twitter/X, and Snapchat exports.
-                Everything stays in your browser. No uploads, no accounts.
-              </p>
-              <Link
-                href="/"
-                className="inline-flex items-center rounded-sm bg-accent px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
-              >
-                Run a free audit
-              </Link>
-            </section>
+            {/* 13. Closing banner CTA (UX_AUDIT CD-01). Points at the tool
+                that runs this check. A mid-page repeat after "Why" is plan
+                phase 5, deferred until scroll-depth data exists. */}
+            <EditorialBannerCTA variant="check" source={explainer.source} />
           </div>
         </article>
 
