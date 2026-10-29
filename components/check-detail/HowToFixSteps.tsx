@@ -1,3 +1,4 @@
+import { InlineProse } from './InlineProse';
 import { parseNumberedList, splitParagraphs } from './prose';
 
 // One numbered fix step as its own card. The step number is set in Geist Mono
@@ -11,13 +12,16 @@ export function HowToFixStep({ number, children }: { number: number; children: s
       >
         {String(number).padStart(2, '0')}
       </span>
-      <p className="min-w-0 whitespace-pre-line text-base leading-7 text-ink">{children}</p>
+      <p className="min-w-0 whitespace-pre-line text-base leading-7 text-ink">
+        <InlineProse text={children} />
+      </p>
     </li>
   );
 }
 
 // Renders howToFix as step cards when it is a numbered list, otherwise as
-// paragraphs. The text itself is passed through untouched.
+// paragraphs. The text itself is passed through untouched; `code` spans render
+// as <code>.
 export function HowToFixSteps({ text }: { text: string }) {
   const steps = parseNumberedList(text);
   if (!steps) {
@@ -25,7 +29,7 @@ export function HowToFixSteps({ text }: { text: string }) {
       <div className="max-w-[72ch] space-y-4 text-base leading-8 text-muted">
         {splitParagraphs(text).map((p, i) => (
           <p key={i} className="whitespace-pre-line">
-            {p}
+            <InlineProse text={p} />
           </p>
         ))}
       </div>

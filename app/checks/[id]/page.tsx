@@ -19,6 +19,7 @@ import { TldrCard } from '@/components/check-detail/TldrCard';
 import { HowToFixSteps } from '@/components/check-detail/HowToFixSteps';
 import { RelatedChecksRow } from '@/components/check-detail/RelatedChecksRow';
 import { EditorialBannerCTA } from '@/components/check-detail/EditorialBannerCTA';
+import { InlineProse } from '@/components/check-detail/InlineProse';
 import { parseNumberedList, splitParagraphs } from '@/components/check-detail/prose';
 
 // "Why" prose: one <p> per paragraph with a little more leading than body
@@ -30,7 +31,9 @@ function WhyProse({ text }: { text: string }) {
     return (
       <ol className="max-w-[72ch] list-decimal space-y-2 pl-6 marker:font-mono marker:text-xs marker:text-muted">
         {list.map((item, i) => (
-          <li key={i}>{item}</li>
+          <li key={i}>
+            <InlineProse text={item} />
+          </li>
         ))}
       </ol>
     );
@@ -39,7 +42,7 @@ function WhyProse({ text }: { text: string }) {
     <div className="max-w-[72ch] space-y-5">
       {splitParagraphs(text).map((p, i) => (
         <p key={i} className="whitespace-pre-line">
-          {p}
+          <InlineProse text={p} />
         </p>
       ))}
     </div>
@@ -356,7 +359,9 @@ export default async function CheckDetailPage({ params }: PageProps) {
 
             {/* 4. TL;DR card: the 10-second exit ramp. */}
             <div className="mt-8">
-              <TldrCard>{explainer.directAnswer ?? explainer.summary}</TldrCard>
+              <TldrCard>
+                <InlineProse text={explainer.directAnswer ?? explainer.summary} />
+              </TldrCard>
             </div>
           </header>
 
@@ -416,7 +421,9 @@ export default async function CheckDetailPage({ params }: PageProps) {
                     </span>
                     <CopyButton text={explainer.citationTemplate} label="Copy citation" />
                   </div>
-                  <p className="text-sm leading-7 text-ink">{explainer.citationTemplate}</p>
+                  <p className="text-sm leading-7 text-ink">
+                    <InlineProse text={explainer.citationTemplate} />
+                  </p>
                   <p className="mt-3 border-t border-accent/15 pt-3 text-xs leading-relaxed text-muted">
                     Drop this paragraph into your client deliverable. Sources back to the
                     canonical platform documentation linked below.

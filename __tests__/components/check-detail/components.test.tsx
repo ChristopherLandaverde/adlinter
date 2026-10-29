@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import { SeverityChip } from '@/components/check-detail/SeverityChip';
 import { TldrCard } from '@/components/check-detail/TldrCard';
 import { HowToFixSteps } from '@/components/check-detail/HowToFixSteps';
+import { InlineProse } from '@/components/check-detail/InlineProse';
 import { RelatedChecksRow } from '@/components/check-detail/RelatedChecksRow';
 import {
   EditorialBannerCTA,
@@ -46,6 +47,48 @@ describe('HowToFixSteps', () => {
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
     expect(screen.getByText('First paragraph.').tagName).toBe('P');
     expect(screen.getByText('Second paragraph.').tagName).toBe('P');
+  });
+
+  it('renders inline code in steps and paragraphs', () => {
+    const { container, unmount } = render(
+      <HowToFixSteps text={'1. Open `gtm.js`.\n2. Set `ad_storage`.'} />
+    );
+    expect(Array.from(container.querySelectorAll('li code')).map((c) => c.textContent)).toEqual([
+      'gtm.js',
+      'ad_storage',
+    ]);
+    unmount();
+    const prose = render(<HowToFixSteps text={'Set `currency` on the tag.'} />);
+    expect(prose.container.querySelector('p code')).toHaveTextContent('currency');
+    expect(prose.container.textContent).not.toContain('`');
+  });
+});
+
+describe('InlineProse', () => {
+  it('renders backtick spans as <code> with no literal backticks', () => {
+    const { container } = render(
+      <p>
+        <InlineProse text={'Send the same `event_id` and `event_time` from both.'} />
+      </p>
+    );
+    const codes = container.querySelectorAll('code');
+    expect(Array.from(codes).map((c) => c.textContent)).toEqual(['event_id', 'event_time']);
+    expect(codes[0]).toHaveClass('font-mono', 'bg-surface-2', 'border-border', 'rounded-sm');
+    expect(container.textContent).toBe('Send the same event_id and event_time from both.');
+    expect(container.textContent).not.toContain('`');
+  });
+
+  it('renders markup-like text as text, not HTML', () => {
+    const { container } = render(
+      <p>
+        <InlineProse text={'Add `<script>` before `</head>`.'} />
+      </p>
+    );
+    expect(container.querySelector('script')).toBeNull();
+    expect(Array.from(container.querySelectorAll('code')).map((c) => c.textContent)).toEqual([
+      '<script>',
+      '</head>',
+    ]);
   });
 });
 

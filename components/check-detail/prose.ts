@@ -20,3 +20,24 @@ export function splitParagraphs(text: string): string[] {
     .map((p) => p.trim())
     .filter(Boolean);
 }
+
+export type InlineSegment = { kind: 'text' | 'code'; value: string };
+
+// Explainers mark identifiers (`event_id`, `gclid`) with Markdown-style
+// backticks. Split a string into plain-text and code segments so the caller
+// can render code spans as <code> elements instead of literal backticks.
+// A span must open and close on the same line and contain at least one
+// character; a backtick without a partner is left in the text as written.
+export function splitInlineCode(text: string): InlineSegment[] {
+  const segments: InlineSegment[] = [];
+  const re = /`([^`\n]+)`/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) segments.push({ kind: 'text', value: text.slice(last, m.index) });
+    segments.push({ kind: 'code', value: m[1] });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) segments.push({ kind: 'text', value: text.slice(last) });
+  return segments;
+}
