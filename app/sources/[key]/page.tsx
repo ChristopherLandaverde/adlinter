@@ -136,7 +136,7 @@ export default async function SourceCategoryPage({ params }: PageProps) {
         name: `Does AdLint upload my ${content.label} data?`,
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'No. AdLint runs entirely in your browser. There is no upload, no account, no server. Your audit files never leave the device. Source code is open and available on GitHub.',
+          text: 'No. AdLint parses and audits your export in your browser, and the file is never uploaded. Audit history is saved only in your browser, and no account is needed. If you unlock PDF export after your fifth audit, the email address you enter is sent to MailerLite, AdLint\'s email provider, without any audit data. Source code is open and available on GitHub.',
         },
       },
     ],
@@ -269,7 +269,7 @@ export default async function SourceCategoryPage({ params }: PageProps) {
           </p>
           <p className="mb-4 text-sm leading-relaxed text-muted">
             AdLint runs every check on this page against your export in seconds.
-            Nothing uploaded. Nothing logged. Everything stays in your browser.
+            Your export is audited in your browser and never uploaded.
           </p>
           {tool ? (
             <Link
@@ -291,7 +291,7 @@ export default async function SourceCategoryPage({ params }: PageProps) {
 
       <footer className="border-t border-border py-6">
         <div className="container mx-auto px-4 text-center text-xs text-muted">
-          AdLint &mdash; 100% private. All processing happens in your browser.
+          AdLint &mdash; audits run in your browser. Your files are never uploaded.
         </div>
       </footer>
     </main>

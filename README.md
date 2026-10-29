@@ -2,7 +2,7 @@
 
 **Free, privacy-first audit suite for ad-tech tracking — GTM, Google Ads, Meta Pixel, TikTok Pixel, LinkedIn, Pinterest, Twitter/X, Snapchat, and performance reports.**
 
-AdLint analyzes your ad-tech exports to surface tracking issues before they cost you money. All processing runs entirely in the browser — no data ever leaves your machine.
+AdLint analyzes your ad-tech exports to surface tracking issues before they cost you money. Your export files are parsed and audited in the browser and never uploaded. The optional PDF-export unlock sends the email address you enter to MailerLite (see Privacy).
 
 ## What It Does
 
@@ -22,7 +22,7 @@ Upload your files, choose the right audit, and get a diagnostic report in second
 ## Features
 
 - Tabbed audit dashboard with Overview, Checks, and Export views
-- PDF export with email capture
+- PDF export (from the fifth audit, unlocking it asks for an email address; see Privacy)
 - Tracking Health Score: a single 0-100 anchor with a shareable badge, computed from weighted severity
 - Audit diff: compare any two audits side-by-side with a score delta and a categorized change list (regressions, fixes, severity shifts, new checks, removed checks)
 - Source and severity filtering
@@ -108,7 +108,9 @@ Tests cover checks, parsers, integration scenarios, edge cases, hooks, and compo
 
 ## Privacy
 
-AdLint is a fully client-side application. Your GTM and Google Ads data is parsed and analyzed in the browser using JavaScript. Nothing is sent to any server.
+Every audit runs in the browser: the export files you choose (GTM, Google Ads, performance reports and pixel exports) are parsed and analyzed by JavaScript on the page and are never uploaded. Audit history is stored in your browser's localStorage.
+
+From your fifth audit, PDF export asks for an email address. That address is sent to AdLint's `/api/subscribe` route, which forwards it to MailerLite, the email provider, and adds it to the AdLint list. No audit data is sent with it. The hosted site also loads fonts from Fontshare.
 
 ## License
 

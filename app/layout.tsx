@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     template: "%s | AdLint",
   },
   description:
-    "Free, privacy-first audit suite for ad-tech tracking. Analyze GTM, Google Ads, Meta Pixel, and TikTok Pixel in 60 seconds. Runs entirely in your browser.",
+    "Free, privacy-first audit suite for ad-tech tracking. Analyze GTM, Google Ads, Meta Pixel, and TikTok Pixel in 60 seconds. Audits run in your browser; your files are never uploaded.",
   keywords: [
     "Google Tag Manager audit",
     "Google Ads audit",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     siteName: "AdLint",
     title: "AdLint — Free Ad-Tech Auditor",
     description:
-      "Audit GTM, Google Ads, Meta Pixel, and TikTok Pixel in 60 seconds. Runs entirely in your browser.",
+      "Audit GTM, Google Ads, Meta Pixel, and TikTok Pixel in 60 seconds. Your files are never uploaded.",
     locale: "en_US",
   },
   twitter: {

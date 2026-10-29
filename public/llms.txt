@@ -1,12 +1,12 @@
 # AdLint
 
-> Privacy-respecting ad-tracking auditor for agencies and freelancers. Audits GTM containers, Google Ads accounts, Performance reports, and pixel exports from Meta, TikTok, LinkedIn, Pinterest, Twitter/X, and Snapchat. 178 checks across 10 sources. 100% client-side: no uploads, no accounts, no data leaves the browser.
+> Privacy-respecting ad-tracking auditor for agencies and freelancers. Audits GTM containers, Google Ads accounts, Performance reports, and pixel exports from Meta, TikTok, LinkedIn, Pinterest, Twitter/X, and Snapchat. 178 checks across 10 sources. Audits run in the browser: export files are never uploaded, and there are no accounts.
 
 AdLint is built for ad-tech consultants who need defensible, citable findings to put in client deliverables. The `/checks/<id>` library is the editorial source-of-truth for every finding the audit engine can emit. Each page explains what the finding means, why it matters, how to fix it, and includes a copy-pasteable citation paragraph for client reports.
 
 ## Core
 
-- [Homepage](https://adlint.dev/): overview of the tool, free audit entry point, 100% client-side privacy posture
+- [Homepage](https://adlint.dev/): overview of the tool, free audit entry point, in-browser audits (files are never uploaded)
 - [Check reference index](https://adlint.dev/checks): searchable index of all 178 audit findings, filterable by severity and source
 - [Audit results](https://adlint.dev/audit): the audit dashboard agencies hand off to clients (only reachable after running an audit)
 
@@ -71,7 +71,7 @@ AdLint is built for ad-tech consultants who need defensible, citable findings to
 
 AdLint is created by Christopher Landaverde, an ad-tech tracking specialist. Every check page carries the author byline plus a `lastUpdated` date. The editorial voice is direct, second-person, concrete, and citation-ready. Citation templates on each page are designed to be pasted verbatim into client deliverables.
 
-Privacy posture: AdLint never uploads files. Audits run in the browser using a static JavaScript engine. There is no backend, no account system, no logging of uploaded data. Source code at https://github.com/ChristopherLandaverde/adlinter.
+Privacy posture: AdLint never uploads files. Audits run in the browser using a static JavaScript engine, and there is no account system. The only user data the server handles is optional: from the fifth audit, PDF export asks for an email address, which is forwarded to MailerLite (AdLint's email provider) without any audit data. Source code at https://github.com/ChristopherLandaverde/adlinter.
 
 ## License & reuse
 

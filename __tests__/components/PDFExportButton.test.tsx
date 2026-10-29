@@ -101,6 +101,16 @@ describe('PDFExportButton', () => {
     expect(saveMock).not.toHaveBeenCalled();
   });
 
+  it('should say what is sent and to whom before the email is submitted', () => {
+    renderButton({ canExportPDF: false, shouldShowUnlockModal: true });
+
+    const input = screen.getByLabelText('Email address');
+    expect(input).toHaveAccessibleDescription(
+      /sends your email address to MailerLite, our email provider.*Nothing from your audit is sent/,
+    );
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('should mark the user subscribed after successful email submission', async () => {
     jest.useFakeTimers();
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });

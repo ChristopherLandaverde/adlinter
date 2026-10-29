@@ -111,7 +111,7 @@ export default function AboutPage() {
             leave you with findings you can&apos;t cite without rewriting.
           </p>
           <p>
-            AdLint runs the audit in your browser. Nothing uploads. Nothing logs. The findings
+            AdLint runs the audit in your browser. The client&apos;s files are never uploaded. The findings
             are sourced back to the canonical platform documentation so the agency can defend
             them to the client without hedging. The citation paragraph on each finding page is
             written to drop into a deliverable verbatim.
@@ -136,12 +136,14 @@ export default function AboutPage() {
               Snapchat).
             </li>
             <li>
-              <strong className="text-ink">100% client-side.</strong> Nothing is uploaded.
-              The audit engine is a static JavaScript bundle. No backend, no account, no logging
-              of audited data.
+              <strong className="text-ink">Your files stay in your browser.</strong> Exports are
+              parsed and audited by JavaScript on the page and never uploaded. Audit history is
+              saved only in this browser. No account.
             </li>
             <li>
-              <strong className="text-ink">Free.</strong> No tier, no paywall.
+              <strong className="text-ink">Free.</strong> No tier, no paywall. From your fifth
+              audit, PDF export asks for an email address. That address is sent to MailerLite,
+              our email provider. Nothing from your audit is sent with it.
             </li>
             <li>
               <strong className="text-ink">Open source.</strong> The check engine and editorial
@@ -194,7 +196,7 @@ export default function AboutPage() {
 
       <footer className="border-t border-border py-6">
         <div className="container mx-auto px-4 text-center text-xs text-muted">
-          AdLint &mdash; 100% private. All processing happens in your browser.
+          AdLint &mdash; audits run in your browser. Your files are never uploaded.
         </div>
       </footer>
     </main>

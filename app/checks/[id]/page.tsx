@@ -474,7 +474,7 @@ export default async function CheckDetailPage({ params }: PageProps) {
 
       <footer className="border-t border-border py-6">
         <div className="container mx-auto px-4 text-center text-xs text-muted">
-          AdLint &mdash; 100% private. All processing happens in your browser.
+          AdLint &mdash; audits run in your browser. Your files are never uploaded.
         </div>
       </footer>
     </main>
