@@ -9,6 +9,7 @@
   --ink: #1c1917;
   --muted: #57534e;
   --border: #e7e5e0;
+  --input-border: #958c76;
   --accent: #1e3a8a;
   --accent-hover: #1e40af;
   --critical: #b91c1c;
@@ -27,6 +28,7 @@
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-input-border: var(--input-border);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-critical: var(--critical);

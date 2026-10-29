@@ -63,7 +63,8 @@ These predate the visual system and govern every screen.
 | `--surface-2` | `#F5F4EE` | Subtle elevation, code blocks, table headers |
 | `--ink` | `#1C1917` | Primary text — warm near-black (Tailwind stone-950) |
 | `--muted` | `#57534E` | Secondary text, captions, metadata |
-| `--border` | `#E7E5E0` | Hairline borders, dividers |
+| `--border` | `#E7E5E0` | Hairline borders, dividers (decorative: cards, rules) |
+| `--input-border` | `#958C76` | Border of form controls (inputs, select, checkbox). 3.03-3.34:1 against `--surface-2`/`--bg`/`--surface`, meets WCAG 1.4.11 (3:1) |
 | `--accent` | `#1E3A8A` | Single product accent — CTAs, links, score ring at high values |
 | `--accent-hover` | `#1E40AF` | Hover state on accent |
 | **Severity** | | |
@@ -209,3 +210,4 @@ The current site sells **price** ("100% Free, 100% Private" in oversized blue). 
 | 2026-05-11 | Replace all emoji icons with lucide-react line icons | Emoji-as-icon is the primary signal of "free utility tool." Single biggest visual offender. |
 | 2026-05-11 | Score-ring count-up as the only signature motion | One moment of theater; everything else serves comprehension. |
 | 2026-05-11 | Hero sells the diagnostic, not the price | Current "100% Free, 100% Private" headline is selling cheapness. Audit value comes first. |
+| 2026-10-29 | Add `--input-border` (`#958C76`) for form-control boundaries; `--border` stays `#E7E5E0` for cards and dividers (#49) | Input borders were `--border`, 1.26:1 on `--surface`, 1.20:1 on `--bg`, 1.14:1 on `--surface-2`; WCAG 1.4.11 needs 3:1. `#958C76` is `#E7E5E0` darkened at the same hue/saturation (HSL 43deg, 13%): 3.34 / 3.19 / 3.03:1. Darkening `--border` itself would have thickened every card and divider, against the hairline rule. |

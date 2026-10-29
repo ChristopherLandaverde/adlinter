@@ -15,6 +15,8 @@ interface PDFExportButtonProps {
   shouldShowUnlockModal: boolean;
   onSubscribe: () => void;
   onDismissModal: () => void;
+  /** Called when the locked button is clicked, so a dismissed unlock dialog can reopen. */
+  onRequestUnlock: () => void;
 }
 
 interface TaggedCheck extends AuditCheck {
@@ -619,7 +621,7 @@ function UnlockModal({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@agency.com"
-                className="h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                className="h-10 w-full rounded-sm border border-input-border bg-surface px-3 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                 required
                 disabled={isSubmitting}
                 aria-invalid={error ? true : undefined}
@@ -661,11 +663,6 @@ function UnlockModal({
   );
 }
 
-// The real rule (lib/hooks/useAuditCounter.ts): PDF export is free for the
-// first FREE_PDF_AUDITS audits; from the next audit on, the unlock form asks
-// for an email when an audit loads.
-export const lockedTooltipText = `PDF export is free for your first ${FREE_PDF_AUDITS} audits. Run your next audit to unlock it with your email.`;
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function PDFExportButton({
@@ -675,14 +672,13 @@ export function PDFExportButton({
   shouldShowUnlockModal,
   onSubscribe,
   onDismissModal,
+  onRequestUnlock,
 }: PDFExportButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showLockedTooltip, setShowLockedTooltip] = useState(false);
 
   const handleExport = useCallback(async () => {
     if (!canExportPDF) {
-      setShowLockedTooltip(true);
-      setTimeout(() => setShowLockedTooltip(false), 2000);
+      onRequestUnlock();
       return;
     }
 
@@ -694,7 +690,7 @@ export function PDFExportButton({
     } finally {
       setIsGenerating(false);
     }
-  }, [canExportPDF, results, auditType]);
+  }, [canExportPDF, results, auditType, onRequestUnlock]);
 
   return (
     <>
@@ -731,16 +727,6 @@ export function PDFExportButton({
             </>
           )}
         </button>
-
-        {/* Locked tooltip */}
-        {showLockedTooltip && !canExportPDF && (
-          <div
-            role="status"
-            className="absolute right-0 top-full z-30 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-sm bg-ink px-3 py-2 text-sm leading-5 text-surface"
-          >
-            {lockedTooltipText}
-          </div>
-        )}
       </div>
 
       {/* Unlock Modal */}

@@ -109,6 +109,19 @@ describe('useAuditCounter', () => {
     expect(localStorage.getItem('adlint_subscribed')).toBeNull();
   });
 
+  it('should reopen the unlock modal after it was dismissed', async () => {
+    localStorage.setItem('adlint_audit_count', '4');
+    const { result } = renderHook(() => useAuditCounter());
+    await waitFor(() => expect(result.current.auditCount).toBe(4));
+
+    act(() => { result.current.incrementAuditCount(); });
+    act(() => { result.current.dismissUnlockModal(); });
+    expect(result.current.shouldShowUnlockModal).toBe(false);
+
+    act(() => { result.current.openUnlockModal(); });
+    expect(result.current.shouldShowUnlockModal).toBe(true);
+  });
+
   it('should allow PDF export below threshold or when subscribed', async () => {
     localStorage.setItem('adlint_audit_count', '4');
 
@@ -134,7 +147,7 @@ describe('useAuditCounter', () => {
     expect(result.current.canExportPDF).toBe(true);
   });
 
-  // The locked tooltip in PDFExportButton describes this rule; keep them in step.
+  // The unlock dialog copy in PDFExportButton describes this rule; keep them in step.
   it('allows PDF export for the first FREE_PDF_AUDITS audits and gates it from the next one', async () => {
     expect(FREE_PDF_AUDITS).toBe(4);
 

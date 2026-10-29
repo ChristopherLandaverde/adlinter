@@ -160,7 +160,7 @@ export function ChecksIndexClient({
             onKeyDown={handleKeyDown}
             placeholder={`Search ${totalCheckCount} checks — try “consent”, “gclid”, or “tROAS”`}
             aria-label="Search AdLint checks"
-            className="w-full rounded-lg border border-border bg-surface py-4 pl-14 pr-14 text-lg font-medium text-ink placeholder:font-normal placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:py-5 sm:text-xl"
+            className="w-full rounded-lg border border-input-border bg-surface py-4 pl-14 pr-14 text-lg font-medium text-ink placeholder:font-normal placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 sm:py-5 sm:text-xl"
           />
           {query && (
             <button
@@ -287,7 +287,7 @@ export function ChecksIndexClient({
               type="checkbox"
               checked={showStubs}
               onChange={(e) => setShowStubs(e.target.checked)}
-              className="h-4 w-4 rounded border-border accent-accent"
+              className="h-4 w-4 rounded border-input-border accent-accent"
             />
             Include reference stubs
           </label>

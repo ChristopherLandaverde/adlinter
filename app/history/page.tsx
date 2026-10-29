@@ -104,7 +104,7 @@ function HistoryCard({
                 checked={selected}
                 onChange={() => onToggleCompare(entry)}
                 aria-label={`Select ${entry.toolName} for comparison`}
-                className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
+                className="h-4 w-4 rounded border-input-border text-accent focus:ring-accent"
               />
             )}
             <ToolIcon className="h-6 w-6 text-ink" />
