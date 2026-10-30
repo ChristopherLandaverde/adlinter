@@ -142,7 +142,7 @@ describe('checkLongAttributionWindows', () => {
     };
     const result = checkLongAttributionWindows(adsData);
     expect(result.passed).toBe(false);
-    expect(result.severity).toBe('critical');
+    expect(result.severity).toBe('warning');
   });
 
   it('should NOT flag 90-day windows for very long sales cycles', () => {
@@ -182,7 +182,7 @@ describe('checkDisabledHighValueConversions', () => {
     const adsData = loadCSV('ads-clean.csv');
     const result = checkDisabledHighValueConversions(adsData);
     expect(result.passed).toBe(true);
-    expect(result.severity).toBe('critical');
+    expect(result.severity).toBe('warning');
   });
 
   it('should FAIL when purchase conversions are disabled', () => {

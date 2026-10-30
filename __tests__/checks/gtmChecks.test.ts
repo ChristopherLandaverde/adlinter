@@ -305,7 +305,7 @@ describe('checkNamingConventions', () => {
     };
     const result = checkNamingConventions(container);
     expect(result.passed).toBe(true);
-    expect(result.severity).toBe('warning');
+    expect(result.severity).toBe('info');
   });
 
   it('should FAIL when <70% follow naming patterns', () => {

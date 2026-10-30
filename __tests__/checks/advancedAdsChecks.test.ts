@@ -294,7 +294,7 @@ describe('checkSuboptimalAttributionModel', () => {
     const context: AuditContext = { salesCycle: 'long' };
     const result = checkSuboptimalAttributionModel(adsData, context);
     expect(result.passed).toBe(false);
-    expect(result.severity).toBe('warning');
+    expect(result.severity).toBe('info');
   });
 
   it('should FAIL with short sales cycle and > 30% complex models', () => {
@@ -426,7 +426,7 @@ describe('checkDataDrivenEligibility', () => {
     expect(result.id).toBe('data-driven-eligibility');
   });
 
-  it('should FAIL as warning when using data-driven attribution', () => {
+  it('should FAIL as info when using data-driven attribution', () => {
     const adsData: AdsData = {
       conversions: [
         makeConversion({ name: 'A', attributionModel: 'Data-driven', status: 'Enabled' }),
@@ -434,7 +434,7 @@ describe('checkDataDrivenEligibility', () => {
     };
     const result = checkDataDrivenEligibility(adsData);
     expect(result.passed).toBe(false);
-    expect(result.severity).toBe('warning');
+    expect(result.severity).toBe('info');
   });
 });
 
@@ -556,7 +556,7 @@ describe('checkPrimaryConversionDesignation', () => {
     };
     const result = checkPrimaryConversionDesignation(adsData);
     expect(result.passed).toBe(false);
-    expect(result.severity).toBe('warning');
+    expect(result.severity).toBe('critical');
     expect(result.id).toBe('no-primary-conversion');
   });
 
@@ -660,6 +660,6 @@ describe('checkConversionSourceConsistency', () => {
     };
     const result = checkConversionSourceConsistency(adsData);
     expect(result.passed).toBe(false);
-    expect(result.severity).toBe('warning');
+    expect(result.severity).toBe('info');
   });
 });

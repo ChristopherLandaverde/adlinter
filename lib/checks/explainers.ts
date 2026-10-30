@@ -324,7 +324,7 @@ export const explainers: CheckExplainer[] = [
     id: 'missing-datalayer-variables',
     name: 'Missing Data Layer Variables',
     source: 'gtm',
-    severity: 'warning',
+    severity: 'critical',
     summary: 'GTM tags reference dataLayer values that are missing or not configured as variables.',
     directAnswer:
       'Conversion tags in this container reference fields that are not exposed as GTM Data Layer Variables. Typically `ecommerce.value`, `ecommerce.currency`, or `ecommerce.transaction_id`. The tags still fire on the right trigger, but the fields they read resolve to empty, which means the conversion is reported with no value. The dashboard shows a count; the bidding signal is noise.',
@@ -2278,7 +2278,7 @@ export const explainers: CheckExplainer[] = [
     id: 'currency-consistency',
     name: 'Inconsistent Currency Codes',
     source: 'ads',
-    severity: 'critical',
+    severity: 'warning',
     summary: 'Google Ads conversion actions are reporting values in more than one currency code.',
     directAnswer:
       'Your conversion actions are reporting values in more than one currency. USD, EUR, sometimes blank. Google Ads doesn\'t normalise across currencies for bidding — Smart Bidding sums €100 and $100 as 200, and your aggregate ROAS column is meaningless until you fix this.',
@@ -2306,7 +2306,7 @@ export const explainers: CheckExplainer[] = [
     id: 'debug-tags-in-production',
     name: 'Preview/Debug Tags in Production',
     source: 'gtm',
-    severity: 'warning',
+    severity: 'info',
     summary: 'Tags with debug, test, preview, staging, or dev names are firing on All Pages in the production container.',
     directAnswer:
       'One or more tags with debug-style names (containing "debug," "test," "preview," "staging," or "dev") are firing on the production All Pages trigger. These tags were almost certainly created during implementation and forgotten. They can ship duplicate conversions, leak implementation details to third-party endpoints, or interfere with real diagnostics.',
@@ -4606,7 +4606,7 @@ export const explainers: CheckExplainer[] = [
     id: 'long-attribution-windows',
     name: 'Attribution Window Too Long',
     source: 'ads',
-    severity: 'info',
+    severity: 'warning',
     summary: 'Conversion click windows are longer than the realistic causal window for the business.',
     directAnswer:
       'One or more conversion actions use click-through windows longer than the realistic causal window for this business. Long windows recover late conversions but increasingly attribute conversions to clicks that may have had no influence. a user who clicked an ad 87 days ago and bought today probably would have bought anyway. The result: inflated reported campaign value and weaker correlation between ad spend and revenue.',
@@ -5069,7 +5069,7 @@ export const explainers: CheckExplainer[] = [
     id: 'struct-window-asymmetry',
     name: 'Click vs View-Through Window Asymmetry',
     source: 'ads',
-    severity: 'info',
+    severity: 'warning',
     summary: 'Click-through and view-through windows are set in ways that produce inconsistent attribution logic.',
     directAnswer:
       'A conversion action\'s click-through and view-through windows are set in a relative configuration that does not follow the typical pattern. View-through windows are normally shorter than click-through windows because view-through evidence is weaker, but some actions in this account configure them inverted or near-identical, which produces inconsistent attribution treatment.',
@@ -5090,7 +5090,7 @@ export const explainers: CheckExplainer[] = [
     id: 'struct-all-last-click',
     name: 'All Conversions Use Last-Click Attribution',
     source: 'ads',
-    severity: 'warning',
+    severity: 'info',
     summary: 'Every enabled conversion action in this account uses Last-Click attribution despite many being DDA-eligible.',
     directAnswer:
       'Every enabled conversion action in this account uses Last-Click attribution. Several high-volume actions would qualify for Data-Driven Attribution (DDA), which is generally more accurate. The account is leaving attribution accuracy on the table.',

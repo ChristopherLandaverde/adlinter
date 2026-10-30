@@ -148,7 +148,7 @@ export const checkWrongCountingMethod = (
   };
 };
 
-// ── CRITICAL CHECK #4 (Context-Aware) ───────────────────────
+// ── WARNING CHECK #4 (Context-Aware) ────────────────────────
 export const checkLongAttributionWindows = (
   adsData: AdsData,
   context?: AuditContext
@@ -158,7 +158,7 @@ export const checkLongAttributionWindows = (
   if (conversions.length === 0) {
     return {
       id: 'long-attribution-windows',
-      severity: 'critical',
+      severity: 'warning',
       passed: true,
       title: 'Overly Long Attribution Windows',
       description: 'No conversions to evaluate',
@@ -176,7 +176,7 @@ export const checkLongAttributionWindows = (
   if (context?.salesCycle === 'very-long') {
     return {
       id: 'long-attribution-windows',
-      severity: 'critical',
+      severity: 'warning',
       passed: true,
       title: 'Overly Long Attribution Windows',
       description: 'Long attribution windows appropriate for your sales cycle',
@@ -192,7 +192,7 @@ export const checkLongAttributionWindows = (
 
   return {
     id: 'long-attribution-windows',
-    severity: 'critical',
+    severity: 'warning',
     passed: longWindows.length === 0,
     title: 'Overly Long Attribution Windows',
     description:
@@ -210,7 +210,7 @@ export const checkLongAttributionWindows = (
   };
 };
 
-// ── CRITICAL CHECK #5 ───────────────────────────────────────
+// ── WARNING CHECK #5 ────────────────────────────────────────
 export const checkDisabledHighValueConversions = (
   adsData: AdsData,
   _context?: AuditContext
@@ -221,7 +221,7 @@ export const checkDisabledHighValueConversions = (
 
   return {
     id: 'disabled-high-value-conversions',
-    severity: 'critical',
+    severity: 'warning',
     passed: disabledPurchases.length === 0,
     title: 'Disabled High-Value Conversions',
     description:

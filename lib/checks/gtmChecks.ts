@@ -199,7 +199,7 @@ export const checkErrorHandling = (
   };
 };
 
-// ── WARNING CHECK #6 ────────────────────────────────────────
+// ── INFO CHECK #6 ───────────────────────────────────────────
 export const checkNamingConventions = (
   container: GTMContainer,
   _context?: AuditContext
@@ -209,7 +209,7 @@ export const checkNamingConventions = (
   if (tags.length === 0) {
     return {
       id: 'naming-conventions',
-      severity: 'warning',
+      severity: 'info',
       passed: true,
       title: 'Tag Naming Conventions',
       description: 'No tags to evaluate',
@@ -226,7 +226,7 @@ export const checkNamingConventions = (
 
   return {
     id: 'naming-conventions',
-    severity: 'warning',
+    severity: 'info',
     passed: percentage >= 70,
     title: 'Tag Naming Conventions',
     description:

@@ -297,7 +297,7 @@ export const checkSuboptimalAttributionModel = (
 
   return {
     id: 'suboptimal-attribution-model',
-    severity: 'warning',
+    severity: 'info',
     passed: issues.length === 0,
     title: 'Attribution Model Optimization',
     description: issues.length > 0
@@ -470,7 +470,7 @@ export const checkDataDrivenEligibility = (
 
   return {
     id: 'data-driven-eligibility',
-    severity: 'warning',
+    severity: 'info',
     passed: false,
     title: 'Data-Driven Attribution Volume Check',
     description:
@@ -638,7 +638,7 @@ export const checkPrimaryConversionDesignation = (
   if (primaryConversions.length === 0 && enabledConversions.length > 1) {
     return {
       id: 'no-primary-conversion',
-      severity: 'warning',
+      severity: 'critical',
       passed: false,
       title: 'No Primary Conversion Designated',
       description: `${enabledConversions.length} conversions enabled, but none marked as Primary for Smart Bidding`,
@@ -741,7 +741,7 @@ export const checkConversionSourceConsistency = (
   if (uniqueSources.size > 2) {
     return {
       id: 'conversion-source-consistency',
-      severity: 'warning',
+      severity: 'info',
       passed: false,
       title: 'Mixed Conversion Sources',
       description: `Using ${uniqueSources.size} different conversion sources: ${Array.from(uniqueSources).join(', ')}`,

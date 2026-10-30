@@ -297,7 +297,7 @@ export const checkRegistry: CheckRegistryEntry[] = [
     "id": "disabled-high-value-conversions",
     "title": "Disabled High-Value Conversions",
     "source": "ads",
-    "severity": "critical",
+    "severity": "warning",
     "modules": [
       "adsChecks"
     ]
@@ -613,7 +613,7 @@ export const checkRegistry: CheckRegistryEntry[] = [
     "id": "long-attribution-windows",
     "title": "Overly Long Attribution Windows",
     "source": "ads",
-    "severity": "critical",
+    "severity": "warning",
     "modules": [
       "adsChecks"
     ]
@@ -784,7 +784,7 @@ export const checkRegistry: CheckRegistryEntry[] = [
     "id": "naming-conventions",
     "title": "Tag Naming Conventions",
     "source": "gtm",
-    "severity": "warning",
+    "severity": "info",
     "modules": [
       "gtmChecks"
     ]
@@ -793,7 +793,7 @@ export const checkRegistry: CheckRegistryEntry[] = [
     "id": "no-primary-conversion",
     "title": "No Primary Conversion Designated",
     "source": "ads",
-    "severity": "warning",
+    "severity": "critical",
     "modules": [
       "advancedAdsChecks"
     ]
@@ -1225,7 +1225,7 @@ export const checkRegistry: CheckRegistryEntry[] = [
     "id": "struct-counting-category-mismatch",
     "title": "Counting Method vs Category Mismatch",
     "source": "ads",
-    "severity": "critical",
+    "severity": "warning",
     "modules": [
       "structureChecks"
     ]
@@ -1270,7 +1270,7 @@ export const checkRegistry: CheckRegistryEntry[] = [
     "id": "suboptimal-attribution-model",
     "title": "Attribution Model Optimization",
     "source": "ads",
-    "severity": "warning",
+    "severity": "info",
     "modules": [
       "advancedAdsChecks"
     ]
