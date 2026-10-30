@@ -44,7 +44,7 @@ AdLint is built for ad-tech consultants who need defensible, citable findings to
 - [E-commerce Data Layer Structure](https://adlint.dev/checks/ecommerce-datalayer-structure): the GA4 canonical `purchase` event shape
 - [Purchase Conversions with Zero Value](https://adlint.dev/checks/zero-value-purchases): value-based bidding requires real revenue signal
 - [Conversion Linker Sequencing](https://adlint.dev/checks/conversion-linker-sequencing): explicit Tag Sequencing prevents the race condition the linker exists to solve
-- [Inconsistent Currency Codes](https://adlint.dev/checks/currency-consistency): the silent killer of cross-region ROAS reports
+- [Multiple Currency Codes](https://adlint.dev/checks/currency-consistency): mixed currencies are supported; what to check instead
 - [Enhanced Conversions Missing User Data](https://adlint.dev/checks/enhanced-conversions-missing-data): how to actually populate the user_data parameter so the match rate is not zero
 - [Conversion Tags Missing Error Handling](https://adlint.dev/checks/conversion-error-handling): Wait-for-Tags configuration prevents conversion loss on slow connections
 - [No Primary Conversion Action](https://adlint.dev/checks/no-primary-conversion): Smart Bidding cannot work without a Primary target

@@ -37,6 +37,30 @@ describe('explainer claims', () => {
         'https://support.google.com/google-ads/answer/13064032',
       );
     });
+
+    // Mixed codes are supported, so the finding is info (matches the check).
+    it('is info, and says a wrong code cannot be detected from the export', () => {
+      expect(getExplainer('currency-consistency')!.severity).toBe('info');
+      const text = allText('currency-consistency');
+      expect(text).toMatch(/cannot (be detected|tell|see)[^.]*export|export[^.]*cannot/i);
+      expect(text).toMatch(/test (order|conversion)/i);
+    });
+  });
+
+  describe('currency-consistency-cross', () => {
+    // A valid tag currency is converted into the account currency at the
+    // average daily exchange rate (answer/13064032); the action's currency is
+    // only the fallback for a missing or invalid code.
+    it('is info and does not call a GTM/Ads currency difference an error', () => {
+      const e = getExplainer('currency-consistency-cross')!;
+      expect(e.severity).toBe('info');
+      const text = allText('currency-consistency-cross');
+      expect(text).not.toMatch(/conversion error/i);
+      expect(text).not.toMatch(/10 to 30 percent/i);
+      expect(text).not.toMatch(/match exactly/i);
+      expect(text).toMatch(/average daily (foreign )?exchange rate/i);
+      expect(text).toMatch(/cannot (be detected|tell|see)[^.]*export|export[^.]*cannot/i);
+    });
   });
 
   describe('disabled-high-value-conversions', () => {

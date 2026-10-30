@@ -178,7 +178,12 @@ export const checkConversionLabelMatching = (
   };
 };
 
-// WARNING: Currency Code Consistency (Cross)
+// INFO: Currency Code Consistency (Cross)
+// A valid currency code in the tag overrides the conversion action's currency
+// and is converted into the account currency at the average daily exchange
+// rate (Google Ads Help, answer/13064032), so a GTM/Ads difference is
+// supported on its own. Whether the hardcoded code matches the money charged
+// is not visible in either export, so this is informational.
 export const checkCurrencyCodeConsistency = (
   gtmData: GTMContainer,
   adsData: AdsData,
@@ -235,14 +240,16 @@ export const checkCurrencyCodeConsistency = (
 
   return {
     id: 'currency-consistency-cross',
-    severity: 'warning',
+    severity: 'info',
     passed: !mismatch,
     title: 'GTM-Ads Currency Code Consistency',
     description: mismatch
-      ? `Currency codes may not match: GTM uses ${gtmCurrencyArray.join(', ')}, Ads uses ${adsCurrencyArray.join(', ')}`
+      ? `GTM tags hardcode ${gtmCurrencyArray.join(', ')}; the Google Ads export lists ${adsCurrencyArray.join(', ')}. Google Ads converts a tag's currency into the account currency at the average daily exchange rate.`
       : 'Currency codes appear consistent',
     details: { gtmCurrencies: gtmCurrencyArray, adsCurrencies: adsCurrencyArray },
-    recommendation: 'Ensure currency codes match exactly between GTM and Google Ads',
+    recommendation: mismatch
+      ? 'A different currency in the tag is supported. Check that each hardcoded tag currency is the currency the customer was actually charged in; if the site charges in more than one currency, read it from the order in the dataLayer instead'
+      : 'No action needed',
     requiresBothFiles: true,
   };
 };

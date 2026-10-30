@@ -247,7 +247,7 @@ describe('checkCurrencyCodeConsistency', () => {
     };
     const result = checkCurrencyCodeConsistency(gtmData, adsData);
     expect(result.passed).toBe(true);
-    expect(result.severity).toBe('warning');
+    expect(result.severity).toBe('info');
   });
 
   it('should FAIL when GTM and Ads currencies do not match', () => {
@@ -270,8 +270,34 @@ describe('checkCurrencyCodeConsistency', () => {
     };
     const result = checkCurrencyCodeConsistency(gtmData, adsData);
     expect(result.passed).toBe(false);
-    expect(result.severity).toBe('warning');
+    expect(result.severity).toBe('info');
     expect(result.id).toBe('currency-consistency-cross');
+  });
+
+  // A valid tag currency overrides the action's currency and is converted
+  // into the account currency at the average daily exchange rate (Google Ads
+  // Help, answer/13064032). A GTM/Ads difference is supported on its own, so
+  // the advice is to check the tag against the money charged, not to make the
+  // two codes match.
+  it('does not tell the user to make GTM and Ads currencies match', () => {
+    const gtmData: GTMContainer = {
+      containerVersion: {
+        tag: [
+          {
+            name: 'Purchase',
+            type: 'awct',
+            parameter: [{ key: 'currencyCode', value: 'EUR', type: 'template' }],
+            firingTriggerId: ['1'],
+          },
+        ],
+      },
+    };
+    const adsData: AdsData = { conversions: [{ ...makeConversion(), currency: 'USD' }] };
+    const result = checkCurrencyCodeConsistency(gtmData, adsData);
+    expect(result.description).toContain('EUR');
+    expect(result.description).toContain('USD');
+    expect(result.recommendation).not.toMatch(/match exactly/i);
+    expect(result.recommendation).toMatch(/charged/i);
   });
 
   // #60: a one-sided comparison used to return a warning-level
@@ -327,7 +353,7 @@ describe('checkCurrencyCodeConsistency', () => {
     ].join('\n');
     const result = checkCurrencyCodeConsistency(usdTag, parseAdsCSV(csv));
     expect(result.passed).toBe(false);
-    expect(result.severity).toBe('warning');
+    expect(result.severity).toBe('info');
   });
 });
 
