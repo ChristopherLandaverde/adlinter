@@ -72,8 +72,8 @@ export const checkCurrencyConsistency = (
   _context?: AuditContext
 ): AuditCheck => {
   const currencyCodes = adsData.conversions
-    .map(c => (c as any).currency)
-    .filter(Boolean);
+    .map(c => c.currency)
+    .filter((code): code is string => Boolean(code));
 
   if (currencyCodes.length === 0) {
     return {
