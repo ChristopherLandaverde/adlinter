@@ -866,8 +866,8 @@ export const explainers: CheckExplainer[] = [
         url: 'https://support.google.com/google-ads/answer/13064107',
       },
       {
-        label: 'Google Ads. Currency conversion',
-        url: 'https://support.google.com/google-ads/answer/2998565',
+        label: 'Google Ads. Set up additional settings (conversion value currency)',
+        url: 'https://support.google.com/google-ads/answer/13064032',
       },
     ],
     lastUpdated: '2026-05-12',
@@ -926,8 +926,8 @@ export const explainers: CheckExplainer[] = [
         url: 'https://support.google.com/google-ads/answer/7335652',
       },
       {
-        label: 'Google Ads. Currency conversion',
-        url: 'https://support.google.com/google-ads/answer/2998565',
+        label: 'Google Ads. Set up additional settings (conversion value currency)',
+        url: 'https://support.google.com/google-ads/answer/13064032',
       },
       {
         label: 'Google Ads. About Target ROAS',
@@ -2279,26 +2279,26 @@ export const explainers: CheckExplainer[] = [
     name: 'Inconsistent Currency Codes',
     source: 'ads',
     severity: 'warning',
-    summary: 'Google Ads conversion actions are reporting values in more than one currency code.',
+    summary: 'Google Ads conversion actions use more than one currency code.',
     directAnswer:
-      'Your conversion actions are reporting values in more than one currency. USD, EUR, sometimes blank. Google Ads doesn\'t normalise across currencies for bidding — Smart Bidding sums €100 and $100 as 200, and your aggregate ROAS column is meaningless until you fix this.',
-    why: 'Google Ads supports per-conversion currency codes. It assumes the team configures them consistently. When that assumption breaks, two problems compound.\n\nValue-based bidding compares conversion values directly, without exchange-rate normalisation. A Target ROAS strategy that sees €100 and $100 treats them as economically equivalent. They aren\'t. Depending on the day, €100 is anywhere from $105 to $115. The optimisation signal is corrupted by exactly the exchange-rate noise the team assumed Google was handling. Aggregate reports also stop reconciling: the "conversion value" total in Google Ads is a sum of mixed currencies, so it won\'t match any single number in the e-commerce backend.\n\nThe mixed-currency state usually shows up in one of three places. Multi-region e-commerce that pushes the local currency without normalising before it hits dataLayer. GTM containers where the Currency Code field is hardcoded to USD but the actual transaction value is in EUR or GBP, so the value matches the customer\'s purchase but the currency lies. And Google Ads conversion imports where the Currency column was left blank or filled differently across upload sessions.\n\nUntil this is fixed, every Target ROAS decision and every cross-region comparison runs on suspect numbers.',
+      'Your conversion actions use more than one currency code. Google Ads converts values reported in another currency into your account currency at the average daily exchange rate, so mixed currencies on their own do not break bidding or reporting. The risk is a currency code that does not describe the amount it is attached to, such as a tag hardcoded to USD on a site that charges in EUR. Google then converts the amount from the wrong currency, and nothing in the interface flags it. Confirm that each action sends the currency the customer was actually charged in.',
+    why: 'Google Ads reports every conversion value in the account currency. When a conversion arrives with a different ISO 4217 currency code, Google converts it at the average daily foreign exchange rate before it reaches reports and bidding. On a USD account, a €100 order sent with currency "EUR" is recorded as the dollar equivalent on that day, not as 100. A multi-currency setup is supported, and on its own it is not a defect.\n\nThe conversion is only as good as the currency code it is given. Google takes the code at face value and cannot tell that an amount labelled USD was charged in EUR. Three setups produce a code that does not match the money. The first is a GTM conversion tag with the currency hardcoded, often to USD, on a site that later started charging in other currencies. The second is a tag that sends no currency code, or one that is not a valid three-letter ISO 4217 code: Google then ignores the tag\'s currency and uses the currency set on the conversion action\'s default value. The third is an offline conversion import where the currency column is filled differently across uploads.\n\nIn each case Google converts the amount from the wrong currency. Revenue in Google Ads drifts from the commerce backend by roughly the exchange rate, and value-based bidding optimises against the distorted values.\n\nAdLint flags mixed currency codes because that is where this drift usually starts. It reads the conversion settings, not individual transactions, so it cannot tell whether each code is correct. That part needs a test order.',
     howToFix:
-      '1. Decide the account-level reporting currency. Usually this is the company\'s functional currency, not the customer\'s. 2. For GTM-managed conversions, open the Google Ads Conversion Tracking tag. Set Currency Code to a Data Layer Variable that resolves to the right ISO code, typically `{{DLV - ecommerce.currency}}`. Do not hardcode it. 3. For multi-region sites, pick one of two approaches and document it. Either (a) pass the local currency consistently and let Google Ads convert at the daily exchange rate, or (b) normalise to the reporting currency on the site before pushing to dataLayer. Both are valid. Mixing them is not. 4. For Google Ads conversion imports, standardise the Currency column on every upload. An empty Currency column means Google falls back to the account default, which can be different from what the import data was actually in. 5. Run a test conversion. Verify in Google Ads → Conversions that the Currency column shows the expected ISO code.',
-    example: 'Expected currency code: USD\nGTM Currency Code field: {{DLV - ecommerce.currency}}\ndataLayer value: ecommerce.currency = "USD"',
+      '1. For each currency in the finding, find where the conversion value comes from: a GTM tag, a gtag snippet, or an import. 2. Check that the currency sent with the value is the currency the customer was charged in. In GTM, the Google Ads Conversion Tracking tag\'s Currency Code field should read the order currency from the dataLayer, typically `{{DLV - ecommerce.currency}}`. Hardcode it only if the site charges in a single currency. 3. Send a valid ISO 4217 three-letter code (USD, EUR, GBP). A missing or invalid code makes Google fall back to the currency on the action\'s default value. 4. For offline conversion imports, fill the currency column on every row of every upload. 5. Place a test order in a non-default currency. Confirm that Google Ads reports it as the order total converted into the account currency at that day\'s rate.',
+    example: 'Account currency: USD\nOrder: €100.00, tag sends currency "EUR"\nGoogle Ads records: the USD equivalent at that day\'s rate (correct)\n\nSame order, tag hardcoded to currency "USD"\nGoogle Ads records: $100.00 (wrong by the exchange rate)',
     citationTemplate:
-      'This account has Google Ads conversion actions reporting values in more than one currency code. Per Google\'s conversion-value documentation, value-based bidding and aggregate reporting assume consistent currency within each conversion action. Mixed currencies are summed without exchange-rate normalisation, so Target ROAS optimisation is corrupted and aggregate totals do not reconcile against backend revenue. Fix: standardise on the account reporting currency or pass per-conversion currency consistently from the site, and verify in Google Ads reports. Source: support.google.com/google-ads/answer/2998565.',
+      'This account has Google Ads conversion actions that use more than one currency code. Per Google Ads Help ("Set up additional settings", conversion value currency), Google Ads converts conversion values reported in a currency other than the account currency at the average daily foreign exchange rate, and uses the currency on the conversion action\'s default value when a tag sends no currency code or an invalid one. Mixed currencies are therefore supported. The risk is a currency code that does not match the amount actually charged, for example a tag hardcoded to USD on a site that charges in EUR: Google converts that amount from the wrong currency, so reported revenue and value-based bidding drift from the commerce backend. Fix: send the order\'s actual ISO 4217 currency code with every conversion value, and verify a test conversion in a non-default currency. Source: support.google.com/google-ads/answer/13064032.',
     references: [
       {
-        label: 'Google Ads. Set up conversion values',
-        url: 'https://support.google.com/google-ads/answer/13064107',
+        label: 'Google Ads. Set up additional settings (conversion value currency)',
+        url: 'https://support.google.com/google-ads/answer/13064032',
       },
       {
-        label: 'Google Ads. Currency conversion in conversion tracking',
-        url: 'https://support.google.com/google-ads/answer/2998565',
+        label: 'Google Ads. Track transaction-specific conversion values',
+        url: 'https://support.google.com/google-ads/answer/6095947',
       },
     ],
-    lastUpdated: '2026-05-12',
+    lastUpdated: '2026-10-30',
     status: 'full',
     relatedChecks: ['zero-value-purchases', 'value-mismatch', 'roas-sanity'],
   },
@@ -3221,23 +3221,23 @@ export const explainers: CheckExplainer[] = [
     summary: 'Currency codes configured in GTM conversion tags do not match the currencies recorded in Google Ads.',
     directAnswer:
       'The currency code sent by your GTM conversion tags does not match the currency configured on the matching Google Ads conversion action. Same conversion, two different currency labels. Google Ads will accept the hit, but the revenue numbers in Ads will not line up with the revenue numbers in your commerce backend, and every multi-currency ROAS calculation on this account is built on a quiet conversion error.',
-    why: 'Google Ads requires every conversion with a value to carry an ISO 4217 currency code (USD, EUR, GBP, etc). When the tag does not send a currency, Google Ads infers the account default. When the tag sends a different currency than the action expects, Google Ads converts the value using its own exchange rate at the time of the hit.\n\nThat conversion is silent. The dashboards still show numbers. The ROAS column still populates. The numbers are just no longer comparable to anything else. A 100 EUR order recorded as USD becomes 100 USD in the Performance report, and the commerce backend that recorded it as 100 EUR will show roughly 110 USD for the same transaction. Multi-currency accounts can have reported Ads revenue diverge from real revenue by 10 to 30 percent depending on the mix.\n\nThe usual cause is a tag built off a hardcoded `currency: "USD"` string that was never updated when the business expanded to other markets, or a Data Layer Variable that resolves to the user\'s locale instead of the order currency.',
+    why: 'Google Ads expects every conversion value to carry an ISO 4217 currency code (USD, EUR, GBP). When the tag sends no currency code, or an invalid one, Google Ads uses the currency set on the conversion action\'s default value. When the tag sends a valid code that differs from the account currency, Google Ads converts the value into the account currency at the average daily exchange rate.\n\nThat conversion is silent. The dashboards still show numbers. The ROAS column still populates. The numbers are just no longer comparable to anything else. A 100 EUR order recorded as USD becomes 100 USD in the Performance report, and the commerce backend that recorded it as 100 EUR will show roughly 110 USD for the same transaction. Multi-currency accounts can have reported Ads revenue diverge from real revenue by 10 to 30 percent depending on the mix.\n\nThe usual cause is a tag built off a hardcoded `currency: "USD"` string that was never updated when the business expanded to other markets, or a Data Layer Variable that resolves to the user\'s locale instead of the order currency.',
     howToFix:
       '1. List the currencies that appear in your GTM conversion tags and the currencies recorded on the corresponding Google Ads actions. AdLint surfaces both. 2. Decide whether the account is single-currency or multi-currency. For single-currency, hardcode the correct ISO 4217 code in the GTM tag and confirm Google Ads matches. 3. For multi-currency, source the currency code from the order object via a Data Layer Variable so each transaction carries its own currency. Do not source from the user\'s browser locale. 4. Verify in Tag Assistant that the currency field on a real transaction matches both the order in your commerce backend and the action setup in Google Ads. 5. Wait one full reporting cycle and reconcile a sample of transactions across Ads and the commerce backend.',
     example: "GTM value parameter: 129.99\nGTM currency parameter: 'USD'\nAds action expects: EUR\nResult: Google Ads converts 129.99 USD to roughly 119 EUR silently.",
     citationTemplate:
-      'This account has GTM conversion tags sending currency codes that do not match the currencies recorded on the corresponding Google Ads conversion actions. Per Google\'s conversion-value documentation, Google Ads accepts any ISO 4217 currency code on the hit and silently converts to the account or action currency using its own exchange rate. Multi-currency accounts therefore see Ads-reported revenue diverge from commerce-backend revenue without any warning, and Target ROAS strategies optimize against the converted values rather than the real transaction values. The typical root cause is a hardcoded currency string in the tag or a Data Layer Variable sourced from the user locale rather than the order currency. Fix: source the currency from the order object, verify in Tag Assistant that the tag currency matches the commerce backend, and reconcile a sample of transactions across both surfaces after one reporting cycle. Source: support.google.com/google-ads/answer/2998565.',
+      'This account has GTM conversion tags sending currency codes that do not match the currencies recorded on the corresponding Google Ads conversion actions. Per Google\'s conversion-value documentation, Google Ads accepts any valid ISO 4217 currency code on the hit and silently converts the value into the account currency at the average daily foreign exchange rate, falling back to the conversion action\'s default-value currency when the code is missing or invalid. Multi-currency accounts therefore see Ads-reported revenue diverge from commerce-backend revenue without any warning, and Target ROAS strategies optimize against the converted values rather than the real transaction values. The typical root cause is a hardcoded currency string in the tag or a Data Layer Variable sourced from the user locale rather than the order currency. Fix: source the currency from the order object, verify in Tag Assistant that the tag currency matches the commerce backend, and reconcile a sample of transactions across both surfaces after one reporting cycle. Source: support.google.com/google-ads/answer/13064032.',
     references: [
       {
-        label: 'Google Ads. About currency in conversions',
-        url: 'https://support.google.com/google-ads/answer/2998565',
+        label: 'Google Ads. Set up additional settings (conversion value currency)',
+        url: 'https://support.google.com/google-ads/answer/13064032',
       },
       {
         label: 'Google Ads. Set up conversion values',
         url: 'https://support.google.com/google-ads/answer/13064107',
       },
     ],
-    lastUpdated: '2026-05-12',
+    lastUpdated: '2026-10-30',
     status: 'full',
     relatedChecks: ['zero-value-purchases', 'cross-value-config-mismatch', 'roas-sanity'],
   },
@@ -4628,19 +4628,20 @@ export const explainers: CheckExplainer[] = [
     name: 'Disabled High-Value Conversion Actions',
     source: 'ads',
     severity: 'warning',
-    summary: 'High-value conversion actions are disabled even though they have recent volume.',
+    summary: 'Purchase or sale conversion actions are disabled.',
     directAnswer:
-      'One or more Google Ads conversion actions are currently disabled despite having significant historical conversion value. The disabled actions are not feeding Smart Bidding, and the underlying business outcome is invisible to optimisation. Either re-enable them or move the value capture to a different active action.',
-    why: 'Conversion actions get disabled for legitimate reasons. a deprecated event, a discontinued lead form, a tracking method being phased out. But disabled actions sometimes get left in that state long after they should have been replaced, particularly when the replacement was set up under a new conversion ID but the old one captured the historically-significant volume. The damage: bidding strategies no longer see signal from a real revenue stream, and campaign reports that filter by conversion goal exclude meaningful activity. The check flags actions that were disabled but show enough historical value to suggest they are still load-bearing.',
+      'One or more conversion actions in a purchase or sale category have the status Disabled in your Google Ads export. An action that is switched off no longer tracks data, so it sends no revenue signal to Smart Bidding and no conversions to your reports. That is often deliberate, for example a duplicate retired after a migration. AdLint cannot tell from the export, so confirm that another enabled action now records these sales, or re-enable this one.',
+    why: 'Conversion actions get disabled for legitimate reasons: a duplicate cleaned up, a checkout rebuilt, a tracking method replaced. The risk is a purchase action that was switched off before its replacement was recording, or switched off by mistake. Then the sales it used to record are no longer visible to bidding or reporting, and nothing warns you, because a disabled action looks the same as a retired one.\n\nAdLint treats purchase and sale actions as high-value because they carry revenue. The check reads two fields from the export, the category and the status, and flags every action in a purchase-style category (purchase, sale, transaction, order, buy) whose status is Disabled. It does not read conversion volume, conversion value or history, so it cannot tell a forgotten revenue action from a correctly retired one. That decision is yours; the steps below walk through it.',
     howToFix:
-      '1. AdLint\'s details list each disabled action and its historical conversion value. 2. For each one: is the action genuinely retired (and is a replacement live)? Re-enable if not. 3. If a replacement exists: confirm it is configured Primary, configured with values, and present in the active campaign goal lists. 4. If the action is truly deprecated: add a note to the Description field explaining when and why, and consider archiving the historical data. 5. Re-run AdLint after the cleanup to confirm the finding clears.',
-    example: 'Disabled action: Purchase (legacy)\nHistorical conversion value (last 90 days while enabled): $480,000\nStatus: disabled 60 days ago, no replacement configured.\nRecommended action: re-enable or verify replacement.',
+      '1. AdLint\'s details list each disabled purchase or sale action by name. 2. For each one, decide whether it was retired on purpose. If it was not, re-enable it. 3. If it was retired, find the action that replaced it. Confirm the replacement is enabled, set as Primary, uses a value, and is included in the conversion goals your campaigns bid on. 4. If the action is retired for good with no replacement needed, note when and why in your measurement docs, or remove it so it stops appearing in audits. 5. Re-run AdLint to confirm the finding clears.',
+    example: 'Category: Purchase\nAction: Purchase (legacy GTM tag)\nStatus: Disabled\nCheck: is "Purchase (GA4 import)" enabled, Primary and in the campaign goals? If yes, this is a retired duplicate. If no, revenue is going unrecorded.',
     citationTemplate:
-      'Google Ads conversion actions in disabled state despite materially significant historical conversion value. Google\'s conversion action documentation, disabled actions do not contribute to Smart Bidding or current reporting; high-value disabled actions usually indicate an incomplete migration to a replacement. Fix: confirm a replacement action is active and capturing equivalent value, or re-enable the disabled action and document its current purpose. Source: support.google.com/google-ads/answer/1722054.',
+      'This Google Ads account has conversion actions in a purchase or sale category whose status is Disabled. Per Google Ads Help, an action that has been removed or archived is no longer tracking data, and only Primary actions in a campaign\'s conversion goals are used for bidding. A switched-off purchase action therefore contributes no revenue signal to Smart Bidding and no conversions to reporting. This is often a deliberate retirement of a duplicate, but it is a gap if no enabled replacement records the same sales. Fix: for each flagged action, confirm an enabled Primary replacement is capturing the same sales with values, or re-enable the action. Sources: support.google.com/google-ads/troubleshooter/13455130 and support.google.com/google-ads/answer/10995103.',
     references: [
-      { label: 'Google Ads. Edit your conversion actions', url: 'https://support.google.com/google-ads/answer/1722054' },
+      { label: 'Google Ads. Troubleshoot conversion tracking status', url: 'https://support.google.com/google-ads/troubleshooter/13455130' },
+      { label: 'Google Ads. About conversion goals', url: 'https://support.google.com/google-ads/answer/10995103' },
     ],
-    lastUpdated: '2026-05-12',
+    lastUpdated: '2026-10-30',
     status: 'full',
     relatedChecks: ['missing-primary-conversion', 'many-inactive-conversions'],
   },
