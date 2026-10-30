@@ -1,3 +1,4 @@
+import { isConversionActionOn } from './conversionStatus';
 import { AdsReportData, AdsData, AuditCheck } from '../types';
 import { areSimilar } from '../utils/stringDistance';
 
@@ -274,7 +275,7 @@ export const checkGhostConversions = (
   }
 
   const enabledSettings = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   );
 
   const ghosts = enabledSettings.filter(setting => {

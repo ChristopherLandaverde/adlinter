@@ -1,3 +1,4 @@
+import { isConversionActionOn } from './conversionStatus';
 import { AdsData, AuditCheck, AuditContext } from '../types';
 
 // ── VALUE INTELLIGENCE ──────────────────────────────────────
@@ -158,7 +159,7 @@ export const checkZeroValueWithCount = (
     (c.category.toLowerCase().includes('purchase') ||
      c.category.toLowerCase().includes('sale') ||
      c.category.toLowerCase().includes('transaction')) &&
-    c.status.toLowerCase() === 'enabled'
+    isConversionActionOn(c.status)
   );
 
   const zeroValueCounting = purchaseConversions.filter(
@@ -243,7 +244,7 @@ export const checkSuboptimalAttributionModel = (
   context?: AuditContext
 ): AuditCheck => {
   const conversions = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   );
 
   const modelCounts = new Map<string, number>();
@@ -330,7 +331,7 @@ export const checkAttributionWindowMismatch = (
   }
 
   const conversions = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   );
 
   const windowIssues: Array<{
@@ -398,7 +399,7 @@ export const checkViewThroughWindows = (
   _context?: AuditContext
 ): AuditCheck => {
   const conversions = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   );
 
   const viewWindows = conversions.map(c => {
@@ -454,7 +455,7 @@ export const checkDataDrivenEligibility = (
 ): AuditCheck => {
   const dataDrivenConversions = adsData.conversions.filter(c =>
     c.attributionModel.toLowerCase().includes('data-driven') &&
-    c.status.toLowerCase() === 'enabled'
+    isConversionActionOn(c.status)
   );
 
   if (dataDrivenConversions.length === 0) {
@@ -491,7 +492,7 @@ export const checkSmartBiddingVolume = (
   _context?: AuditContext
 ): AuditCheck => {
   const enabledConversions = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   );
 
   const primaryConversions = enabledConversions.filter(c =>
@@ -529,11 +530,11 @@ export const checkROASFeasibility = (
   _context?: AuditContext
 ): AuditCheck => {
   const conversionsWithValue = adsData.conversions.filter(
-    c => c.value > 0 && c.status.toLowerCase() === 'enabled'
+    c => c.value > 0 && isConversionActionOn(c.status)
   );
 
   const conversionsWithoutValue = adsData.conversions.filter(
-    c => c.value === 0 && c.status.toLowerCase() === 'enabled'
+    c => c.value === 0 && isConversionActionOn(c.status)
   );
 
   if (conversionsWithoutValue.length > conversionsWithValue.length) {
@@ -585,7 +586,7 @@ export const checkConversionDelayImpact = (
   _context?: AuditContext
 ): AuditCheck => {
   const conversions = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   );
 
   const longWindows = conversions.filter(c => {
@@ -632,7 +633,7 @@ export const checkPrimaryConversionDesignation = (
   );
 
   const enabledConversions = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   );
 
   if (primaryConversions.length === 0 && enabledConversions.length > 1) {

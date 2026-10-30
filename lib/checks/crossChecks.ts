@@ -1,3 +1,4 @@
+import { isConversionActionOn } from './conversionStatus';
 import { GTMContainer, AdsData, AuditCheck, AuditContext } from '../types';
 
 // ── CRITICAL CROSS-CHECK #1 ─────────────────────────────────
@@ -7,7 +8,7 @@ export const checkAdsConversionHasGTMTag = (
   _context?: AuditContext
 ): AuditCheck => {
   const enabledConversions = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   );
 
   const gtmTags = gtmData.containerVersion.tag || [];
@@ -163,7 +164,7 @@ export const checkTagCountMismatch = (
   const gtmTags = gtmData.containerVersion.tag || [];
   const gtmConversionCount = gtmTags.filter(tag => tag.type === 'awct').length;
   const adsConversionCount = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   ).length;
 
   if (gtmConversionCount === 0 && adsConversionCount === 0) {

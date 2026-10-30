@@ -1,3 +1,4 @@
+import { isConversionActionOff, isConversionActionOn } from './conversionStatus';
 import { AdsData, AdsReportData, AuditCheck } from '../types';
 
 /**
@@ -23,10 +24,10 @@ export const checkPurchaseDisabledOthersEnabled = (
   );
 
   const purchaseDisabled = purchaseConversions.filter(
-    c => c.status.toLowerCase() === 'disabled'
+    c => isConversionActionOff(c.status)
   );
   const othersEnabled = otherConversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   );
 
   const isBroken = purchaseDisabled.length > 0 && othersEnabled.length > 0;
@@ -37,7 +38,7 @@ export const checkPurchaseDisabledOthersEnabled = (
     passed: !isBroken,
     title: 'Purchase Conversions Disabled While Others Enabled',
     description: isBroken
-      ? `${purchaseDisabled.length} purchase conversion(s) disabled while ${othersEnabled.length} other action(s) enabled — Smart Bidding optimizing for wrong goal`
+      ? `${purchaseDisabled.length} purchase conversion(s) removed or disabled while ${othersEnabled.length} other action(s) enabled — Smart Bidding optimizing for wrong goal`
       : 'Primary conversion status is appropriate',
     details: {
       disabledPurchases: purchaseDisabled.map(c => c.name),
@@ -64,7 +65,7 @@ export const checkHighValueWrongCounting = (
     // Wrong counting: purchase with "One" (should be "Every")
     const wrongCounting = isPurchase && c.count.toLowerCase() === 'one';
 
-    return isHighValue && wrongCounting && c.status.toLowerCase() === 'enabled';
+    return isHighValue && wrongCounting && isConversionActionOn(c.status);
   });
 
   return {
@@ -174,7 +175,7 @@ export const checkExtremeWindowMismatch = (
 
     const hasExtremeClickWindow = isPurchase && clickDays > 60;
     const hasInvertedRatio = viewDays > 7 && clickDays < 7;
-    const hasTooShortClick = clickDays > 0 && clickDays < 1 && c.status.toLowerCase() === 'enabled';
+    const hasTooShortClick = clickDays > 0 && clickDays < 1 && isConversionActionOn(c.status);
 
     return hasExtremeClickWindow || hasInvertedRatio || hasTooShortClick;
   });
@@ -306,7 +307,7 @@ export const checkSingleCategoryDominance = (
   _reportData: AdsReportData | null
 ): AuditCheck => {
   const enabledConversions = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   );
 
   if (enabledConversions.length < 3) {

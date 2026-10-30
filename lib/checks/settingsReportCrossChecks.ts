@@ -1,3 +1,4 @@
+import { isConversionActionOff, isConversionActionOn } from './conversionStatus';
 import { AdsData, AdsReportData, AuditCheck } from '../types';
 import { areSimilar } from '../utils/stringDistance';
 
@@ -12,7 +13,7 @@ export const checkZeroVolumeActiveConversions = (
   reportData: AdsReportData
 ): AuditCheck => {
   const enabledConversions = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   );
 
   const reportNamesLower = new Map(
@@ -154,7 +155,7 @@ export const checkDisabledWithVolume = (
   reportData: AdsReportData
 ): AuditCheck => {
   const disabledConversions = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'disabled'
+    c => isConversionActionOff(c.status)
   );
 
   const disabledWithVolume = disabledConversions.filter(setting => {
@@ -179,8 +180,8 @@ export const checkDisabledWithVolume = (
     passed: disabledWithVolume.length === 0,
     title: 'Disabled Conversions with Active Volume',
     description: disabledWithVolume.length > 0
-      ? `${disabledWithVolume.length} disabled conversion(s) still showing volume in report — data may be stale or tags still firing`
-      : 'No disabled conversions with active volume',
+      ? `${disabledWithVolume.length} removed or disabled conversion(s) still showing volume in report — data may be stale or tags still firing`
+      : 'No removed or disabled conversions with active volume',
     details: { disabledWithVolume },
     recommendation: 'Verify if these should be re-enabled, or if tags need to be removed from GTM',
     requiresBothFiles: true,
@@ -193,7 +194,7 @@ export const checkSettingsReportCountMismatch = (
   reportData: AdsReportData
 ): AuditCheck => {
   const enabledCount = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   ).length;
 
   const reportWithVolume = reportData.conversions.filter(
