@@ -1,3 +1,4 @@
+import { isConversionActionOn } from './conversionStatus';
 import { AdsData, AdsReportData, AuditCheck, AuditContext, Severity } from '../types';
 
 // Helper to extract days from window strings
@@ -68,7 +69,7 @@ export const checkPrimaryDilution = (
 
   // Count enabled conversions that could be "primary" (purchase/lead categories)
   const primaryCandidates = adsData.conversions.filter(c =>
-    c.status.toLowerCase() === 'enabled' &&
+    isConversionActionOn(c.status) &&
     MACRO_CATEGORIES.some(cat => c.category.toLowerCase().includes(cat))
   );
 
@@ -154,7 +155,7 @@ export const checkZeroValuePrimary = (
   }
 
   const zeroValuePrimary = adsData.conversions.filter(c =>
-    c.status.toLowerCase() === 'enabled' &&
+    isConversionActionOn(c.status) &&
     PRIMARY_CATEGORIES.some(cat => c.category.toLowerCase().includes(cat)) &&
     c.value === 0
   );
@@ -296,7 +297,7 @@ export const checkMicroAsPrimary = (
   }
 
   const microAsPrimary = adsData.conversions.filter(c =>
-    c.status.toLowerCase() === 'enabled' &&
+    isConversionActionOn(c.status) &&
     MICRO_CATEGORIES.some(m => c.category.toLowerCase().includes(m) || c.name.toLowerCase().includes(m))
   );
 

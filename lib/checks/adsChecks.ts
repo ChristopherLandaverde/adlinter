@@ -1,3 +1,4 @@
+import { isConversionActionOff, isConversionActionOn } from './conversionStatus';
 import { AdsData, AuditCheck, AuditContext, Severity } from '../types';
 import { areSimilar } from '../utils/stringDistance';
 import { normaliseCounting, recommendedCounting } from './countingGuidance';
@@ -225,7 +226,7 @@ export const checkDisabledHighValueConversions = (
   _context?: AuditContext
 ): AuditCheck => {
   const disabledPurchases = adsData.conversions.filter(
-    c => isPurchaseCategory(c.category) && c.status.toLowerCase() === 'disabled'
+    c => isPurchaseCategory(c.category) && isConversionActionOff(c.status)
   );
 
   return {
@@ -235,7 +236,7 @@ export const checkDisabledHighValueConversions = (
     title: 'Disabled High-Value Conversions',
     description:
       disabledPurchases.length > 0
-        ? `${disabledPurchases.length} purchase/sale conversion(s) are disabled`
+        ? `${disabledPurchases.length} purchase/sale conversion(s) are removed or disabled (status Removed, Hidden or Disabled)`
         : 'All high-value conversions are enabled',
     details: { conversions: disabledPurchases.map(c => c.name) },
     recommendation: 'Enable disabled purchase conversions or remove if no longer needed',
@@ -350,7 +351,7 @@ export const checkMissingPrimaryConversion = (
   const hasPrimaryConversion = adsData.conversions.some(
     c =>
       isPurchaseCategory(c.category) &&
-      c.status.toLowerCase() === 'enabled'
+      isConversionActionOn(c.status)
   );
 
   return {
@@ -400,8 +401,11 @@ export const checkManyInactiveConversions = (
   adsData: AdsData,
   _context?: AuditContext
 ): AuditCheck => {
+  // Not isConversionActionOff: Google Ads archives Removed actions and hides
+  // them from the conversions table by default, so they are already cleaned
+  // up, not clutter (support.google.com/google-ads/answer/10918269).
   const disabled = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'disabled'
+    c => c.status.trim().toLowerCase() === 'disabled'
   );
 
   return {

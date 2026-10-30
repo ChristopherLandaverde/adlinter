@@ -1,3 +1,4 @@
+import { isConversionActionOn } from './conversionStatus';
 import { GTMContainer, AdsData, AuditCheck, AuditContext } from '../types';
 
 // ── VALUE PASSING & INTEGRATION ─────────────────────────────
@@ -62,7 +63,7 @@ export const checkDynamicValuePassing = (
   const purchaseConversions = adsData.conversions.filter(c =>
     (c.category.toLowerCase().includes('purchase') ||
      c.category.toLowerCase().includes('sale')) &&
-    c.status.toLowerCase() === 'enabled'
+    isConversionActionOn(c.status)
   );
 
   const tagsWithDynamicValues = conversionTags.filter(tag => {
@@ -124,7 +125,7 @@ export const checkConversionLabelMatching = (
   });
 
   const adsConversions = adsData.conversions
-    .filter(c => c.status.toLowerCase() === 'enabled')
+    .filter(c => isConversionActionOn(c.status))
     .map(c => c.name);
 
   const matchingIssues: Array<{ gtmTag: string; issue: string }> = [];
@@ -564,7 +565,7 @@ export const checkConversionFunnelCoverage = (
   _context?: AuditContext
 ): AuditCheck => {
   const adsConversions = adsData.conversions.filter(
-    c => c.status.toLowerCase() === 'enabled'
+    c => isConversionActionOn(c.status)
   );
 
   const funnelStages: Record<string, number> = {
@@ -621,7 +622,7 @@ export const checkConversionNamingAlignment = (
   ) || [];
 
   const adsConversionNames = adsData.conversions
-    .filter(c => c.status.toLowerCase() === 'enabled')
+    .filter(c => isConversionActionOn(c.status))
     .map(c => c.name.toLowerCase());
 
   const namingMismatches: Array<{
