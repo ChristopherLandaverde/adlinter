@@ -325,10 +325,10 @@ export const explainers: CheckExplainer[] = [
     name: 'Missing Data Layer Variables',
     source: 'gtm',
     severity: 'critical',
-    summary: 'GTM tags reference dataLayer values that are missing or not configured as variables.',
+    summary: 'GTM tags reference variables that are not defined anywhere in the container.',
     directAnswer:
-      'Conversion tags in this container reference fields that are not exposed as GTM Data Layer Variables. Typically `ecommerce.value`, `ecommerce.currency`, or `ecommerce.transaction_id`. The tags still fire on the right trigger, but the fields they read resolve to empty, which means the conversion is reported with no value. The dashboard shows a count; the bidding signal is noise.',
-    why: 'A GTM tag does not read the dataLayer directly. it reads variables that are bound to dataLayer paths through the User-Defined Variables panel. If a conversion tag references `{{DLV - ecommerce.value}}` but no such Data Layer Variable exists (or the binding is misspelled), GTM evaluates the placeholder to an empty string and ships the conversion with no value field. Google Ads counts this as a valid conversion at zero revenue. Smart Bidding then optimises against the count signal alone, treating a $1,000 order identically to a $10 order. The damage adds up because the failure is silent: nothing in the tag firing or the Preview-mode summary surfaces "this variable resolved to empty." The user finds out months later when reported ROAS diverges from the e-commerce backend by an unexplainable factor.',
+      'Tags in this container reference a variable, written as `{{Variable Name}}`, that is not defined anywhere in the container: not as a user-defined variable of any type, and not as a built-in. Usually it is a Data Layer Variable for `ecommerce.value`, `ecommerce.currency` or `ecommerce.transaction_id` that was renamed, deleted or misspelled. The tag has nothing to read that field from, so a conversion tag can fire without its value or transaction ID.',
+    why: 'A GTM tag does not read the dataLayer directly. It reads variables that are bound to dataLayer paths through the User-Defined Variables panel. If a conversion tag references `{{DLV - ecommerce.value}}` but no variable with that name exists in the container (it was renamed, deleted, or the reference is misspelled), the tag has no defined source for the value and the conversion goes out without it. Google Ads still counts the conversion, but falls back to the default value set on the conversion action (Google\'s setup asks for "a default value to use when one isn\'t provided"), or records no value if there is none. Smart Bidding then optimises against a flat value, treating a $1,000 order like a $10 order. The damage adds up because the failure is silent: nothing in the tag firing or the Preview-mode summary surfaces "this variable resolved to empty." The user finds out months later when reported ROAS diverges from the e-commerce backend by an unexplainable factor.',
     howToFix:
       '1. In GTM, open Workspace → Variables → User-Defined Variables. 2. For every field used by a conversion or analytics tag. `ecommerce.value`, `ecommerce.currency`, `ecommerce.transaction_id`, and any user-data field. Create a Data Layer Variable with the matching Data Layer Variable Name (case-sensitive, dot-separated path). 3. Set Data Layer Version to Version 2 for any nested ecommerce path. 4. Open each conversion tag and reference the variables via `{{DLV - …}}` syntax instead of literal values. 5. In Preview mode, complete a test conversion and inspect each variable in the Variables tab at the exact event step the tag fires on. Every variable should resolve to a non-empty value before publish.',
     example: 'Variable: DLV - ecommerce.value\nData Layer Variable Name: ecommerce.value\nData Layer Version: Version 2\nUsed by: Google Ads purchase conversion value',
@@ -344,7 +344,7 @@ export const explainers: CheckExplainer[] = [
         url: 'https://developers.google.com/tag-platform/tag-manager/datalayer',
       },
     ],
-    lastUpdated: '2026-05-12',
+    lastUpdated: '2026-10-30',
     status: 'full',
     relatedChecks: ['ecommerce-datalayer-structure', 'dynamic-value-passing'],
   },
