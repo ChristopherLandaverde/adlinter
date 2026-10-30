@@ -11,6 +11,7 @@ import {
   checkConversionNamingAlignment,
 } from '@/lib/checks/advancedCrossChecks';
 import { GTMContainer, AdsData, AuditContext } from '@/lib/types';
+import { parseAdsCSV } from '@/lib/parsers/adsParser';
 
 // Helper to create a minimal AdsConversion
 const makeConversion = (overrides: Partial<{
@@ -271,6 +272,62 @@ describe('checkCurrencyCodeConsistency', () => {
     expect(result.passed).toBe(false);
     expect(result.severity).toBe('warning');
     expect(result.id).toBe('currency-consistency-cross');
+  });
+
+  // #60: a one-sided comparison used to return a warning-level
+  // "Currency codes appear consistent" pass without comparing anything.
+  const usdTag: GTMContainer = {
+    containerVersion: {
+      tag: [
+        {
+          name: 'Purchase',
+          type: 'awct',
+          parameter: [{ key: 'currencyCode', value: 'USD', type: 'template' }],
+          firingTriggerId: ['1'],
+        },
+      ],
+    },
+  };
+
+  it('reports the Ads side as not available instead of passing', () => {
+    const adsData: AdsData = { conversions: [makeConversion()] };
+    const result = checkCurrencyCodeConsistency(usdTag, adsData);
+    expect(result.passed).toBe(true);
+    expect(result.severity).toBe('info');
+    expect(result.description).not.toMatch(/appear consistent/i);
+    expect(result.description).toMatch(/Google Ads export/i);
+    expect(result.description).toMatch(/not available|no currency/i);
+  });
+
+  it('reports the GTM side as not available when tags only use variables', () => {
+    const dynamicTag: GTMContainer = {
+      containerVersion: {
+        tag: [
+          {
+            name: 'Purchase',
+            type: 'awct',
+            parameter: [{ key: 'currencyCode', value: '{{DLV - ecommerce.currency}}', type: 'template' }],
+            firingTriggerId: ['1'],
+          },
+        ],
+      },
+    };
+    const adsData: AdsData = { conversions: [{ ...makeConversion(), currency: 'USD' }] };
+    const result = checkCurrencyCodeConsistency(dynamicTag, adsData);
+    expect(result.passed).toBe(true);
+    expect(result.severity).toBe('info');
+    expect(result.description).not.toMatch(/appear consistent/i);
+    expect(result.description).toMatch(/GTM/);
+  });
+
+  it('compares a parsed Ads export against GTM and flags the mismatch', () => {
+    const csv = [
+      'Conversion name,Category,Value,Count,Attribution model,Click-through conversion window,View-through conversion window,Status,Currency code',
+      'Purchase,Purchase,50,Every,Data-driven,30 days,1 day,Active,EUR',
+    ].join('\n');
+    const result = checkCurrencyCodeConsistency(usdTag, parseAdsCSV(csv));
+    expect(result.passed).toBe(false);
+    expect(result.severity).toBe('warning');
   });
 });
 

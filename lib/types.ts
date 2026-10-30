@@ -99,6 +99,8 @@ export interface AdsConversion {
   clickWindow: string;
   viewWindow: string;
   status: string;
+  /** ISO 4217 code from the export's currency column, when it has one. */
+  currency?: string;
 }
 
 export interface AdsData {

@@ -198,16 +198,30 @@ export const checkCurrencyCodeConsistency = (
   });
 
   const adsCurrencies = new Set(
-    adsData.conversions.map(c => (c as any).currency).filter(Boolean)
+    adsData.conversions
+      .map(c => c.currency)
+      .filter((code): code is string => Boolean(code))
   );
 
-  if (gtmCurrencies.size === 0 && adsCurrencies.size === 0) {
+  // A comparison needs a currency on both sides. GTM tags that read the
+  // currency from a variable resolve only at runtime, so they can't be compared.
+  if (gtmCurrencies.size === 0 || adsCurrencies.size === 0) {
+    const missing =
+      gtmCurrencies.size === 0 && adsCurrencies.size === 0
+        ? 'Currency information not available in exports'
+        : adsCurrencies.size === 0
+          ? 'Currency not available in the Google Ads export (no currency column), so GTM currencies could not be compared'
+          : 'No hardcoded currency in GTM conversion tags (none, or set by variable), so Google Ads currencies could not be compared';
     return {
       id: 'currency-consistency-cross',
       severity: 'info',
       passed: true,
       title: 'Currency Code Consistency',
-      description: 'Currency information not available in exports',
+      description: missing,
+      details: {
+        gtmCurrencies: Array.from(gtmCurrencies),
+        adsCurrencies: Array.from(adsCurrencies),
+      },
       recommendation: 'Verify currency codes match in GTM tags and Google Ads UI',
       requiresBothFiles: true,
     };
@@ -216,9 +230,7 @@ export const checkCurrencyCodeConsistency = (
   const gtmCurrencyArray = Array.from(gtmCurrencies);
   const adsCurrencyArray = Array.from(adsCurrencies);
 
-  const mismatch = gtmCurrencyArray.some(
-    gtmCurr => adsCurrencyArray.length > 0 && !adsCurrencyArray.includes(gtmCurr)
-  );
+  const mismatch = gtmCurrencyArray.some(gtmCurr => !adsCurrencyArray.includes(gtmCurr));
 
   return {
     id: 'currency-consistency-cross',

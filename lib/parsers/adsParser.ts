@@ -5,6 +5,29 @@ import { AdsData, AdsConversion } from '../types';
 const REQUIRED_COLUMNS = ['conversion name', 'category', 'value', 'status'];
 const REQUIRED_COLUMNS_DISPLAY = ['Conversion name', 'Category', 'Value', 'Status'];
 
+// Accepted headers for the conversion action's currency (lowercase, trimmed).
+// Google Ads report downloads call the account currency "Currency code"; the
+// Google Ads API calls the action's fallback currency
+// value_settings.default_currency_code. Google Ads Help does not document the
+// exact header of a conversion-action download, so the common variants are
+// accepted.
+const CURRENCY_COLUMNS = [
+  'currency code',
+  'currency',
+  'default currency code',
+  'default currency',
+  'conversion currency',
+  'value currency',
+];
+
+const parseCurrency = (row: Record<string, string>): string | undefined => {
+  for (const col of CURRENCY_COLUMNS) {
+    const code = row[col]?.trim().toUpperCase();
+    if (code) return code;
+  }
+  return undefined;
+};
+
 // Parse numeric values handling both US (1,000.00) and EU (1.000,00) formats
 const parseNumericValue = (val: string | undefined): number => {
   if (!val || val === '') return 0;
@@ -69,6 +92,7 @@ export const parseAdsCSV = (fileContent: string): AdsData => {
       clickWindow: String(r['click-through conversion window'] ?? ''),
       viewWindow: String(r['view-through conversion window'] ?? ''),
       status: String(r['status'] ?? ''),
+      currency: parseCurrency(r),
     };
   });
 

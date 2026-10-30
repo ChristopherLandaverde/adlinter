@@ -16,6 +16,7 @@ import {
   checkConversionSourceConsistency,
 } from '@/lib/checks/advancedAdsChecks';
 import { AdsData, AuditContext } from '@/lib/types';
+import { parseAdsCSV } from '@/lib/parsers/adsParser';
 
 // Helper to create a minimal conversion
 const makeConversion = (overrides: Partial<AdsData['conversions'][0]> & { name: string }) => ({
@@ -143,6 +144,45 @@ describe('checkCurrencyConsistency', () => {
     expect(result.passed).toBe(false);
     expect(result.severity).toBe('warning');
     expect(result.id).toBe('currency-consistency');
+  });
+
+  // #60: end to end through the parser, the way the app runs it.
+  describe('on a parsed export', () => {
+    const HEADER =
+      'Conversion name,Category,Value,Count,Attribution model,Click-through conversion window,View-through conversion window,Status';
+
+    it('FAILS when the export lists two currency codes', () => {
+      const csv = [
+        `${HEADER},Currency code`,
+        'Purchase US,Purchase,50,Every,Data-driven,30 days,1 day,Active,USD',
+        'Purchase EU,Purchase,45,Every,Data-driven,30 days,1 day,Active,EUR',
+      ].join('\n');
+      const result = checkCurrencyConsistency(parseAdsCSV(csv));
+      expect(result.passed).toBe(false);
+      expect(result.severity).toBe('warning');
+      expect(result.description).toContain('USD');
+      expect(result.description).toContain('EUR');
+    });
+
+    it('PASSES when every action uses one currency', () => {
+      const csv = [
+        `${HEADER},Currency`,
+        'Purchase,Purchase,50,Every,Data-driven,30 days,1 day,Active,USD',
+        'Lead,Submit lead form,0,One,Data-driven,30 days,1 day,Active,usd',
+      ].join('\n');
+      const result = checkCurrencyConsistency(parseAdsCSV(csv));
+      expect(result.passed).toBe(true);
+      expect(result.severity).toBe('warning');
+      expect(result.description).toBe('All conversions use USD');
+    });
+
+    it('reports "not available" when the export has no currency column', () => {
+      const csv = [HEADER, 'Purchase,Purchase,50,Every,Data-driven,30 days,1 day,Active'].join('\n');
+      const result = checkCurrencyConsistency(parseAdsCSV(csv));
+      expect(result.passed).toBe(true);
+      expect(result.severity).toBe('info');
+      expect(result.description).toMatch(/not available/i);
+    });
   });
 });
 

@@ -47,4 +47,39 @@ Test,,0,One,,,Enabled`;
       expect(result.conversions[0].clickWindow).toBe('');
     });
   });
+
+  // #60: the currency column was never read, so both currency-consistency
+  // checks always reported "not available" on a real export.
+  describe('currency column', () => {
+    const HEADER =
+      'Conversion name,Category,Value,Count,Attribution model,Click-through conversion window,View-through conversion window,Status';
+
+    it.each([
+      'Currency code',
+      'Currency',
+      'Default currency',
+      'Default currency code',
+      'Conversion currency',
+      'Value currency',
+      ' CURRENCY CODE ',
+    ])('reads the currency from a "%s" column', (header) => {
+      const csv = `${HEADER},${header}\nPurchase,Purchase,50,One,Last click,30 days,1 day,Enabled,USD`;
+      expect(parseAdsCSV(csv).conversions[0].currency).toBe('USD');
+    });
+
+    it('trims and upper-cases the ISO 4217 code', () => {
+      const csv = `${HEADER},Currency code\nPurchase,Purchase,50,One,Last click,30 days,1 day,Enabled, eur `;
+      expect(parseAdsCSV(csv).conversions[0].currency).toBe('EUR');
+    });
+
+    it('leaves currency undefined when the cell is blank', () => {
+      const csv = `${HEADER},Currency code\nPurchase,Purchase,50,One,Last click,30 days,1 day,Enabled,`;
+      expect(parseAdsCSV(csv).conversions[0].currency).toBeUndefined();
+    });
+
+    it('leaves currency undefined when the export has no currency column', () => {
+      const csv = `${HEADER}\nPurchase,Purchase,50,One,Last click,30 days,1 day,Enabled`;
+      expect(parseAdsCSV(csv).conversions[0].currency).toBeUndefined();
+    });
+  });
 });
