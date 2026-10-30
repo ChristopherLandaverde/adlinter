@@ -265,7 +265,7 @@ export const checkCountingCategoryMismatch = (
 
   return {
     id: 'struct-counting-category-mismatch',
-    severity: 'critical',
+    severity: 'warning',
     passed: violations.length === 0,
     title: 'Counting Method vs Category Mismatch',
     description: violations.length > 0

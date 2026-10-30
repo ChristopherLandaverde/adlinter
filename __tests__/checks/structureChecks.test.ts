@@ -159,7 +159,7 @@ describe('Structure Audit Checks', () => {
 
       const result = checkCountingCategoryMismatch(adsData);
       expect(result.passed).toBe(false);
-      expect(result.severity).toBe('critical');
+      expect(result.severity).toBe('warning');
     });
 
     it('should flag lead with count "Every"', () => {
