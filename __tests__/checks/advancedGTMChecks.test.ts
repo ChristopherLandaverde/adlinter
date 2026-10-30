@@ -91,6 +91,114 @@ describe('checkMissingDataLayerVariables', () => {
     expect(result.passed).toBe(true);
     expect(result.severity).toBe('critical');
   });
+
+  // ── False positives (follow-up 3 of PR #55) ──────────────────
+  // A tag can read a variable that is not a Data Layer Variable: a Constant,
+  // Custom JavaScript, Lookup Table, Cookie, URL, custom-template variable,
+  // or any built-in. Those are defined; only names that exist nowhere in the
+  // container are missing.
+  const tagReading = (...refs: string[]) => ({
+    name: 'Tag A',
+    type: 'gaawe',
+    parameter: refs.map((r, i) => ({ key: `p${i}`, value: `{{${r}}}`, type: 'template' })),
+    firingTriggerId: ['1'],
+  });
+  const missingOf = (container: GTMContainer) =>
+    (checkMissingDataLayerVariables(container).details as { missingVariables: string[] })
+      .missingVariables;
+
+  it.each([
+    ['c', 'Constant - GA4 Measurement ID'],
+    ['jsm', 'CJS - Order Total'],
+    ['smm', 'Lookup - Conversion Label'],
+    ['remm', 'RegEx Table - Environment'],
+    ['k', 'Cookie - _fbp'],
+    ['u', 'URL - Query gclid'],
+    ['aev', 'AEV - Link Text'],
+    ['gas', 'GA Settings'],
+    ['cvt_123456_7', 'Template - Hashed Email'],
+  ])('should PASS when a tag reads a user-defined variable of type %s', (type, name) => {
+    const container: GTMContainer = {
+      containerVersion: {
+        tag: [tagReading(name)],
+        variable: [{ name, type, parameter: [] }],
+      },
+    };
+    const result = checkMissingDataLayerVariables(container);
+    expect(missingOf(container)).toEqual([]);
+    expect(result.passed).toBe(true);
+  });
+
+  it.each([
+    'Form ID',
+    'Form Classes',
+    'Referrer',
+    'HTML ID',
+    'Error Message',
+    'History Source',
+    'New History Fragment',
+    'Scroll Depth Threshold',
+    'Video Title',
+    'Percent Visible',
+    'On-Screen Duration',
+    'Analytics Client ID',
+  ])('should PASS when a tag reads the documented built-in variable "%s"', builtIn => {
+    const container: GTMContainer = {
+      containerVersion: { tag: [tagReading(builtIn)], variable: [] },
+    };
+    expect(missingOf(container)).toEqual([]);
+  });
+
+  it('should PASS when a tag reads a built-in listed in the export builtInVariable array', () => {
+    const container: GTMContainer = {
+      containerVersion: {
+        tag: [tagReading('Some Future Built-In')],
+        variable: [],
+        builtInVariable: [{ accountId: '1', containerId: '2', type: 'SOME_FUTURE', name: 'Some Future Built-In' }],
+      },
+    };
+    expect(missingOf(container)).toEqual([]);
+  });
+
+  it('should ignore {{...}} text in tag notes and names, which GTM does not resolve', () => {
+    const container: GTMContainer = {
+      containerVersion: {
+        tag: [
+          {
+            name: 'Purchase {{legacy}}',
+            type: 'awct',
+            notes: 'Reads {{DLV - old value}} until the migration is done',
+            parameter: [],
+            firingTriggerId: ['1'],
+          },
+        ],
+        variable: [],
+      },
+    };
+    expect(missingOf(container)).toEqual([]);
+  });
+
+  it('should still FAIL for a reference that exists nowhere in the container', () => {
+    const container: GTMContainer = {
+      containerVersion: {
+        tag: [tagReading('DLV - ecommerce.value', 'Constant - Conversion ID')],
+        variable: [{ name: 'Constant - Conversion ID', type: 'c', parameter: [] }],
+        builtInVariable: [{ type: 'PAGE_URL', name: 'Page URL' }],
+      },
+    };
+    const result = checkMissingDataLayerVariables(container);
+    expect(result.passed).toBe(false);
+    expect(missingOf(container)).toEqual(['DLV - ecommerce.value']);
+  });
+
+  it('should FAIL for an undefined name that merely starts like a built-in', () => {
+    // The old prefix filter treated any name starting with Page/Click/Event
+    // as built-in, hiding real misses such as a deleted "Page Type" variable.
+    const container: GTMContainer = {
+      containerVersion: { tag: [tagReading('Page Type')], variable: [] },
+    };
+    expect(missingOf(container)).toEqual(['Page Type']);
+  });
 });
 
 // ──────────────────────────────────────────────────────────────

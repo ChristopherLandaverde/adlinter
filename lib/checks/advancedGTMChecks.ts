@@ -2,24 +2,61 @@ import { GTMContainer, AuditCheck, AuditContext, Severity } from '../types';
 
 // ── DATA LAYER ANALYSIS ─────────────────────────────────────
 
-// CRITICAL: Missing Data Layer Variables
+// Built-in variables for web containers, as named in GTM's "Built-in
+// variables for web" reference (support.google.com/tagmanager/answer/7182738).
+// An export lists the built-ins enabled in that container under
+// containerVersion.builtInVariable; this list covers exports that omit it.
+const WEB_BUILT_IN_VARIABLES = new Set([
+  // Clicks
+  'Click Element', 'Click Classes', 'Click ID', 'Click Target', 'Click URL', 'Click Text',
+  // Errors
+  'Error Message', 'Error URL', 'Error Line', 'Debug Mode',
+  // Forms
+  'Form Classes', 'Form Element', 'Form ID', 'Form Target', 'Form Text', 'Form URL',
+  // History
+  'History Source', 'New History Fragment', 'New History State', 'Old History Fragment', 'Old History State',
+  // Pages
+  'Page Hostname', 'Page Path', 'Page URL', 'Referrer',
+  // Scroll
+  'Scroll Depth Threshold', 'Scroll Depth Units', 'Scroll Direction',
+  // Utilities
+  'Container ID', 'Container Version', 'Environment Name', 'Event', 'HTML ID', 'Random Number',
+  'Analytics Client ID', 'Analytics Session ID', 'Analytics Session Number',
+  // Videos
+  'Video Current Time', 'Video Duration', 'Video Percent', 'Video Provider', 'Video Status',
+  'Video Title', 'Video URL', 'Video Visible',
+  // Visibility
+  'Percent Visible', 'On-Screen Duration',
+]);
+
+// CRITICAL: Tags reference variables that are not defined in the container.
+// A reference is defined if it names any user-defined variable (of any type:
+// Data Layer, Constant, Custom JavaScript, Lookup Table, custom template…),
+// a built-in listed in the export, or a documented web built-in.
 export const checkMissingDataLayerVariables = (
   container: GTMContainer,
   _context?: AuditContext
 ): AuditCheck => {
-  const definedVars = container.containerVersion.variable
-    ?.filter(v => v.type === 'v')
-    .map(v => ({
-      name: v.name,
-      path: v.parameter?.find(p => p.key === 'dataLayerVersion')?.value || '',
-    })) || [];
+  const userDefined = container.containerVersion.variable || [];
+  const exportBuiltIns = (container.containerVersion.builtInVariable || [])
+    .map(v => v.name)
+    .filter((n): n is string => typeof n === 'string');
+
+  const definedVarNames = new Set<string>([
+    ...userDefined.map(v => v.name),
+    ...exportBuiltIns,
+    ...WEB_BUILT_IN_VARIABLES,
+  ]);
 
   const tags = container.containerVersion.tag || [];
   const usedVars = new Set<string>();
 
   tags.forEach(tag => {
-    const tagString = JSON.stringify(tag);
-    const matches = tagString.match(/\{\{([^}]+)\}\}/g);
+    // GTM resolves {{...}} in tag settings, not in the tag's name or notes.
+    const settings = Object.fromEntries(
+      Object.entries(tag).filter(([key]) => key !== 'name' && key !== 'notes')
+    );
+    const matches = JSON.stringify(settings).match(/\{\{([^}]+)\}\}/g);
     if (matches) {
       matches.forEach(match => {
         const varName = match.replace(/\{\{|\}\}/g, '').trim();
@@ -28,11 +65,9 @@ export const checkMissingDataLayerVariables = (
     }
   });
 
-  const definedVarNames = new Set(definedVars.map(v => v.name));
-  const missingVars = Array.from(usedVars).filter(v => !definedVarNames.has(v));
-
-  const actuallyMissing = missingVars.filter(v =>
-    !v.match(/^(Page|Click|Event|Container|Environment|Debug|Random|gtm\.)/)
+  // `_event` and `gtm.*` are GTM-internal keys, not user-facing variables.
+  const actuallyMissing = Array.from(usedVars).filter(
+    v => !definedVarNames.has(v) && !/^(_|gtm\.)/.test(v)
   );
 
   return {
@@ -45,10 +80,10 @@ export const checkMissingDataLayerVariables = (
       : 'All variable references are defined',
     details: {
       missingVariables: actuallyMissing,
-      definedCount: definedVars.length,
+      definedCount: userDefined.length,
       usedCount: usedVars.size,
     },
-    recommendation: 'Create missing Data Layer Variables or remove references from tags',
+    recommendation: 'Create each missing variable in GTM (Variables → User-Defined Variables), or fix the misspelled reference in the tag',
   };
 };
 
