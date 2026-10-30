@@ -1,5 +1,6 @@
 import { AdsData, AuditCheck, AuditContext, Severity } from '../types';
 import { areSimilar } from '../utils/stringDistance';
+import { normaliseCounting, recommendedCounting } from './countingGuidance';
 
 // Helper to extract days from window strings like "30 days", "1 day"
 const parseDays = (window: string): number => {
@@ -91,12 +92,16 @@ export const checkZeroValuePurchases = (
 };
 
 // ── CRITICAL CHECK #3 (Context-Aware) ───────────────────────
+// Follows Google's counting guidance (answer/3438531): purchases and other
+// sales count "Every". This check never recommends "One" for a sale, so it
+// cannot contradict struct-counting-category-mismatch (same guidance, see
+// countingGuidance.ts). Context only sets how sure the finding is.
 export const checkWrongCountingMethod = (
   adsData: AdsData,
   context?: AuditContext
 ): AuditCheck => {
-  const purchaseConversions = adsData.conversions.filter(c =>
-    isPurchaseCategory(c.category)
+  const purchaseConversions = adsData.conversions.filter(
+    c => recommendedCounting(c.category) === 'Every'
   );
 
   if (purchaseConversions.length === 0) {
@@ -110,41 +115,45 @@ export const checkWrongCountingMethod = (
     };
   }
 
-  let wrongCounting: typeof purchaseConversions;
-  let severity: Severity = 'critical';
+  const countedOne = purchaseConversions.filter(c => normaliseCounting(c.count) === 'One');
 
-  if (context?.conversionCounting === 'every-time') {
-    // User wants "Every" — flag "One" as wrong
-    wrongCounting = purchaseConversions.filter(
-      c => c.count.toLowerCase() === 'one'
-    );
-  } else if (context?.conversionCounting === 'not-sure') {
-    // Uncertain — still flag "Every" for purchases but as warning
-    wrongCounting = purchaseConversions.filter(
-      c => c.count.toLowerCase() === 'every'
-    );
-    severity = 'warning';
-  } else {
-    // Default / "once" — flag "Every" as wrong
-    wrongCounting = purchaseConversions.filter(
-      c => c.count.toLowerCase() === 'every'
-    );
+  // The user said they deliberately count once per click (e.g. only a
+  // first purchase matters). Accept it; note Google's recommendation.
+  if (context?.conversionCounting === 'once') {
+    return {
+      id: 'wrong-counting-method',
+      severity: 'info',
+      passed: true,
+      title: 'Wrong Counting Method',
+      description:
+        countedOne.length > 0
+          ? `${countedOne.length} purchase conversion(s) count "One", as you described. Google recommends "Every" for purchases unless only the first purchase per click matters`
+          : 'All purchase conversions count "Every", as Google recommends for purchases',
+      details: { conversions: [] },
+      recommendation: 'Keep "One" only if repeat purchases from the same click should not count',
+    };
   }
 
-  const expectedMethod =
-    context?.conversionCounting === 'every-time' ? 'Every' : 'One';
+  // Stated "every conversion": the setting contradicts the user's own intent.
+  // No context or "not sure": it contradicts Google's recommendation only.
+  let severity: Severity = 'warning';
+  if (context?.conversionCounting === 'every-time') {
+    severity = 'critical';
+  }
 
   return {
     id: 'wrong-counting-method',
     severity,
-    passed: wrongCounting.length === 0,
+    passed: countedOne.length === 0,
     title: 'Wrong Counting Method',
     description:
-      wrongCounting.length > 0
-        ? `${wrongCounting.length} purchase conversion(s) using wrong counting method (should be "${expectedMethod}")`
-        : 'All purchase conversions use correct counting method',
-    details: { conversions: wrongCounting.map(c => ({ name: c.name, count: c.count })) },
-    recommendation: `Change counting method to "${expectedMethod}" for purchase conversions`,
+      countedOne.length > 0
+        ? `${countedOne.length} purchase conversion(s) count "One", so repeat purchases from the same click are dropped (Google recommends "Every")`
+        : 'All purchase conversions count "Every", as Google recommends',
+    details: {
+      conversions: countedOne.map(c => ({ name: c.name, count: c.count, expected: 'Every' })),
+    },
+    recommendation: 'Change counting to "Every" for purchase conversions so each sale is counted',
   };
 };
 

@@ -99,28 +99,54 @@ describe('checkZeroValuePurchases', () => {
 // 3. checkWrongCountingMethod (CRITICAL, Context-Aware)
 // ──────────────────────────────────────────────────────────────
 describe('checkWrongCountingMethod', () => {
-  it('should flag "Every" when user wants "once"', () => {
-    const adsData = loadCSV('ads-wrong-counting.csv');
-    const context: AuditContext = { conversionCounting: 'once' };
-    const result = checkWrongCountingMethod(adsData, context);
+  // Google Ads Help (answer/3438531): "Every" is the choice for tracking
+  // sales; "One" for when the number of sales doesn't matter (leads).
+  type Flagged = { name: string; count: string; expected: string };
+  const flagged = (r: ReturnType<typeof checkWrongCountingMethod>) =>
+    ((r.details as { conversions?: Flagged[] } | undefined)?.conversions ?? []);
 
+  it('should PASS purchases counted "Every" with no context (Google\'s recommendation)', () => {
+    // ads-wrong-counting.csv: Purchase and Sale, both counted "Every".
+    const result = checkWrongCountingMethod(loadCSV('ads-wrong-counting.csv'));
+    expect(result.passed).toBe(true);
+  });
+
+  it('should flag purchases counted "One" with no context, recommending "Every", as WARNING', () => {
+    // ads-clean.csv: Purchase counted "One".
+    const result = checkWrongCountingMethod(loadCSV('ads-clean.csv'));
+    expect(result.passed).toBe(false);
+    expect(result.severity).toBe('warning');
+    expect(flagged(result)).toEqual([{ name: 'Purchase', count: 'One', expected: 'Every' }]);
+    expect(result.recommendation).toMatch(/"Every"/);
+    expect(result.recommendation).not.toMatch(/"One"/);
+  });
+
+  it('should be CRITICAL when the user says they count every conversion', () => {
+    const context: AuditContext = { conversionCounting: 'every-time' };
+    const result = checkWrongCountingMethod(loadCSV('ads-clean.csv'), context);
     expect(result.passed).toBe(false);
     expect(result.severity).toBe('critical');
+    expect(flagged(result).map(c => c.expected)).toEqual(['Every']);
   });
 
-  it('should flip check when user wants "Every"', () => {
-    const adsData = loadCSV('ads-clean.csv');
-    const context: AuditContext = { conversionCounting: 'every-time' };
-    const result = checkWrongCountingMethod(adsData, context);
-    // ads-clean.csv has "One" entries which should be flagged as wrong
-    expect(result.passed).toBe(false);
-  });
-
-  it('should be WARNING when user is not sure', () => {
-    const adsData = loadCSV('ads-wrong-counting.csv');
+  it('should be WARNING when the user is not sure', () => {
     const context: AuditContext = { conversionCounting: 'not-sure' };
-    const result = checkWrongCountingMethod(adsData, context);
+    const result = checkWrongCountingMethod(loadCSV('ads-clean.csv'), context);
+    expect(result.passed).toBe(false);
     expect(result.severity).toBe('warning');
+  });
+
+  it('should never tell users to switch purchases to "One", even when they count once per click', () => {
+    const context: AuditContext = { conversionCounting: 'once' };
+    const every = checkWrongCountingMethod(loadCSV('ads-wrong-counting.csv'), context);
+    expect(every.passed).toBe(true);
+    expect(flagged(every)).toEqual([]);
+
+    // Purchase counted "One" by stated choice: accepted, with Google's
+    // recommendation noted rather than overridden.
+    const one = checkWrongCountingMethod(loadCSV('ads-clean.csv'), context);
+    expect(one.passed).toBe(true);
+    expect(one.description).toMatch(/Every/);
   });
 
   it('should handle empty conversions', () => {

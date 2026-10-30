@@ -1,5 +1,6 @@
 import { AdsData, AuditCheck, AuditContext, Severity } from '../types';
 import { areSimilar } from '../utils/stringDistance';
+import { isLeadCategory, normaliseCounting, recommendedCounting } from './countingGuidance';
 
 // Helper to extract days from window strings like "30 days", "1 day"
 const parseDays = (window: string): number => {
@@ -10,12 +11,6 @@ const parseDays = (window: string): number => {
 // Helper to check if a category is purchase-related
 const isPurchaseCategory = (category: string): boolean => {
   const terms = ['purchase', 'sale', 'transaction', 'order', 'buy'];
-  return terms.some(t => category.toLowerCase().includes(t));
-};
-
-// Helper to check if a category is lead-related
-const isLeadCategory = (category: string): boolean => {
-  const terms = ['lead', 'sign-up', 'signup', 'contact', 'subscribe', 'form'];
   return terms.some(t => category.toLowerCase().includes(t));
 };
 
@@ -251,17 +246,10 @@ export const checkCountingCategoryMismatch = (
   adsData: AdsData,
   _context?: AuditContext
 ): AuditCheck => {
-  const violations = adsData.conversions.filter(c => {
-    const isPurchase = isPurchaseCategory(c.category);
-    const isLead = isLeadCategory(c.category);
-    const countLower = c.count.toLowerCase();
-
-    // Purchases should typically count "Every" (each transaction)
-    // Leads should typically count "One" (one lead per user)
-    if (isPurchase && countLower === 'one') return true;
-    if (isLead && countLower === 'every') return true;
-    return false;
-  });
+  // Google: sales count "Every", leads count "One" (countingGuidance.ts).
+  const violations = adsData.conversions
+    .map(c => ({ c, expected: recommendedCounting(c.category), actual: normaliseCounting(c.count) }))
+    .filter(v => v.expected !== null && v.actual !== null && v.actual !== v.expected);
 
   return {
     id: 'struct-counting-category-mismatch',
@@ -272,11 +260,11 @@ export const checkCountingCategoryMismatch = (
       ? `${violations.length} conversion(s) have counting methods that conflict with their category`
       : 'All counting methods align with conversion categories',
     details: {
-      violations: violations.map(c => ({
+      violations: violations.map(({ c, expected }) => ({
         name: c.name,
         category: c.category,
         count: c.count,
-        expected: isPurchaseCategory(c.category) ? 'Every' : 'One',
+        expected,
       })),
     },
     recommendation: 'Set purchases to "Every" (count each transaction) and leads to "One" (count unique users)',
