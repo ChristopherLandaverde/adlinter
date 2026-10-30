@@ -11,9 +11,9 @@
 
 A conversion counted twice halves your reported CPA overnight, and Smart Bidding starts spending against numbers that aren't real. An account with no primary conversion gives Smart Bidding no target, and a revenue conversion that fires without a value leaves value-based bidding blind. The ad platform shows none of these as an error: spend keeps going out and the dashboards keep filling. AdLint reads your GTM container, Google Ads conversion export, performance report or pixel export and tells you what is broken, how badly, and how to fix it.
 
-![AdLint audit results for the bundled Google Full-Stack sample: a Tracking Health Score of 73 out of 100 marked "Needs work", 90 of 119 checks passed, with the three most critical findings listed below](docs/images/audit-sample.png)
+![Screen recording of the live demo: on the Google Full-Stack Audit page the Try with sample data button is clicked; the results page shows a Tracking Health Score of 73 out of 100 marked "Needs work", 90 of 119 checks passed, and the three most critical findings; the "Learn more" link on "Google Ads Conversions Missing GTM Tags" opens its explainer, which scrolls from Why It Matters to How To Fix It; the recording ends back on the score](docs/images/audit-demo.gif)
 
-*The bundled Google Full-Stack sample scores 73/100: 90 of 119 checks pass and the three critical findings are listed first. Click **Try with sample data** on the [live demo](https://adlinter.vercel.app) to get this screen yourself.*
+*Recorded on the [live demo](https://adlinter.vercel.app) with the bundled Google Full-Stack sample, nothing uploaded: one click to a 73/100 score with 90 of 119 checks passing, the three most critical findings first, and each finding's explainer with why it matters and how to fix it.*
 
 ## Who it's for
 
