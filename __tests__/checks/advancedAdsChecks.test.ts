@@ -105,7 +105,7 @@ describe('checkValueOutliers', () => {
 });
 
 // ──────────────────────────────────────────────────────────────
-// 2. checkCurrencyConsistency (WARNING)
+// 2. checkCurrencyConsistency (INFO)
 // ──────────────────────────────────────────────────────────────
 describe('checkCurrencyConsistency', () => {
   it('should PASS as info when no currency data', () => {
@@ -124,26 +124,43 @@ describe('checkCurrencyConsistency', () => {
   it('should PASS with single currency', () => {
     const adsData: AdsData = {
       conversions: [
-        { ...makeConversion({ name: 'A' }), currency: 'USD' } as any,
-        { ...makeConversion({ name: 'B' }), currency: 'USD' } as any,
+        { ...makeConversion({ name: 'A' }), currency: 'USD' },
+        { ...makeConversion({ name: 'B' }), currency: 'USD' },
       ],
     };
     const result = checkCurrencyConsistency(adsData);
     expect(result.passed).toBe(true);
-    expect(result.severity).toBe('warning');
+    expect(result.severity).toBe('info');
   });
 
   it('should FAIL with multiple currencies', () => {
     const adsData: AdsData = {
       conversions: [
-        { ...makeConversion({ name: 'A' }), currency: 'USD' } as any,
-        { ...makeConversion({ name: 'B' }), currency: 'EUR' } as any,
+        { ...makeConversion({ name: 'A' }), currency: 'USD' },
+        { ...makeConversion({ name: 'B' }), currency: 'EUR' },
       ],
     };
     const result = checkCurrencyConsistency(adsData);
     expect(result.passed).toBe(false);
-    expect(result.severity).toBe('warning');
+    expect(result.severity).toBe('info');
     expect(result.id).toBe('currency-consistency');
+  });
+
+  // Google Ads converts values sent in another currency into the account
+  // currency at the average daily exchange rate (Google Ads Help,
+  // answer/13064032), so mixed codes are supported, not a defect. The finding
+  // is informational and must not tell the user to standardise on one currency.
+  it('reports mixed currencies as supported, not as something to standardise', () => {
+    const adsData: AdsData = {
+      conversions: [
+        { ...makeConversion({ name: 'A' }), currency: 'USD' },
+        { ...makeConversion({ name: 'B' }), currency: 'EUR' },
+      ],
+    };
+    const result = checkCurrencyConsistency(adsData);
+    expect(result.title).not.toMatch(/inconsistent/i);
+    expect(result.recommendation).not.toMatch(/standardi[sz]e/i);
+    expect(result.recommendation).toMatch(/charged/i);
   });
 
   // #60: end to end through the parser, the way the app runs it.
@@ -159,7 +176,7 @@ describe('checkCurrencyConsistency', () => {
       ].join('\n');
       const result = checkCurrencyConsistency(parseAdsCSV(csv));
       expect(result.passed).toBe(false);
-      expect(result.severity).toBe('warning');
+      expect(result.severity).toBe('info');
       expect(result.description).toContain('USD');
       expect(result.description).toContain('EUR');
     });
@@ -172,7 +189,7 @@ describe('checkCurrencyConsistency', () => {
       ].join('\n');
       const result = checkCurrencyConsistency(parseAdsCSV(csv));
       expect(result.passed).toBe(true);
-      expect(result.severity).toBe('warning');
+      expect(result.severity).toBe('info');
       expect(result.description).toBe('All conversions use USD');
     });
 

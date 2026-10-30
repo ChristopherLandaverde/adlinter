@@ -67,7 +67,12 @@ export const checkValueOutliers = (
   };
 };
 
-// WARNING: Currency Code Consistency
+// INFO: Currency Code Consistency
+// Mixed currency codes are supported: Google Ads converts values reported in
+// another currency into the account currency at the average daily exchange
+// rate (Google Ads Help, answer/13064032). The real risk, a code that does not
+// match the money actually charged, is not visible in the export, so this is
+// an informational finding pointing at where to check.
 export const checkCurrencyConsistency = (
   adsData: AdsData,
   _context?: AuditContext
@@ -88,17 +93,20 @@ export const checkCurrencyConsistency = (
   }
 
   const uniqueCurrencies = new Set(currencyCodes);
+  const mixed = uniqueCurrencies.size > 1;
 
   return {
     id: 'currency-consistency',
-    severity: 'warning',
-    passed: uniqueCurrencies.size === 1,
-    title: 'Inconsistent Currency Codes',
-    description: uniqueCurrencies.size > 1
-      ? `Using ${uniqueCurrencies.size} different currencies: ${Array.from(uniqueCurrencies).join(', ')}`
+    severity: 'info',
+    passed: !mixed,
+    title: mixed ? 'Multiple Currency Codes' : 'Currency Code Consistency',
+    description: mixed
+      ? `Using ${uniqueCurrencies.size} different currencies: ${Array.from(uniqueCurrencies).join(', ')}. Google Ads converts these into the account currency at the average daily exchange rate.`
       : `All conversions use ${Array.from(uniqueCurrencies)[0]}`,
     details: { currencies: Array.from(uniqueCurrencies) },
-    recommendation: 'Standardize on a single currency for consistent reporting',
+    recommendation: mixed
+      ? 'Mixed currencies are supported. Check that each conversion action sends the currency the customer was actually charged in; the export cannot show that, so place a test order in each currency'
+      : 'No action needed',
   };
 };
 
