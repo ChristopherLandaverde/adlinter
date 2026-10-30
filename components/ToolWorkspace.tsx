@@ -16,6 +16,7 @@ import { parseLinkedInInsightCSV } from '@/lib/parsers/linkedinInsightParser';
 import { parsePinterestCSV } from '@/lib/parsers/pinterestParser';
 import { parseTwitterCSV } from '@/lib/parsers/twitterParser';
 import { parseSnapchatCSV } from '@/lib/parsers/snapchatParser';
+import { startAuditRun } from '@/lib/auditRun';
 import type { AuditContext } from '@/lib/types';
 import type { ToolConfig, ToolFileSlot } from '@/lib/tools';
 
@@ -160,6 +161,7 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
       // severity to the user's real situation, which doesn't apply here. Skip
       // the picker and go straight to results, equivalent to "Skip — use defaults".
       sessionStorage.removeItem('auditContext');
+      startAuditRun();
       router.push('/audit');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load sample data.';
@@ -193,11 +195,13 @@ export function ToolWorkspace({ tool }: { tool: ToolConfig }) {
 
   const handleContextSubmit = (context: AuditContext) => {
     sessionStorage.setItem('auditContext', JSON.stringify(context));
+    startAuditRun();
     router.push('/audit');
   };
 
   const handleContextSkip = () => {
     sessionStorage.removeItem('auditContext');
+    startAuditRun();
     router.push('/audit');
   };
 

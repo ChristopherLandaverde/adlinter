@@ -8,6 +8,12 @@ const CHANGE_EVENT = 'adlint:auditHistoryChanged';
 export interface AuditHistoryEntry {
   id: string;
   timestamp: number;
+  /**
+   * The audit run this entry records (see lib/auditRun.ts). One run is saved
+   * at most once, however many times the results page mounts for it (#53).
+   * Optional: entries saved before #53 have none.
+   */
+  runId?: string;
   toolSlug: string;
   toolName: string;
   fileNames: string[];
@@ -74,6 +80,11 @@ export function getHistory(): AuditHistoryEntry[] {
 }
 
 export function saveEntry(entry: Omit<AuditHistoryEntry, 'id' | 'timestamp'>): AuditHistoryEntry {
+  if (entry.runId) {
+    const existing = getHistory().find((item) => item.runId === entry.runId);
+    if (existing) return existing;
+  }
+
   const saved: AuditHistoryEntry = {
     ...entry,
     id: createId(),

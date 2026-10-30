@@ -136,6 +136,8 @@ describe('ToolWorkspace', () => {
       expect(JSON.parse(sessionStorage.getItem('gtmData') ?? '{}')).toEqual(sampleParsed);
       expect(sessionStorage.getItem('auditContext')).toBeNull();
       expect(screen.queryByRole('heading', { name: 'Refine your audit' })).not.toBeInTheDocument();
+      // Each "Try with sample data" click is a new audit run (#53).
+      expect(sessionStorage.getItem('auditRunId')).toBeTruthy();
     } finally {
       global.fetch = originalFetch;
     }
@@ -219,6 +221,18 @@ describe('ToolWorkspace', () => {
 
     expect(sessionStorage.getItem('auditContext')).toBeNull();
     expect(mockPush).toHaveBeenCalledWith('/audit');
+  });
+
+  it('starts a new audit run each time an audit is launched (#53)', async () => {
+    const user = userEvent.setup();
+    sessionStorage.setItem('auditRunId', 'previous-run');
+    const { container } = renderTool('gtm-auditor');
+
+    await user.upload(container.querySelector('input[type="file"]') as HTMLInputElement, fileWithText('container.json', '{}'));
+    await user.click(await screen.findByRole('button', { name: 'Skip — use defaults' }));
+
+    expect(sessionStorage.getItem('auditRunId')).toBeTruthy();
+    expect(sessionStorage.getItem('auditRunId')).not.toBe('previous-run');
   });
 
   it('stores selected audit context and navigates to results on submit', async () => {

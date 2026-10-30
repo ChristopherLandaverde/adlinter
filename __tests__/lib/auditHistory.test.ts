@@ -140,4 +140,34 @@ describe('auditHistory', () => {
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     expect(getHistory()).toEqual([]);
   });
+
+  describe('run-id dedupe (#53)', () => {
+    it('saves an audit run only once, however many times the results page mounts', () => {
+      const first = saveEntry(newEntry({ runId: 'run-1' }));
+      (window.crypto.randomUUID as jest.Mock).mockReturnValue('second-generated-id');
+      const second = saveEntry(newEntry({ runId: 'run-1' }));
+
+      expect(getHistory()).toHaveLength(1);
+      expect(second.id).toBe(first.id);
+    });
+
+    it('saves separate entries for separate runs', () => {
+      saveEntry(newEntry({ runId: 'run-1' }));
+      (window.crypto.randomUUID as jest.Mock).mockReturnValue('second-generated-id');
+      saveEntry(newEntry({ runId: 'run-2' }));
+
+      expect(getHistory()).toHaveLength(2);
+    });
+
+    it('does not write to storage when the run is already saved', () => {
+      saveEntry(newEntry({ runId: 'run-1' }));
+      const listener = jest.fn();
+      window.addEventListener('adlint:auditHistoryChanged', listener);
+
+      saveEntry(newEntry({ runId: 'run-1' }));
+
+      window.removeEventListener('adlint:auditHistoryChanged', listener);
+      expect(listener).not.toHaveBeenCalled();
+    });
+  });
 });

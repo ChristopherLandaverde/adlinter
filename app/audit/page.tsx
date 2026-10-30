@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { runAudit } from '@/lib/auditEngine';
 import { AuditResults, AuditCheck, AuditSummary, GTMContainer, AdsData, AdsReportData, MetaPixelData, TikTokPixelData, LinkedInInsightData, PinterestTagData, TwitterPixelData, SnapchatPixelData, Severity, AuditContext } from '@/lib/types';
 import { getEntry, getHistory, saveEntry } from '@/lib/auditHistory';
+import { claimAuditRunCount, getOrCreateAuditRunId, setAuditRunId } from '@/lib/auditRun';
 import { computeHealthScore } from '@/lib/healthScore';
 import { useAuditCounter } from '@/lib/hooks/useAuditCounter';
 import { getToolBySlug } from '@/lib/tools';
@@ -1150,8 +1151,10 @@ function AuditPageContent() {
     openUnlockModal,
   } = useAuditCounter();
 
-  // Track if we've already counted this audit session
-  const hasCountedAudit = useRef(false);
+  // Saving to history and counting toward the free-audit threshold happen once
+  // per audit run, keyed by its run id. Refs alone are not enough: browser back
+  // from a check explainer remounts this page with fresh refs (#53).
+  const auditRunId = useRef<string | null>(null);
   const hasSavedHistory = useRef(false);
   const restoredFromHistory = useRef(false);
   const sourceSnapshot = useRef<(AuditSourceData & { context?: AuditContext }) | null>(null);
@@ -1163,6 +1166,7 @@ function AuditPageContent() {
       const entry = getEntry(restoreId);
       if (entry) {
         restoredFromHistory.current = true;
+        setAuditRunId(entry.runId ?? entry.id);
         restoreSourceData({
           gtmData: (entry.sourceData.gtmData as GTMContainer | undefined) ?? null,
           adsData: (entry.sourceData.adsData as AdsData | undefined) ?? null,
@@ -1211,6 +1215,7 @@ function AuditPageContent() {
       const snapchatData: SnapchatPixelData | null = snapchatDataStr ? JSON.parse(snapchatDataStr) : null;
       const context: AuditContext | undefined = contextStr ? JSON.parse(contextStr) : undefined;
 
+      auditRunId.current = getOrCreateAuditRunId();
       sourceSnapshot.current = { gtmData, adsData, reportData, metaData, tiktokData, linkedinData, pinterestData, twitterData, snapchatData, context };
 
       const auditResults = runAudit(gtmData, adsData, context, reportData, metaData, tiktokData, linkedinData, pinterestData, twitterData, snapchatData);
@@ -1227,9 +1232,8 @@ function AuditPageContent() {
       else if (gtmData && !adsData) setActiveTab('gtm');
       else if (adsData && !gtmData) setActiveTab('ads');
 
-      // Increment audit count once per audit session
-      if (!hasCountedAudit.current) {
-        hasCountedAudit.current = true;
+      // Increment audit count once per audit run, not per mount
+      if (claimAuditRunCount(auditRunId.current)) {
         incrementAuditCount();
       }
     } catch (err) {
@@ -1254,6 +1258,7 @@ function AuditPageContent() {
     const tool = getToolBySlug(toolSlug);
 
     saveEntry({
+      runId: auditRunId.current ?? undefined,
       toolSlug,
       toolName: tool?.name ?? 'Audit',
       fileNames: collectFileNames(sourceData),
