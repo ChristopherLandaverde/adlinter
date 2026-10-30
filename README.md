@@ -1,19 +1,38 @@
 # AdLint
 
-**Find what's actually broken in your ad tracking, from the exports you already have.**
+**Broken conversion tracking doesn't announce itself. AdLint finds it in the exports you already have.**
+
+**178 checks** across Google Ads, Google Tag Manager and 6 pixel platforms · runs in your browser, files never uploaded · [try it on sample data](https://adlinter.vercel.app)
 
 [![CI](https://github.com/ChristopherLandaverde/adlinter/actions/workflows/ci.yml/badge.svg)](https://github.com/ChristopherLandaverde/adlinter/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[Live demo](https://adlinter.vercel.app) · [Quick start](#quick-start) · [What it audits](#what-it-audits) · [Privacy](#privacy) · [Development](#development)
+[Live demo](https://adlinter.vercel.app) · [Try it](#try-it) · [What it checks](#what-it-checks) · [Known limits](#known-limits) · [Privacy](#privacy)
 
-AdLint is for agencies and freelancers auditing ad tracking they didn't build, and for in-house marketers who suspect their tracking is off. Upload a GTM container, a Google Ads conversion export, a performance report or a pixel export from Meta, TikTok, LinkedIn, Pinterest, Twitter/X or Snapchat. You get a 0-100 Tracking Health Score and a severity-ranked list of findings, each linked to a `/checks/<id>` page with the fix and a citation you can paste into a client report. The audit runs in your browser and your files are never uploaded.
+A conversion counted twice halves your reported CPA overnight, and Smart Bidding starts spending against numbers that aren't real. An account with no primary conversion gives Smart Bidding no target, and a revenue conversion that fires without a value leaves value-based bidding blind. The ad platform shows none of these as an error: spend keeps going out and the dashboards keep filling. AdLint reads your GTM container, Google Ads conversion export, performance report or pixel export and tells you what is broken, how badly, and how to fix it.
 
-![AdLint audit results for the bundled Google Full-Stack sample: a Tracking Health Score of 73 out of 100 marked "Needs work", 90 of 119 checks passed, with the three most critical findings listed below](docs/images/audit-sample.png)
+![Screen recording of the live demo: on the Google Full-Stack Audit page the Try with sample data button is clicked; the results page shows a Tracking Health Score of 73 out of 100 marked "Needs work", 90 of 119 checks passed, and the three most critical findings; the "Learn more" link on "Google Ads Conversions Missing GTM Tags" opens its explainer, which scrolls from Why It Matters to How To Fix It; the recording ends back on the score](docs/images/audit-demo.gif)
 
-## Quick start
+*Recorded on the [live demo](https://adlinter.vercel.app) with the bundled Google Full-Stack sample, nothing uploaded: one click to a 73/100 score with 90 of 119 checks passing, the three most critical findings first, and each finding's explainer with why it matters and how to fix it.*
 
-**No install:** open the [live demo](https://adlinter.vercel.app), pick a tool (for example **Google Full-Stack Audit**), and click **Try with sample data**. The bundled sample files load and you land on the audit results page, the screen shown above. Every tool has a sample.
+## Who it's for
+
+| You are | You come to |
+|---|---|
+| An agency or freelancer auditing ad tracking you didn't build | Hand the client a list of findings, each with a fix and a citation they can check |
+| An in-house marketer who suspects the tracking is off | Get a second opinion before launch or when the numbers look wrong, without waiting on an engineer |
+
+## What you get
+
+- **Know which conversions are double-counted.** Duplicate conversion tags in GTM, duplicate conversion actions in Google Ads, duplicate event names in each pixel export.
+- **Know whether bidding has a real target.** Missing primary conversion, a micro-conversion set as primary, too little conversion volume for Smart Bidding.
+- **Know which Google Ads conversions no tag is sending.** Cross-checks the Google Ads export against the GTM container, including conversion ID and label matching.
+- **Know where conversion value is missing or wrong.** Revenue conversions counting with no value, $0 purchases, configured value vs. reported value, purchase events without value on each pixel.
+- **A finding you can defend.** One 0-100 Tracking Health Score, findings ranked critical / warning / info, and a `/checks/<id>` page per finding with why it matters, how to fix it, platform documentation and a citation paragraph for your client report.
+
+## Try it
+
+**No install:** open the [live demo](https://adlinter.vercel.app), pick a tool (for example **Google Full-Stack Audit**) and click **Try with sample data**. The bundled sample files load and you land on the audit results page shown above. Every tool has a sample.
 
 **Run it locally** (Node 20, the version CI uses):
 
@@ -26,23 +45,17 @@ npm run dev
 
 Open <http://localhost:3000>, pick a tool and click **Try with sample data**, or upload your own export.
 
-## What it audits
+## What it checks
 
-| Tool | Input | Source(s) in the check registry |
+| Tool | Input | Checks (registry source) |
 |---|---|---|
-| GTM Container Auditor | GTM container export (`.json`) | `gtm` |
-| Google Ads Linter | Google Ads conversions export (`.csv`) | `ads` |
-| Google Ads Performance Report | Performance report (`.json`) | `report` |
-| Google Full-Stack Audit | All three Google files | `gtm`, `ads`, `report`, plus `cross` (consistency between them) |
-| Meta, TikTok, LinkedIn, Pinterest, Twitter/X, Snapchat auditors | Each platform's event or conversion export (`.csv` or `.json`) | one source per platform |
+| GTM Container Auditor | GTM container export (`.json`) | 29 (`gtm`) |
+| Google Ads Linter | Google Ads conversions export (`.csv`) | 34 (`ads`) |
+| Google Ads Performance Report | Performance report (`.json`) | 26 (`report`) |
+| Google Full-Stack Audit | All three Google files | the three above, plus 29 cross-source checks (`cross`) for consistency between them |
+| Meta, TikTok, LinkedIn, Pinterest, Twitter/X, Snapchat auditors | Each platform's event or conversion export (`.csv` or `.json`) | 10 per platform |
 
-**Check counts.** Every check ID the engine can emit is listed in [`lib/checks/registry.generated.ts`](lib/checks/registry.generated.ts), generated from the check files on every build. To see the current total and the count per source:
-
-```bash
-npm run gen:registry
-```
-
-The live [`/checks`](https://adlinter.vercel.app/checks) index lists every check with its explainer page.
+Counts are the distinct check IDs in [`lib/checks/registry.generated.ts`](lib/checks/registry.generated.ts), which is regenerated from the check files on every build. Run `npm run gen:registry` to print the current total and the count per source. The live [`/checks`](https://adlinter.vercel.app/checks) index lists every check with its explainer page.
 
 <details>
 <summary>Example checks per source</summary>
@@ -61,15 +74,6 @@ The live [`/checks`](https://adlinter.vercel.app/checks) index lists every check
 | Snapchat Pixel | Pixel ID format, missing PAGE_VIEW, standard event names, CAPI deduplication and currency alignment |
 
 </details>
-
-## Features
-
-- **Tracking Health Score:** one 0-100 number computed from weighted severity, with a shareable badge.
-- **Severity-ranked findings:** critical, warning and info, the three most critical first, filterable by source and severity.
-- **`/checks/<id>` explainers:** why it matters, how to fix it, references to platform documentation and a citation paragraph for client reports.
-- **Audit context:** tune severity to your business model, value strategy, sales cycle and consent requirements.
-- **History and diff:** audits are saved in this browser; compare any two for a score delta and a list of regressions, fixes and severity shifts.
-- **PDF export:** generated in the browser. From the fifth audit, unlocking it asks for an email address (see [Privacy](#privacy)).
 
 <details>
 <summary>How to get each export</summary>
@@ -91,6 +95,15 @@ The live [`/checks`](https://adlinter.vercel.app/checks) index lists every check
 **Snapchat Pixel events:** Snapchat Ads Manager → Events Manager. CSV or JSON.
 
 </details>
+
+## Features
+
+- **Tracking Health Score:** one 0-100 number computed from weighted severity, with a shareable badge.
+- **Severity-ranked findings:** critical, warning and info, the three most critical first, filterable by source and severity.
+- **`/checks/<id>` explainers:** why it matters, how to fix it, references to platform documentation and a citation paragraph for client reports.
+- **Audit context:** tune severity to your business model, value strategy, sales cycle and consent requirements.
+- **History and diff:** audits are saved in this browser; compare any two for a score delta and a list of regressions, fixes and severity shifts.
+- **PDF export:** generated in the browser. From the fifth audit, unlocking it asks for an email address (see [Privacy](#privacy)).
 
 ## Known limits
 
