@@ -82,4 +82,29 @@ Test,,0,One,,,Enabled`;
       expect(parseAdsCSV(csv).conversions[0].currency).toBeUndefined();
     });
   });
+
+  describe('primary status column (#69)', () => {
+    const BASE = 'Conversion name,Category,Value,Count,Attribution model,Click-through conversion window,View-through conversion window,Status';
+
+    it('reads "Action optimization" Primary/Secondary', () => {
+      const csv = `${BASE},Action optimization\nPurchase,Purchase,50,One,Last click,30 days,1 day,Enabled,Primary\nAdd to cart,Add to cart,0,Every,Last click,30 days,1 day,Enabled,Secondary`;
+      const [a, b] = parseAdsCSV(csv).conversions;
+      expect(a.primary).toBe(true);
+      expect(b.primary).toBe(false);
+    });
+
+    it('reads "Primary action" Yes/No/true/false, with a case-insensitive header', () => {
+      const csv = `${BASE},PRIMARY ACTION\nA,Purchase,50,One,Last click,30 days,1 day,Enabled,Yes\nB,Purchase,50,One,Last click,30 days,1 day,Enabled,no\nC,Purchase,50,One,Last click,30 days,1 day,Enabled,TRUE\nD,Purchase,50,One,Last click,30 days,1 day,Enabled,false`;
+      expect(parseAdsCSV(csv).conversions.map(c => c.primary)).toEqual([true, false, true, false]);
+    });
+
+    it('leaves primary unset when the column is missing, blank or unrecognised', () => {
+      const none = parseAdsCSV(`${BASE}\nA,Purchase,50,One,Last click,30 days,1 day,Enabled`).conversions[0];
+      expect(none.primary).toBeUndefined();
+      expect('primary' in none).toBe(false);
+
+      const blank = parseAdsCSV(`${BASE},Action optimization\nA,Purchase,50,One,Last click,30 days,1 day,Enabled,\nB,Purchase,50,One,Last click,30 days,1 day,Enabled,--`).conversions;
+      expect(blank.map(c => c.primary)).toEqual([undefined, undefined]);
+    });
+  });
 });

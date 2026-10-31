@@ -28,6 +28,29 @@ const parseCurrency = (row: Record<string, string>): string | undefined => {
   return undefined;
 };
 
+// Accepted headers for whether an action is Primary or Secondary for bidding
+// (lowercase, trimmed). The Google Ads conversions table shows this as "Action
+// optimization" (Primary / Secondary); some downloads call it "Primary action".
+const PRIMARY_COLUMNS = ['action optimization', 'action optimisation', 'primary action', 'primary'];
+const PRIMARY_VALUES: Record<string, boolean> = {
+  primary: true,
+  secondary: false,
+  yes: true,
+  no: false,
+  true: true,
+  false: false,
+};
+
+// true / false when the row says, undefined when it doesn't (no column, a
+// blank cell, or a value that is not one of the above).
+const parsePrimary = (row: Record<string, string>): boolean | undefined => {
+  for (const col of PRIMARY_COLUMNS) {
+    const v = row[col]?.trim().toLowerCase();
+    if (v && v in PRIMARY_VALUES) return PRIMARY_VALUES[v];
+  }
+  return undefined;
+};
+
 // Parse numeric values handling both US (1,000.00) and EU (1.000,00) formats
 const parseNumericValue = (val: string | undefined): number => {
   if (!val || val === '') return 0;
@@ -83,6 +106,7 @@ export const parseAdsCSV = (fileContent: string): AdsData => {
 
   const conversions: AdsConversion[] = parsed.data.map((row: unknown) => {
     const r = row as Record<string, string>;
+    const primary = parsePrimary(r);
     return {
       name: String(r['conversion name'] ?? ''),
       category: String(r['category'] ?? ''),
@@ -93,6 +117,7 @@ export const parseAdsCSV = (fileContent: string): AdsData => {
       viewWindow: String(r['view-through conversion window'] ?? ''),
       status: String(r['status'] ?? ''),
       currency: parseCurrency(r),
+      ...(primary === undefined ? {} : { primary }),
     };
   });
 

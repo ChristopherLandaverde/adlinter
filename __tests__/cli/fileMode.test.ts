@@ -75,6 +75,16 @@ describe('adlint file mode: JSON schema v1', () => {
     }
   });
 
+  it('does not report no-primary-conversion for a CSV without a primary column (#69)', async () => {
+    const res = await runCli(['audit', '--ads-csv', ADS], testDeps());
+    expect(readFileSync(ADS, 'utf8').split('\n')[0].toLowerCase()).not.toMatch(/primary|action optimi/);
+    expect(res.report!.findings.map(f => f.checkId)).not.toContain('no-primary-conversion');
+    const results = runAudit(null, parseAdsCSV(readFileSync(ADS, 'utf8')));
+    const check = results.ads.find(c => c.id === 'no-primary-conversion')!;
+    expect(check.passed).toBe(true);
+    expect(check.description).toContain('(check skipped)');
+  });
+
   it('exits 1 when there are critical findings and 0 when there are none', async () => {
     const dirty = await runCli(['audit', '--gtm-export', GTM, '--ads-csv', ADS], testDeps());
     expect(dirty.report!.summary.counts.critical).toBeGreaterThan(0);

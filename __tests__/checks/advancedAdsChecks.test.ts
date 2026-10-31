@@ -607,8 +607,8 @@ describe('checkPrimaryConversionDesignation', () => {
   it('should FAIL when no primary with multiple enabled conversions', () => {
     const adsData: AdsData = {
       conversions: [
-        makeConversion({ name: 'A', status: 'Enabled' }),
-        makeConversion({ name: 'B', status: 'Enabled' }),
+        makeConversion({ name: 'A', status: 'Enabled', primary: false }),
+        makeConversion({ name: 'B', status: 'Enabled', primary: false }),
       ],
     };
     const result = checkPrimaryConversionDesignation(adsData);
@@ -639,6 +639,46 @@ describe('checkPrimaryConversionDesignation', () => {
     const result = checkPrimaryConversionDesignation(adsData);
     expect(result.passed).toBe(true);
     expect(result.severity).toBe('info');
+  });
+
+  // #69: the check only fails when the input says which actions are primary.
+  describe('when primary status is or is not in the input', () => {
+    const BASE = 'Conversion name,Category,Value,Count,Attribution model,Click-through conversion window,View-through conversion window,Status';
+    const rows = (primary?: [string, string, string]) =>
+      [
+        `${BASE}${primary ? ',Action optimization' : ''}`,
+        `Purchase,Purchase,50,One,Last click,30 days,1 day,Enabled${primary ? `,${primary[0]}` : ''}`,
+        `Lead,Submit lead form,0,One,Last click,30 days,1 day,Enabled${primary ? `,${primary[1]}` : ''}`,
+        `Add to cart,Add to cart,0,Every,Last click,30 days,1 day,Enabled${primary ? `,${primary[2]}` : ''}`,
+      ].join('\n');
+
+    it('a CSV without a primary column is not checked (no failure, never critical)', () => {
+      const result = checkPrimaryConversionDesignation(parseAdsCSV(rows()));
+      expect(result.id).toBe('no-primary-conversion');
+      expect(result.passed).toBe(true);
+      expect(result.severity).not.toBe('critical');
+      expect(result.description).toContain('(check skipped)');
+      expect(result.details).toEqual({ primaryStatusInInput: false, enabledConversions: 3 });
+    });
+
+    it('a primary column with no Primary rows (more than one enabled) still fails as critical', () => {
+      const result = checkPrimaryConversionDesignation(parseAdsCSV(rows(['Secondary', 'Secondary', 'Secondary'])));
+      expect(result.passed).toBe(false);
+      expect(result.severity).toBe('critical');
+      expect(result.details).toEqual({ enabledConversions: 3, primaryConversions: 0 });
+    });
+
+    it('a primary column with one Primary row passes', () => {
+      const result = checkPrimaryConversionDesignation(parseAdsCSV(rows(['Primary', 'Secondary', 'Secondary'])));
+      expect(result.passed).toBe(true);
+      expect(result.description).toBe('Primary conversion: Purchase');
+    });
+
+    it('rows without a value count as not primary once any row carries status', () => {
+      const result = checkPrimaryConversionDesignation(parseAdsCSV(rows(['Secondary', '', ''])));
+      expect(result.passed).toBe(false);
+      expect(result.severity).toBe('critical');
+    });
   });
 });
 

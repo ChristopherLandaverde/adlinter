@@ -644,7 +644,12 @@ export const checkPrimaryConversionDesignation = (
     c => isConversionActionOn(c.status)
   );
 
-  if (primaryConversions.length === 0 && enabledConversions.length > 1) {
+  // Primary status is only known when the input carries it: a primary column
+  // in the CSV, or primary_for_goal in live mode (#69). Without it, "none is
+  // Primary" cannot be told apart from "the export doesn't say".
+  const primaryStatusInInput = adsData.conversions.some(c => c.primary !== undefined);
+
+  if (primaryStatusInInput && primaryConversions.length === 0 && enabledConversions.length > 1) {
     return {
       id: 'no-primary-conversion',
       severity: 'critical',
@@ -656,6 +661,21 @@ export const checkPrimaryConversionDesignation = (
         primaryConversions: primaryConversions.length,
       },
       recommendation: 'Designate your most important conversion as Primary to guide Smart Bidding optimization',
+    };
+  }
+
+  if (!primaryStatusInInput) {
+    return {
+      id: 'no-primary-conversion',
+      severity: 'info',
+      passed: true,
+      title: 'Primary Conversion Designation',
+      description: 'Primary/Secondary status is not in this input (check skipped)',
+      details: {
+        primaryStatusInInput: false,
+        enabledConversions: enabledConversions.length,
+      },
+      recommendation: 'Include the "Action optimization" (Primary/Secondary) column in the conversions download to check this',
     };
   }
 

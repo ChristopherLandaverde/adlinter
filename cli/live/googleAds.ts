@@ -23,7 +23,8 @@ export const CONVERSION_ACTION_QUERY = [
   '  conversion_action.click_through_lookback_window_days,',
   '  conversion_action.view_through_lookback_window_days,',
   '  conversion_action.value_settings.default_value,',
-  '  conversion_action.value_settings.default_currency_code',
+  '  conversion_action.value_settings.default_currency_code,',
+  '  conversion_action.primary_for_goal',
   'FROM conversion_action',
 ].join('\n');
 
@@ -113,6 +114,7 @@ export interface ConversionActionRow {
     clickThroughLookbackWindowDays?: string | number;
     viewThroughLookbackWindowDays?: string | number;
     valueSettings?: { defaultValue?: number; defaultCurrencyCode?: string };
+    primaryForGoal?: boolean;
   };
 }
 
@@ -126,6 +128,7 @@ export const CSV_COLUMNS = [
   'View-through conversion window',
   'Status',
   'Currency code',
+  'Action optimization',
 ] as const;
 
 /**
@@ -147,6 +150,10 @@ export function toCsvRow(row: ConversionActionRow): Record<(typeof CSV_COLUMNS)[
     'View-through conversion window': days(ca.viewThroughLookbackWindowDays),
     Status: label(STATUS_LABELS, ca.status),
     'Currency code': ca.valueSettings?.defaultCurrencyCode ?? '',
+    // primary_for_goal → the conversions table's "Action optimization".
+    // Absent → blank, so the check treats status as unknown, not Secondary.
+    'Action optimization':
+      ca.primaryForGoal === true ? 'Primary' : ca.primaryForGoal === false ? 'Secondary' : '',
   };
 }
 
