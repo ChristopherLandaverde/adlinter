@@ -15,7 +15,8 @@
         "valueSettings": {
           "defaultValue": 50.0,
           "defaultCurrencyCode": "USD"
-        }
+        },
+        "primaryForGoal": true
       }
     },
     {
@@ -33,11 +34,12 @@
         "valueSettings": {
           "defaultValue": 0.0,
           "defaultCurrencyCode": "USD"
-        }
+        },
+        "primaryForGoal": false
       }
     }
   ],
   "nextPageToken": "PAGE-TOKEN-2",
-  "fieldMask": "conversionAction.name,conversionAction.category,conversionAction.status,conversionAction.countingType,conversionAction.attributionModelSettings.attributionModel,conversionAction.clickThroughLookbackWindowDays,conversionAction.viewThroughLookbackWindowDays,conversionAction.valueSettings.defaultValue,conversionAction.valueSettings.defaultCurrencyCode",
+  "fieldMask": "conversionAction.name,conversionAction.category,conversionAction.status,conversionAction.countingType,conversionAction.attributionModelSettings.attributionModel,conversionAction.clickThroughLookbackWindowDays,conversionAction.viewThroughLookbackWindowDays,conversionAction.valueSettings.defaultValue,conversionAction.valueSettings.defaultCurrencyCode,conversionAction.primaryForGoal",
   "queryResourceConsumption": "40"
 }
