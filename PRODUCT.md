@@ -32,6 +32,8 @@ Data flows today (keep this list exact; every privacy claim in the product must 
 - The one piece of user data AdLint's server handles: from the fifth audit, PDF export asks for an email address. `app/api/subscribe/route.ts` forwards that address (tagged `source: adlint_pdf_unlock`) to MailerLite. No audit data goes with it. The unlock form says this before submit.
 - The hosted site loads its display fonts from Fontshare (`api.fontshare.com`), so the browser requests them from that host. No analytics scripts are loaded.
 
+- The local `adlint` CLI (`cli/`, run from source) is separate from the web app. File mode makes no network requests. Live mode calls Google, with the user's own credentials: the Tag Manager API (`tagmanager.readonly`), the Google Ads API (`GoogleAdsService` search only) and Google's OAuth token endpoint. With federated or impersonated credentials it also calls Google STS and IAM Credentials, plus the credential source named in the user's credentials file. On a Google Cloud machine it also uses that machine's metadata server; elsewhere the library's metadata-server probe is off. Nothing goes to AdLint. The README's Live mode section has the exact list.
+
 So the exact claim is "your files are never uploaded", not "no data leaves your browser".
 
 ## What Makes a Finding Good

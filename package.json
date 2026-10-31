@@ -2,6 +2,9 @@
   "name": "adlint",
   "version": "1.28.0",
   "private": true,
+  "bin": {
+    "adlint": "cli/bin.cjs"
+  },
   "scripts": {
     "dev": "next dev",
     "gen:registry": "node scripts/generate-check-registry.mjs",
@@ -12,7 +15,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "adlint": "tsx cli/adlint.ts"
   },
   "dependencies": {
     "jspdf": "^4.2.1",
@@ -36,11 +40,13 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "google-auth-library": "^10.9.0",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "opensrc": "^0.7.2",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.6",
+    "tsx": "^4.23.14",
     "typescript": "^5"
   }
 }
