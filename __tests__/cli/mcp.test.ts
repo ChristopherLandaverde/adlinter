@@ -1,7 +1,9 @@
 /**
  * @jest-environment node
  */
+import { spawnSync } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -9,7 +11,9 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { getExplainerOrStub } from '../../lib/checks/explainers';
 import { checkRegistry } from '../../lib/checks/registry.generated';
-import { createServer } from '../../cli/mcp/server';
+import { RefusedError } from '../../cli/errors';
+import { assertReadOnlyRequest } from '../../cli/live/http';
+import { createServer, resolveInputPath, toolError } from '../../cli/mcp/server';
 import { runCli, type CliDeps } from '../../cli/run';
 import { FAKE, fixture, fixtureFetch, liveRoutes, ROOT, testDeps } from './helpers';
 
@@ -166,6 +170,8 @@ describe('adlint-mcp over the in-memory transport', () => {
       ['audit_export', { gtmExportPath: '/nonexistent/container.json' }, 'usage', 'gtmExportPath: cannot read'],
       ['audit_export', { adsCsvPath: SAMPLE_GTM }, 'usage', 'Missing required columns'],
       ['audit_export', { gtmExportJson: 'not json' }, 'usage', 'Invalid JSON format'],
+      ['audit_export', { gtmExportPath: 'public/samples/gtm-container-sample.json' }, 'usage', 'gtmExportPath must be an absolute path'],
+      ['audit_export', { adsCsvPath: './ads.csv' }, 'usage', 'adsCsvPath must be an absolute path'],
       ['audit_live_container', { container: 'GTM-TEST001' }, 'usage', 'container must look like accounts/'],
       ['audit_live_container', { container: FAKE.container, adsCustomerId: '12345' }, 'usage', 'adsCustomerId must be a 10-digit'],
       ['explain_check', { checkId: 'no-such-check' }, 'usage', 'Unknown checkId'],
@@ -176,6 +182,18 @@ describe('adlint-mcp over the in-memory transport', () => {
       expect(err.message).toContain(message);
       expect((await client.listTools()).tools).toHaveLength(4);
       await close();
+    });
+
+    it('the read-only guard throws a typed refusal (kind "refused"); anything unexpected is "internal"', () => {
+      let refused: unknown;
+      try {
+        assertReadOnlyRequest('https://googleads.googleapis.com/v26/customers/1234567890/googleAds:mutate', 'POST');
+      } catch (e) {
+        refused = e;
+      }
+      expect(refused).toBeInstanceOf(RefusedError);
+      expect(errorOf(toolError(refused))).toEqual({ kind: 'refused', message: 'Refusing a mutate call: AdLint is read-only' });
+      expect(errorOf(toolError(new TypeError('boom')))).toEqual({ kind: 'internal', message: 'boom' });
     });
 
     it('missing Google Ads developer token: credentials error before any request', async () => {
@@ -203,6 +221,44 @@ describe('adlint-mcp over the in-memory transport', () => {
       expect((await client.listTools()).tools).toHaveLength(4);
       await close();
     });
+  });
+});
+
+describe('path inputs', () => {
+  it('expands ~ and requires an absolute path', () => {
+    expect(resolveInputPath('~/exports/c.json', 'gtmExportPath')).toBe(path.join(os.homedir(), 'exports/c.json'));
+    expect(resolveInputPath('/abs/c.json', 'gtmExportPath')).toBe('/abs/c.json');
+    expect(() => resolveInputPath('c.json', 'gtmExportPath')).toThrow('gtmExportPath must be an absolute path');
+  });
+
+  it('a ~/ path is read from the home directory', async () => {
+    const reads: string[] = [];
+    const { call, close } = await connect(
+      testDeps({ readFile: async p => (reads.push(p), readFileSync(SAMPLE_ADS, 'utf8')) })
+    );
+    const res = await call('audit_export', { adsCsvPath: '~/ads.csv' });
+    expect(res.isError).toBeFalsy();
+    expect(reads).toEqual([path.join(os.homedir(), 'ads.csv')]);
+    await close();
+  });
+});
+
+describe('console output never reaches stdout (it carries the protocol)', () => {
+  it('cli/mcp/console.cjs sends log, info, debug, dir, dirxml, table, group and trace to stderr', () => {
+    const script = [
+      `require(${JSON.stringify(path.join(ROOT, 'cli/mcp/console.cjs'))});`,
+      "console.log('L1'); console.info('I1'); console.debug('D1'); console.dir({ dir1: 1 }); console.dirxml('X1');",
+      "console.table([{ table1: 1 }]); console.group('G1'); console.groupEnd(); console.trace('T1');",
+    ].join('\n');
+    const res = spawnSync(process.execPath, ['-e', script], { encoding: 'utf8' });
+    expect(res.status).toBe(0);
+    expect(res.stdout).toBe('');
+    for (const marker of ['L1', 'I1', 'D1', 'dir1', 'X1', 'table1', 'G1', 'T1']) expect(res.stderr).toContain(marker);
+  });
+
+  it('bin.cjs loads console.cjs before tsx and the server', () => {
+    const lines = readFileSync(path.join(ROOT, 'cli/mcp/bin.cjs'), 'utf8').split('\n').filter(l => l.startsWith('require('));
+    expect(lines[0]).toContain('./console.cjs');
   });
 });
 

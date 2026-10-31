@@ -19,7 +19,15 @@ export class ApiError extends Error {
   }
 }
 
-export type CliError = UsageError | CredentialError | ApiError;
+/** The read-only guard (cli/live/http.ts) refused a request before it was sent. */
+export class RefusedError extends Error {
+  readonly kind = 'refused' as const;
+}
+
+export type CliError = UsageError | CredentialError | ApiError | RefusedError;
 
 export const isCliError = (e: unknown): e is CliError =>
-  e instanceof UsageError || e instanceof CredentialError || e instanceof ApiError;
+  e instanceof UsageError ||
+  e instanceof CredentialError ||
+  e instanceof ApiError ||
+  e instanceof RefusedError;

@@ -2,7 +2,7 @@
 // not one of Google's two APIs AdLint reads, and any Google Ads path that is
 // not a search call, so a read-only run cannot turn into a write by mistake.
 
-import { ApiError, CredentialError } from '../errors';
+import { ApiError, CredentialError, RefusedError } from '../errors';
 
 export type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 
@@ -20,19 +20,19 @@ const GTM_READ_PATH = /^\/tagmanager\/v2\/accounts\//;
 export function assertReadOnlyRequest(url: string, method: string): void {
   const u = new URL(url);
   if (u.protocol !== 'https:' || !ALLOWED_HOSTS.has(u.hostname)) {
-    throw new Error(`Refusing to call ${u.hostname}: live mode only calls Google's Tag Manager and Google Ads APIs`);
+    throw new RefusedError(`Refusing to call ${u.hostname}: live mode only calls Google's Tag Manager and Google Ads APIs`);
   }
   if (/mutate/i.test(u.pathname)) {
-    throw new Error('Refusing a mutate call: AdLint is read-only');
+    throw new RefusedError('Refusing a mutate call: AdLint is read-only');
   }
   if (u.hostname === 'googleads.googleapis.com') {
     if (method !== 'POST' || !ADS_READ_PATH.test(u.pathname)) {
-      throw new Error(`Refusing ${method} ${u.pathname}: AdLint only calls GoogleAdsService search`);
+      throw new RefusedError(`Refusing ${method} ${u.pathname}: AdLint only calls GoogleAdsService search`);
     }
   }
   if (u.hostname === 'tagmanager.googleapis.com') {
     if (method !== 'GET' || !GTM_READ_PATH.test(u.pathname)) {
-      throw new Error(`Refusing ${method} ${u.pathname}: AdLint only reads from the Tag Manager API`);
+      throw new RefusedError(`Refusing ${method} ${u.pathname}: AdLint only reads from the Tag Manager API`);
     }
   }
 }

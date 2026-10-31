@@ -125,16 +125,16 @@ Output on the bundled samples (trimmed with `jq '{schemaVersion, tool, source, s
 
 | Tool | What it returns |
 |---|---|
-| `audit_export` | The CLI's JSON report (schema version 1) for a GTM export and/or Google Ads conversions CSV, given as file paths (only read, never written) or as text. No network. |
+| `audit_export` | The CLI's JSON report (schema version 1) for a GTM export and/or Google Ads conversions CSV, given as absolute file paths or `~/...` (only read, never written) or as text. No network. |
 | `audit_live_container` | The same report from [live mode](#live-mode): `container` (`accounts/<id>/containers/<id>`) and optional `adsCustomerId`. Same credentials, read-only request guard and network list as the CLI. |
 | `list_checks` | Check IDs, titles, platform and default severity from the check registry, filterable by `platform` and `severity`. |
 | `explain_check` | The `/checks/<id>` explainer for one check: why it matters, how to fix it, citation paragraph and sources. |
 
-Bad input (a missing file, both a path and text, a malformed container path, missing credentials) comes back as a tool error, `{"error": {"kind": "usage" | "credentials" | "api" | "refused", "message": "..."}}`, not a crash.
+Bad input (a missing file, a relative path, both a path and text, a malformed container path, missing credentials) comes back as a tool error, `{"error": {"kind": "usage" | "credentials" | "api" | "refused" | "internal", "message": "..."}}`, not a crash. `refused` means the read-only guard stopped a request before it was sent.
 
 **Connect it** (after `npm ci` in your clone; replace `/path/to/adlinter` with its absolute path):
 
-Claude Code:
+Claude Code (this adds it for the current project; `claude mcp add -s user adlint -- ...` adds it for every project):
 
 ```bash
 claude mcp add adlint -- node /path/to/adlinter/cli/mcp/bin.cjs
@@ -153,11 +153,13 @@ Claude Desktop (`claude_desktop_config.json`) and Cursor (`~/.cursor/mcp.json` o
 }
 ```
 
+Claude Desktop may not see your shell's `PATH`. If Node comes from nvm or a similar version manager, use the absolute path to `node` (the output of `which node`, for example `/Users/you/.nvm/versions/node/v20.19.0/bin/node`) as `"command"`.
+
 For `audit_live_container`, the server needs the same credentials as live mode on the machine that runs it: Application Default Credentials, plus `GOOGLE_ADS_DEVELOPER_TOKEN` and the other `GOOGLE_ADS_*` variables for Google Ads. Pass them with `-e KEY=value` after the server name in `claude mcp add`, or an `"env"` object in the JSON config. Values set that way are stored in that client's config file.
 
-The `claude mcp add` command above was run in this repo, and `claude mcp list` reported the server as connected. The Claude Desktop and Cursor snippets use the same command, but they weren't run in those apps.
+The `claude mcp add` command above (project scope) was run in this repo, and `claude mcp list` reported the server as connected. The `-s user` variant and the Claude Desktop and Cursor snippets use the same command, but they weren't run.
 
-A real `audit_export` call on the bundled samples, made over stdio with the MCP SDK's client against `node cli/mcp/bin.cjs`. The arguments were `{"gtmExportPath": "public/samples/gtm-container-sample.json", "adsCsvPath": "public/samples/ads-conversions-sample.csv"}`. The output below is trimmed with `jq '{summary, findings: [.findings[1]]}'`. The full result has 15 findings and is identical to the CLI's JSON for the same files:
+A real `audit_export` call on the bundled samples, made over stdio with the MCP SDK's client against `node cli/mcp/bin.cjs`. The arguments were the absolute paths of `public/samples/gtm-container-sample.json` (`gtmExportPath`) and `public/samples/ads-conversions-sample.csv` (`adsCsvPath`) in the clone. Relative paths are refused, because the server's working directory is whatever the agent app started it in. The output below is trimmed with `jq '{summary, findings: [.findings[1]]}'`. The full result has 15 findings and is identical to the CLI's JSON for the same files:
 
 ```json
 {

@@ -9,6 +9,8 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import os from 'node:os';
+import path from 'node:path';
 import * as z from 'zod';
 import { getExplainerOrStub } from '../../lib/checks/explainers';
 import { checkRegistry } from '../../lib/checks/registry.generated';
@@ -89,9 +91,13 @@ function ok(data: object): CallToolResult {
   };
 }
 
-/** A tool error the model can read: { error: { kind, message } }. Never a credential. */
+/**
+ * A tool error the model can read: { error: { kind, message } }. kind is
+ * usage, credentials, api or refused (the read-only guard) for the CLI's own
+ * errors, and internal for anything unexpected. Never contains a credential.
+ */
 export function toolError(e: unknown): CallToolResult {
-  const kind = isCliError(e) ? e.kind : 'refused';
+  const kind = isCliError(e) ? e.kind : 'internal';
   const message = e instanceof Error ? e.message : String(e);
   return {
     isError: true,
@@ -100,6 +106,19 @@ export function toolError(e: unknown): CallToolResult {
 }
 
 const reportResult = (report: AdlintReport) => ok(report);
+
+/**
+ * File paths from an agent: a leading ~ is expanded to the home directory,
+ * and the result must be absolute, because the server's working directory is
+ * whatever the agent app started it in.
+ */
+export function resolveInputPath(p: string, name: string): string {
+  const expanded = p === '~' ? os.homedir() : p.startsWith('~/') ? path.join(os.homedir(), p.slice(2)) : p;
+  if (!path.isAbsolute(expanded)) {
+    throw new UsageError(`${name} must be an absolute path (or start with ~/), got "${p}"`);
+  }
+  return expanded;
+}
 
 // ── Server ──────────────────────────────────────────────────────────────────
 
@@ -111,11 +130,11 @@ export function createServer(deps: CliDeps = defaultDeps(process.env)): McpServe
     {
       title: 'Audit GTM / Google Ads exports',
       description:
-        'Read-only. Runs AdLint\'s GTM, Google Ads and cross-source checks on a GTM container export (JSON) and/or a Google Ads conversions download (CSV) and returns the same JSON report as `adlint audit` (schemaVersion 1): health score, counts and one finding per failed check with its evidence and fix. Give each input either as a local file path (only read, never written) or as its text. Makes no network requests. Every number comes from the engine; quote them, do not recompute them.',
+        'Read-only. Runs AdLint\'s GTM, Google Ads and cross-source checks on a GTM container export (JSON) and/or a Google Ads conversions download (CSV) and returns the same JSON report as `adlint audit` (schemaVersion 1): health score, counts and one finding per failed check with its evidence and fix. Give each input either as an absolute local file path (or one starting with ~/; only read, never written) or as its text. Makes no network requests. Every number comes from the engine; quote them, do not recompute them.',
       inputSchema: {
-        gtmExportPath: z.string().min(1).optional().describe('Path to a GTM container export (.json) on this machine. Read only.'),
+        gtmExportPath: z.string().min(1).optional().describe('Absolute path (or ~/...) to a GTM container export (.json) on this machine. Read only.'),
         gtmExportJson: z.string().min(1).optional().describe('The GTM container export JSON as text, instead of gtmExportPath.'),
-        adsCsvPath: z.string().min(1).optional().describe('Path to a Google Ads conversions download (.csv) on this machine. Read only.'),
+        adsCsvPath: z.string().min(1).optional().describe('Absolute path (or ~/...) to a Google Ads conversions download (.csv) on this machine. Read only.'),
         adsCsv: z.string().min(1).optional().describe('The Google Ads conversions CSV as text, instead of adsCsvPath.'),
       },
       outputSchema: reportShape,
@@ -131,13 +150,13 @@ export function createServer(deps: CliDeps = defaultDeps(process.env)): McpServe
         }
         const gtmExport: FileInput | undefined =
           gtmExportPath !== undefined
-            ? { label: gtmExportPath, name: 'gtmExportPath' }
+            ? { label: resolveInputPath(gtmExportPath, 'gtmExportPath'), name: 'gtmExportPath' }
             : gtmExportJson !== undefined
               ? { label: '(inline gtmExportJson)', name: 'gtmExportJson', text: gtmExportJson }
               : undefined;
         const ads: FileInput | undefined =
           adsCsvPath !== undefined
-            ? { label: adsCsvPath, name: 'adsCsvPath' }
+            ? { label: resolveInputPath(adsCsvPath, 'adsCsvPath'), name: 'adsCsvPath' }
             : adsCsv !== undefined
               ? { label: '(inline adsCsv)', name: 'adsCsv', text: adsCsv }
               : undefined;
