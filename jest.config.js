@@ -17,6 +17,8 @@ const customJestConfig = {
     '!**/*.d.ts',
     '!**/node_modules/**',
   ],
+  // Shared helpers for the CLI tests, not a test file.
+  testPathIgnorePatterns: ['/node_modules/', '/.next/', '/__tests__/cli/helpers\\.ts$'],
   testMatch: [
     '**/__tests__/**/*.[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)'

@@ -2,6 +2,9 @@
   "name": "adlint",
   "version": "1.28.0",
   "private": true,
+  "bin": {
+    "adlint": "cli/bin.cjs"
+  },
   "scripts": {
     "dev": "next dev",
     "gen:registry": "node scripts/generate-check-registry.mjs",
@@ -12,16 +15,19 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "adlint": "tsx cli/adlint.ts"
   },
   "dependencies": {
+    "google-auth-library": "^10.9.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.14.0",
     "next": "16.4.1",
     "papaparse": "^5.5.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "recharts": "^3.7.0"
+    "recharts": "^3.7.0",
+    "tsx": "^4.23.14"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -59,6 +59,97 @@ npm run dev
 
 Open <http://localhost:3000>, pick a tool and click **Try with sample data**, or upload your own export.
 
+## Use it from an agent / CLI
+
+`adlint` runs the same check engine as the web app (`lib/auditEngine.ts`, `lib/checks/*`, `lib/parsers/*`) from Node, on a GTM container export and/or a Google Ads conversions CSV. It prints JSON for a script or an agent to read, or text for a person. It runs from source and is not published to npm.
+
+```bash
+npm ci
+npx tsx cli/adlint.ts audit \
+  --gtm-export public/samples/gtm-container-sample.json \
+  --ads-csv public/samples/ads-conversions-sample.csv
+echo $?   # 1: at least one critical finding
+```
+
+Output on the bundled samples (trimmed with `jq '{schemaVersion, tool, source, summary, findings: [.findings[0]]}'`; the full run has 15 findings):
+
+```json
+{
+  "schemaVersion": "1",
+  "tool": "adlint",
+  "source": {
+    "mode": "file",
+    "gtmExport": "public/samples/gtm-container-sample.json",
+    "adsCsv": "public/samples/ads-conversions-sample.csv"
+  },
+  "summary": {
+    "healthScore": 82,
+    "band": "good",
+    "checksRun": 86,
+    "checksPassed": 71,
+    "counts": {
+      "critical": 3,
+      "warning": 6,
+      "info": 6,
+      "passed": 71
+    }
+  },
+  "findings": [
+    {
+      "checkId": "no-primary-conversion",
+      "severity": "critical",
+      "source": "ads",
+      "title": "No Primary Conversion Designated",
+      "evidence": {
+        "observed": "3 conversions enabled, but none marked as Primary for Smart Bidding",
+        "details": {
+          "enabledConversions": 3,
+          "primaryConversions": 0
+        }
+      },
+      "fix": "Designate your most important conversion as Primary to guide Smart Bidding optimization"
+    }
+  ]
+}
+```
+
+- **Every number comes from the engine.** `counts` is the engine's own summary, `healthScore` is the same 0-100 score the web app shows, and each finding is one failed check: its ID, severity, title, what it observed (`evidence`) and its recommendation (`fix`). Findings are sorted critical, warning, info.
+- **Exit codes:** `0` no critical findings, `1` at least one critical finding, `2` a usage, input or credential error (the message goes to stderr).
+- **Options:** `--gtm-export <file>`, `--ads-csv <file>` (either or both; both adds the cross-source checks), `--format json|text` (default `json`). `npx tsx cli/adlint.ts --help` prints the full usage. `npm run adlint -- audit ...` and the `adlint` bin (after `npm link`) run the same thing.
+- **What it runs:** the GTM, Google Ads and cross-source checks. The performance report and the pixel exports are not wired into the CLI yet, and there are no flags for audit context, so the engine runs with its defaults.
+- **Where the output goes:** the CLI writes to your terminal and nowhere else. If an agent runs it (a shell tool today, or an MCP server once AdLint has one), the JSON goes to the model behind that agent, under that agent's own data terms.
+
+## Live mode
+
+Live mode reads the published GTM container and the Google Ads conversion actions straight from Google's APIs, so you don't have to export files first. The results go through the same parsers and checks as file mode.
+
+```bash
+npx tsx cli/adlint.ts audit \
+  --gtm-container accounts/<accountId>/containers/<containerId> \
+  --ads-customer <10-digit customer ID>
+```
+
+Live mode is verified against recorded API responses; it has not yet been run against a real account. The recorded responses were built by hand in the shapes the Tag Manager and Google Ads API references document, with made-up IDs. The test suite checks that the live fixtures give exactly the same findings as the same container and conversion actions read from files (`__tests__/cli/liveMode.test.ts`). Treat live output as a live read (fixture-verified; not yet run against a real account).
+
+| Source | API call | OAuth scope |
+|---|---|---|
+| GTM | Tag Manager API v2 `accounts.containers.versions.live` (GET) | `https://www.googleapis.com/auth/tagmanager.readonly` |
+| Google Ads | `GoogleAdsService` search, GAQL on `conversion_action`, API `v26` (set `ADLINT_GOOGLE_ADS_API_VERSION` to change it) | `https://www.googleapis.com/auth/adwords` |
+
+**Credentials come from your machine.** AdLint never stores, logs or prints them.
+
+- **GTM:** Application Default Credentials, for example `gcloud auth application-default login --scopes=https://www.googleapis.com/auth/tagmanager.readonly,https://www.googleapis.com/auth/cloud-platform`.
+- **Google Ads:**
+  - `GOOGLE_ADS_DEVELOPER_TOKEN` (required). A developer token without Standard access only works on test accounts.
+  - `GOOGLE_ADS_LOGIN_CUSTOMER_ID` when you reach the account through a manager account.
+  - OAuth: either `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_CLIENT_SECRET` and `GOOGLE_ADS_REFRESH_TOKEN`, or Application Default Credentials with the `adwords` scope.
+
+**Read-only, and what that means for Google Ads.** The Google Ads API has a single OAuth scope, `adwords`, and that scope can technically make changes. AdLint only ever reads: the only Google Ads call it makes is `GoogleAdsService` search. Every request goes through one function ([`cli/live/http.ts`](cli/live/http.ts)), which refuses any `mutate` path, any other Google Ads endpoint and any host besides `tagmanager.googleapis.com` and `googleads.googleapis.com`, and a test checks this. To be safe anyway, authorize with a Google Ads user whose access level is **Read only**.
+
+**What leaves your machine:** only the calls to Google's APIs: the two above, plus Google's OAuth token endpoint when a token is refreshed. Nothing goes to AdLint or any other service. The web app is unchanged: it never calls these APIs, and your files are still never uploaded.
+
+**Mapping:** each conversion action's API fields become the columns of the Google Ads conversions download (for example `MANY_PER_CLICK` → `Every`, `GOOGLE_SEARCH_ATTRIBUTION_DATA_DRIVEN` → `Data-driven`, `REMOVED` → `Removed`). That CSV then goes through the web app's own parser ([`cli/live/googleAds.ts`](cli/live/googleAds.ts)). Removed and hidden actions are included and treated as switched off, as the checks already do for exports.
+
 ## What it checks
 
 | Tool | Input | Checks (registry source) |
@@ -121,7 +212,8 @@ Counts are the distinct check IDs in [`lib/checks/registry.generated.ts`](lib/ch
 
 ## Known limits
 
-- AdLint audits **exports, not live sites**. It can't see whether a tag actually fires on a page, what a consent banner does at runtime, or anything the export leaves out.
+- AdLint audits **configuration, not live sites**: exports in the web app and CLI, and the published GTM container and Google Ads conversion actions in the CLI's [live mode](#live-mode). It can't see whether a tag actually fires on a page, what a consent banner does at runtime, or anything the export or API leaves out.
+- Live mode is fixture-verified only. It has not yet been run against a real Google account.
 - Findings are about configuration correctness and policy. AdLint doesn't predict CTR, ROAS or conversions.
 - History, audit context and the PDF unlock state live in one browser's localStorage. Clearing site data or switching browsers loses them.
 - The check registry is generated by pattern-matching the check source files (`scripts/generate-check-registry.mjs`), so a check written in an unusual shape could be missed from the count.
@@ -131,12 +223,13 @@ Counts are the distinct check IDs in [`lib/checks/registry.generated.ts`](lib/ch
 - **Your files stay in your browser.** Exports are parsed and audited by JavaScript on the page and never uploaded. Audit history is stored in your browser's localStorage. PDFs are generated in the browser.
 - **Email for PDF export (optional).** From your fifth audit, PDF export asks for an email address. The form says this before you submit: the address is sent to AdLint's `/api/subscribe` route ([`app/api/subscribe/route.ts`](app/api/subscribe/route.ts)), which forwards it to MailerLite, the email provider, tagged as a PDF-export sign-up. No audit data is sent with it.
 - **Third-party requests.** The site loads its display fonts from Fontshare (`api.fontshare.com`). It loads no analytics scripts.
+- **CLI.** `adlint` runs on your machine. In file mode it makes no network requests. In live mode it calls only Google's Tag Manager and Google Ads APIs (and Google's OAuth token endpoint), with your own credentials. See [Live mode](#live-mode).
 
 ## Development
 
 ```bash
 npx tsc --noEmit    # type check
-npx jest --ci       # tests: checks, parsers, integration scenarios, hooks, components
+npx jest --ci       # tests: checks, parsers, integration scenarios, hooks, components, CLI
 npm run build       # regenerates the check registry, then builds
 ```
 

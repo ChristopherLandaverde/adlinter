@@ -1,0 +1,340 @@
+{
+  "path": "accounts/6000000001/containers/7000000001/versions/42",
+  "accountId": "6000000001",
+  "containerId": "7000000001",
+  "containerVersionId": "42",
+  "name": "Live version (sample)",
+  "container": {
+    "path": "accounts/6000000001/containers/7000000001",
+    "accountId": "6000000001",
+    "containerId": "7000000001",
+    "name": "example.test",
+    "publicId": "GTM-TEST001",
+    "usageContext": [
+      "WEB"
+    ],
+    "fingerprint": "1700000000000"
+  },
+  "tag": [
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "tagId": "1",
+      "name": "Google Ads - Conversion Linker",
+      "type": "gclidw",
+      "parameter": [
+        {
+          "type": "boolean",
+          "key": "enableCrossDomain",
+          "value": "false"
+        }
+      ],
+      "fingerprint": "17000000001",
+      "firingTriggerId": [
+        "2147479553"
+      ],
+      "tagFiringOption": "ONCE_PER_EVENT",
+      "consentSettings": {
+        "consentStatus": "needed",
+        "consentType": {
+          "type": "list",
+          "list": [
+            {
+              "type": "template",
+              "value": "ad_storage"
+            }
+          ]
+        }
+      },
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/tags/1",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/tags/1?apiLink=tag"
+    },
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "tagId": "2",
+      "name": "Google Ads - Purchase",
+      "type": "awct",
+      "parameter": [
+        {
+          "type": "template",
+          "key": "conversionId",
+          "value": "100000001"
+        },
+        {
+          "type": "template",
+          "key": "conversionLabel",
+          "value": "AbCdEfGhIjK"
+        },
+        {
+          "type": "template",
+          "key": "conversionValue",
+          "value": "{{DLV - value}}"
+        },
+        {
+          "type": "template",
+          "key": "currencyCode",
+          "value": "USD"
+        }
+      ],
+      "fingerprint": "17000000002",
+      "firingTriggerId": [
+        "10"
+      ],
+      "tagFiringOption": "ONCE_PER_EVENT",
+      "consentSettings": {
+        "consentStatus": "needed",
+        "consentType": {
+          "type": "list",
+          "list": [
+            {
+              "type": "template",
+              "value": "ad_storage"
+            }
+          ]
+        }
+      },
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/tags/2",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/tags/2?apiLink=tag"
+    },
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "tagId": "3",
+      "name": "Google Ads - Purchase (copy)",
+      "type": "awct",
+      "parameter": [
+        {
+          "type": "template",
+          "key": "conversionId",
+          "value": "100000001"
+        },
+        {
+          "type": "template",
+          "key": "conversionLabel",
+          "value": "AbCdEfGhIjK"
+        }
+      ],
+      "fingerprint": "17000000003",
+      "firingTriggerId": [
+        "10"
+      ],
+      "tagFiringOption": "ONCE_PER_EVENT",
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/tags/3",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/tags/3?apiLink=tag"
+    },
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "tagId": "4",
+      "name": "Google Ads - Lead Form",
+      "type": "awct",
+      "parameter": [
+        {
+          "type": "template",
+          "key": "conversionId",
+          "value": "100000001"
+        },
+        {
+          "type": "template",
+          "key": "conversionLabel",
+          "value": "{{DLV - label}}"
+        }
+      ],
+      "fingerprint": "17000000004",
+      "firingTriggerId": [
+        "11"
+      ],
+      "tagFiringOption": "ONCE_PER_EVENT",
+      "consentSettings": {
+        "consentStatus": "needed",
+        "consentType": {
+          "type": "list",
+          "list": [
+            {
+              "type": "template",
+              "value": "ad_storage"
+            }
+          ]
+        }
+      },
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/tags/4",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/tags/4?apiLink=tag"
+    },
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "tagId": "5",
+      "name": "GA4 - Config",
+      "type": "gaawe",
+      "parameter": [
+        {
+          "type": "template",
+          "key": "measurementIdOverride",
+          "value": "G-TEST000001"
+        },
+        {
+          "type": "template",
+          "key": "eventName",
+          "value": "page_view"
+        }
+      ],
+      "fingerprint": "17000000005",
+      "firingTriggerId": [
+        "2147479573"
+      ],
+      "tagFiringOption": "ONCE_PER_EVENT",
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/tags/5",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/tags/5?apiLink=tag"
+    },
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "tagId": "6",
+      "name": "cHTML - debug",
+      "type": "html",
+      "parameter": [
+        {
+          "type": "template",
+          "key": "html",
+          "value": "<script>console.log('debug')</script>"
+        }
+      ],
+      "fingerprint": "17000000006",
+      "firingTriggerId": [
+        "2147479553"
+      ],
+      "tagFiringOption": "ONCE_PER_EVENT",
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/tags/6",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/tags/6?apiLink=tag"
+    }
+  ],
+  "trigger": [
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "triggerId": "10",
+      "name": "CE - purchase",
+      "type": "customEvent",
+      "customEventFilter": [
+        {
+          "type": "equals",
+          "parameter": [
+            {
+              "type": "template",
+              "key": "arg0",
+              "value": "{{_event}}"
+            },
+            {
+              "type": "template",
+              "key": "arg1",
+              "value": "purchase"
+            }
+          ]
+        }
+      ],
+      "fingerprint": "170000000010",
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/triggers/10",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/triggers/10?apiLink=trigger"
+    },
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "triggerId": "11",
+      "name": "Form - Lead",
+      "type": "formSubmission",
+      "fingerprint": "170000000011",
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/triggers/11",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/triggers/11?apiLink=trigger"
+    },
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "triggerId": "12",
+      "name": "Unused click",
+      "type": "click",
+      "fingerprint": "170000000012",
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/triggers/12",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/triggers/12?apiLink=trigger"
+    }
+  ],
+  "variable": [
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "variableId": "20",
+      "name": "DLV - value",
+      "type": "v",
+      "parameter": [
+        {
+          "type": "integer",
+          "key": "dataLayerVersion",
+          "value": "2"
+        },
+        {
+          "type": "template",
+          "key": "name",
+          "value": "ecommerce.value"
+        }
+      ],
+      "fingerprint": "170000000020",
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/variables/20",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/variables/20?apiLink=variable"
+    },
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "variableId": "21",
+      "name": "DLV - label",
+      "type": "v",
+      "parameter": [
+        {
+          "type": "integer",
+          "key": "dataLayerVersion",
+          "value": "1"
+        },
+        {
+          "type": "template",
+          "key": "name",
+          "value": "conversion_label"
+        }
+      ],
+      "fingerprint": "170000000021",
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/variables/21",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/variables/21?apiLink=variable"
+    },
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "variableId": "22",
+      "name": "unused var",
+      "type": "c",
+      "parameter": [
+        {
+          "type": "template",
+          "key": "value",
+          "value": "x"
+        }
+      ],
+      "fingerprint": "170000000022",
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/variables/22",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/variables/22?apiLink=variable"
+    }
+  ],
+  "builtInVariable": [
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "type": "PAGE_URL",
+      "name": "Page URL"
+    },
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "type": "EVENT",
+      "name": "Event"
+    }
+  ],
+  "fingerprint": "1700000000042",
+  "tagManagerUrl": "https://tagmanager.google.com/#/versions/accounts/6000000001/containers/7000000001/versions/42?apiLink=version"
+}
