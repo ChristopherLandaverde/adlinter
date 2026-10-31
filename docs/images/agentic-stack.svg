@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="604" viewBox="0 0 880 604" role="img" aria-labelledby="t d">
   <title id="t">AdLint agentic stack</title>
-  <desc id="d">Four stacked layers. Engine: the check registry, 178 checks in lib/checks, level L0. Tools: the adlint audit CLI and the adlint-mcp server with audit_export, audit_live_container, list_checks and explain_check, levels L1 and L2. Your agent: Claude, Cursor or any MCP client, reading live GTM and Google Ads read-only, level L3 fixture-verified. You approve: nothing writes; findings are evidence for you to act on; L4 planned.</desc>
+  <desc id="d">Four stacked layers. Engine: the check registry, 178 checks in lib/checks, the base every level builds on. Tools: the adlint audit CLI and the adlint-mcp server with audit_export, audit_live_container, list_checks and explain_check, levels L1 and L2. Your agent: Claude, Cursor or any MCP client, reading live GTM and Google Ads read-only, level L3 fixture-verified. You approve: nothing writes; findings are evidence for you to act on; L4 planned.</desc>
   <style>
     .sans { font-family: 'General Sans', 'Instrument Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
     .mono { font-family: 'Geist Mono', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -68,8 +68,8 @@
   <text x="240" y="482" class="sans body ink">Check registry: <tspan class="mono code accent">178 checks</tspan> in <tspan class="mono code">lib/checks</tspan>.</text>
   <text x="240" y="503" class="sans body ink">Deterministic. It owns every verdict, score and</text>
   <text x="240" y="524" class="sans body ink">count, with evidence on each finding.</text>
-  <rect x="718" y="467" width="106" height="26" rx="4" fill="#1E3A8A"/>
-  <text x="771" y="484" text-anchor="middle" class="mono chip" fill="#FFFFFF">L0 · engine</text>
+  <rect x="770.5" y="467.5" width="53" height="25" rx="4" fill="#FFFFFF" stroke="#57534E"/>
+  <text x="797" y="484" text-anchor="middle" class="mono chip ink">base</text>
 
-  <text x="32" y="580" class="mono note muted">Levels from AGENTIC.md · filled = on main · dashed = planned · L3 tested on synthetic API responses only</text>
+  <text x="32" y="580" class="mono note muted">Filled = shipped on main · dashed = planned · L3 tested on synthetic API responses only</text>
 </svg>
