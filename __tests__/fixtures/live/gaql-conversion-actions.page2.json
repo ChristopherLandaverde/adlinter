@@ -15,7 +15,8 @@
         "valueSettings": {
           "defaultValue": 0.0,
           "defaultCurrencyCode": "USD"
-        }
+        },
+        "primaryForGoal": false
       }
     },
     {
@@ -33,7 +34,8 @@
         "valueSettings": {
           "defaultValue": 0.0,
           "defaultCurrencyCode": "USD"
-        }
+        },
+        "primaryForGoal": false
       }
     },
     {
@@ -51,7 +53,8 @@
         "valueSettings": {
           "defaultValue": 0.0,
           "defaultCurrencyCode": "USD"
-        }
+        },
+        "primaryForGoal": false
       }
     },
     {
@@ -65,10 +68,11 @@
           "attributionModel": "GOOGLE_SEARCH_ATTRIBUTION_LINEAR"
         },
         "clickThroughLookbackWindowDays": "60",
-        "viewThroughLookbackWindowDays": "0"
+        "viewThroughLookbackWindowDays": "0",
+        "primaryForGoal": false
       }
     }
   ],
-  "fieldMask": "conversionAction.name,conversionAction.category,conversionAction.status,conversionAction.countingType,conversionAction.attributionModelSettings.attributionModel,conversionAction.clickThroughLookbackWindowDays,conversionAction.viewThroughLookbackWindowDays,conversionAction.valueSettings.defaultValue,conversionAction.valueSettings.defaultCurrencyCode",
+  "fieldMask": "conversionAction.name,conversionAction.category,conversionAction.status,conversionAction.countingType,conversionAction.attributionModelSettings.attributionModel,conversionAction.clickThroughLookbackWindowDays,conversionAction.viewThroughLookbackWindowDays,conversionAction.valueSettings.defaultValue,conversionAction.valueSettings.defaultCurrencyCode,conversionAction.primaryForGoal",
   "queryResourceConsumption": "40"
 }

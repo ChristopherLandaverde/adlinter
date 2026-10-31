@@ -636,15 +636,20 @@ export const checkPrimaryConversionDesignation = (
   adsData: AdsData,
   _context?: AuditContext
 ): AuditCheck => {
-  const primaryConversions = adsData.conversions.filter(c =>
-    (c as any).primary === 'true' || (c as any).primary === true
-  );
-
   const enabledConversions = adsData.conversions.filter(
     c => isConversionActionOn(c.status)
   );
 
-  if (primaryConversions.length === 0 && enabledConversions.length > 1) {
+  // Only enabled actions can be a bidding target: a Removed or Hidden action
+  // marked Primary doesn't count.
+  const primaryConversions = enabledConversions.filter(c => c.primary === true);
+
+  // Primary status is only known when the input carries it: a primary column
+  // in the CSV, or primary_for_goal in live mode (#69). Without it, "none is
+  // Primary" cannot be told apart from "the export doesn't say".
+  const primaryStatusInInput = adsData.conversions.some(c => c.primary !== undefined);
+
+  if (primaryStatusInInput && primaryConversions.length === 0 && enabledConversions.length > 1) {
     return {
       id: 'no-primary-conversion',
       severity: 'critical',
@@ -659,17 +664,18 @@ export const checkPrimaryConversionDesignation = (
     };
   }
 
-  if (primaryConversions.length > 1) {
+  if (!primaryStatusInInput) {
     return {
       id: 'no-primary-conversion',
-      severity: 'warning',
-      passed: false,
-      title: 'Multiple Primary Conversions',
-      description: `${primaryConversions.length} conversions marked as Primary - should only be one`,
+      severity: 'info',
+      passed: true,
+      title: 'Primary Conversion Designation',
+      description: 'Primary/Secondary status is not in this input (check skipped)',
       details: {
-        primaryConversions: primaryConversions.map(c => c.name),
+        primaryStatusInInput: false,
+        enabledConversions: enabledConversions.length,
       },
-      recommendation: 'Designate only one conversion as Primary',
+      recommendation: 'Include the "Action optimization" (Primary/Secondary) column in the conversions download to check this',
     };
   }
 
@@ -678,7 +684,12 @@ export const checkPrimaryConversionDesignation = (
     severity: 'info',
     passed: true,
     title: 'Primary Conversion Configured',
-    description: `Primary conversion: ${primaryConversions[0]?.name || 'N/A'}`,
+    // Several Primary actions are normal (Primary is set per conversion goal),
+    // so one or more enabled Primary actions passes.
+    description: primaryConversions.length
+      ? `Enabled Primary conversion actions: ${primaryConversions.map(c => c.name).join(', ')}`
+      : 'No more than one conversion action enabled',
+    ...(primaryConversions.length ? { details: { primaryConversions: primaryConversions.map(c => c.name) } } : {}),
     recommendation: 'Continue monitoring primary conversion performance',
   };
 };

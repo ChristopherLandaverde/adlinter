@@ -1,7 +1,7 @@
-Conversion name,Category,Value,Count,Attribution model,Click-through conversion window,View-through conversion window,Status,Currency code
-Purchase,Purchase,50,One,Last click,30 days,1 day,Enabled,USD
-Add to cart,Add to cart,0,Every,Data-driven,30 days,1 day,Enabled,USD
-Lead form submit,Submit lead form,0,One,Last click,90 days,1 day,Enabled,USD
-Purchase - old,Purchase,0,Every,Last click,30 days,1 day,Removed,USD
-Store visits,Store visit,0,Every,Time decay,30 days,1 day,Hidden,USD
-Legacy import,,,,Linear,60 days,0 days,Enabled,
+Conversion name,Category,Value,Count,Attribution model,Click-through conversion window,View-through conversion window,Status,Currency code,Action optimization
+Purchase,Purchase,50,One,Last click,30 days,1 day,Enabled,USD,Primary
+Add to cart,Add to cart,0,Every,Data-driven,30 days,1 day,Enabled,USD,Secondary
+Lead form submit,Submit lead form,0,One,Last click,90 days,1 day,Enabled,USD,Secondary
+Purchase - old,Purchase,0,Every,Last click,30 days,1 day,Removed,USD,Secondary
+Store visits,Store visit,0,Every,Time decay,30 days,1 day,Hidden,USD,Secondary
+Legacy import,,,,Linear,60 days,0 days,Enabled,,Secondary

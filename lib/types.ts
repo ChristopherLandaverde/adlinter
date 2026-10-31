@@ -101,6 +101,12 @@ export interface AdsConversion {
   status: string;
   /** ISO 4217 code from the export's currency column, when it has one. */
   currency?: string;
+  /**
+   * Primary (true) or Secondary (false) for bidding, from the export's
+   * "Action optimization" / "Primary action" column or the API's
+   * primary_for_goal. Unset when the input does not say.
+   */
+  primary?: boolean;
 }
 
 export interface AdsData {

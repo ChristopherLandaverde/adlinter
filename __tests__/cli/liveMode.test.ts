@@ -106,6 +106,7 @@ describe('adlint live mode against synthetic API fixtures (documented response s
       'View-through conversion window': '0 days',
       Status: 'Hidden',
       'Currency code': '',
+      'Action optimization': '',
     });
   });
 
@@ -129,7 +130,32 @@ describe('adlint live mode against synthetic API fixtures (documented response s
       'View-through conversion window': '',
       Status: '',
       'Currency code': '',
+      'Action optimization': '',
     });
+  });
+
+  it('selects primary_for_goal and maps it to the download\'s Primary/Secondary column (#69)', () => {
+    expect(googleAds.CONVERSION_ACTION_QUERY).toContain('conversion_action.primary_for_goal');
+    expect(googleAds.toCsvRow({ conversionAction: { name: 'P', primaryForGoal: true } })['Action optimization']).toBe('Primary');
+    expect(googleAds.toCsvRow({ conversionAction: { name: 'S', primaryForGoal: false } })['Action optimization']).toBe('Secondary');
+    expect(googleAds.toCsvRow({ conversionAction: { name: 'U' } })['Action optimization']).toBe('');
+
+    const ads = googleAds.rowsToAdsData([
+      { conversionAction: { name: 'P', status: 'ENABLED', primaryForGoal: true } },
+      { conversionAction: { name: 'S', status: 'ENABLED', primaryForGoal: false } },
+    ]);
+    expect(ads.conversions.map(c => c.primary)).toEqual([true, false]);
+  });
+
+  it('the synthetic fixtures carry primary status, so no-primary-conversion is checked and passes', async () => {
+    const { fetchImpl } = fixtureFetch(liveRoutes());
+    const res = await runCli(['audit', '--ads-customer', FAKE.customer], testDeps({ fetch: fetchImpl }));
+    expect(res.report!.findings.map(f => f.checkId)).not.toContain('no-primary-conversion');
+    const rows = [
+      ...readJson(fixture('live', 'gaql-conversion-actions.page1.json')).results,
+      ...readJson(fixture('live', 'gaql-conversion-actions.page2.json')).results,
+    ];
+    expect(rows.every((r: { conversionAction: { primaryForGoal?: boolean } }) => typeof r.conversionAction.primaryForGoal === 'boolean')).toBe(true);
   });
 
   it('returns no findings for an account with no conversion actions', async () => {
