@@ -503,9 +503,7 @@ export const checkSmartBiddingVolume = (
     c => isConversionActionOn(c.status)
   );
 
-  const primaryConversions = enabledConversions.filter(c =>
-    (c as any).primary === 'true' || (c as any).primary === true
-  );
+  const primaryConversions = enabledConversions.filter(c => c.primary === true);
 
   if (enabledConversions.length < 3 && primaryConversions.length === 0) {
     return {
@@ -649,13 +647,15 @@ export const checkPrimaryConversionDesignation = (
   // Primary" cannot be told apart from "the export doesn't say".
   const primaryStatusInInput = adsData.conversions.some(c => c.primary !== undefined);
 
-  if (primaryStatusInInput && primaryConversions.length === 0 && enabledConversions.length > 1) {
+  // With status known, any enabled action and no enabled Primary is critical,
+  // including a single enabled Secondary action (#72).
+  if (primaryStatusInInput && primaryConversions.length === 0 && enabledConversions.length > 0) {
     return {
       id: 'no-primary-conversion',
       severity: 'critical',
       passed: false,
       title: 'No Primary Conversion Designated',
-      description: `${enabledConversions.length} conversions enabled, but none marked as Primary for Smart Bidding`,
+      description: `${enabledConversions.length} conversion${enabledConversions.length === 1 ? '' : 's'} enabled, but none marked as Primary for Smart Bidding`,
       details: {
         enabledConversions: enabledConversions.length,
         primaryConversions: primaryConversions.length,
@@ -683,12 +683,12 @@ export const checkPrimaryConversionDesignation = (
     id: 'no-primary-conversion',
     severity: 'info',
     passed: true,
-    title: 'Primary Conversion Configured',
+    title: primaryConversions.length ? 'Primary Conversion Configured' : 'Primary Conversion Designation',
     // Several Primary actions are normal (Primary is set per conversion goal),
     // so one or more enabled Primary actions passes.
     description: primaryConversions.length
       ? `Enabled Primary conversion actions: ${primaryConversions.map(c => c.name).join(', ')}`
-      : 'No more than one conversion action enabled',
+      : 'No enabled conversion actions',
     ...(primaryConversions.length ? { details: { primaryConversions: primaryConversions.map(c => c.name) } } : {}),
     recommendation: 'Continue monitoring primary conversion performance',
   };
