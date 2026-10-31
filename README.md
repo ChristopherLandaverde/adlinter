@@ -45,7 +45,7 @@ AdLint is built as an agentic app in four layers: a deterministic engine, typed 
 | "Which critical Google Ads checks does AdLint run?" | `list_checks` | The check registry | nothing |
 | "Why does `no-primary-conversion` matter? Give me a citation for the client report." | `explain_check` | The check's `/checks/<id>` explainer | nothing |
 
-Agentic levels: L1 machine-readable · L2 agent-callable · L3 live read · L4 proposes changes for you to approve. AdLint: L1 (`adlint audit` JSON) · L2 (`adlint-mcp`) · L3 (fixture-verified: tested against synthetic API responses, not yet a real account). AdLint is read-only by design: it never writes to GTM or Google Ads, and you make any change yourself.
+Agentic levels: L1 machine-readable · L2 agent-callable · L3 live read. AdLint: L1 (`adlint audit` JSON) · L2 (`adlint-mcp`) · L3 (fixture-verified: tested against synthetic API responses, not yet a real account). Read-only by design: nothing writes.
 
 The CLI and MCP tools run the GTM, Google Ads and cross-source checks; the performance report and pixel checks are web-app only for now. Details: [Use it from an agent / CLI](#use-it-from-an-agent--cli) · [MCP server](#mcp-server) · [Live mode](#live-mode) · [where the data goes](#privacy).
 
