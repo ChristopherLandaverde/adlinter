@@ -683,7 +683,7 @@ export const checkPrimaryConversionDesignation = (
     id: 'no-primary-conversion',
     severity: 'info',
     passed: true,
-    title: 'Primary Conversion Configured',
+    title: primaryConversions.length ? 'Primary Conversion Configured' : 'Primary Conversion Designation',
     // Several Primary actions are normal (Primary is set per conversion goal),
     // so one or more enabled Primary actions passes.
     description: primaryConversions.length
