@@ -731,6 +731,63 @@ describe('checkPrimaryConversionDesignation', () => {
       expect(result.severity).toBe('critical');
     });
   });
+
+  // #72: the old "more than one enabled" threshold let a single enabled
+  // Secondary action pass.
+  describe('with exactly one enabled action (#72)', () => {
+    const BASE = 'Conversion name,Category,Value,Count,Attribution model,Click-through conversion window,View-through conversion window,Status';
+    const one = (primary?: string) =>
+      [
+        `${BASE}${primary !== undefined ? ',Action optimization' : ''}`,
+        `Purchase,Purchase,50,One,Last click,30 days,1 day,Enabled${primary !== undefined ? `,${primary}` : ''}`,
+      ].join('\n');
+
+    it('status known, Secondary: fails as critical', () => {
+      const result = checkPrimaryConversionDesignation(parseAdsCSV(one('Secondary')));
+      expect(result.id).toBe('no-primary-conversion');
+      expect(result.passed).toBe(false);
+      expect(result.severity).toBe('critical');
+      expect(result.description).toBe('1 conversion enabled, but none marked as Primary for Smart Bidding');
+      expect(result.details).toEqual({ enabledConversions: 1, primaryConversions: 0 });
+    });
+
+    it('status known, Primary: passes', () => {
+      const result = checkPrimaryConversionDesignation(parseAdsCSV(one('Primary')));
+      expect(result.passed).toBe(true);
+      expect(result.severity).toBe('info');
+      expect(result.description).toBe('Enabled Primary conversion actions: Purchase');
+    });
+
+    it('no status column: skipped (unchanged)', () => {
+      const result = checkPrimaryConversionDesignation(parseAdsCSV(one()));
+      expect(result.passed).toBe(true);
+      expect(result.severity).toBe('info');
+      expect(result.description).toContain('(check skipped)');
+      expect(result.details).toEqual({ primaryStatusInInput: false, enabledConversions: 1 });
+    });
+
+    it('status known, one enabled Secondary beside a Removed Primary: critical', () => {
+      const csv = [
+        `${BASE},Action optimization`,
+        'Purchase - old,Purchase,50,One,Last click,30 days,1 day,Removed,Primary',
+        'Purchase,Purchase,50,One,Last click,30 days,1 day,Enabled,Secondary',
+      ].join('\n');
+      const result = checkPrimaryConversionDesignation(parseAdsCSV(csv));
+      expect(result.passed).toBe(false);
+      expect(result.severity).toBe('critical');
+    });
+
+    it('status known, no enabled action: passes and says nothing is enabled', () => {
+      const csv = [
+        `${BASE},Action optimization`,
+        'Purchase,Purchase,50,One,Last click,30 days,1 day,Removed,Secondary',
+      ].join('\n');
+      const result = checkPrimaryConversionDesignation(parseAdsCSV(csv));
+      expect(result.passed).toBe(true);
+      expect(result.severity).toBe('info');
+      expect(result.description).toBe('No enabled conversion actions');
+    });
+  });
 });
 
 // ──────────────────────────────────────────────────────────────

@@ -267,7 +267,7 @@ export async function runCli(argv: string[], deps: CliDeps): Promise<CliResult> 
       const usageHint = e instanceof UsageError ? `\n\n${USAGE}` : '\n';
       return { exitCode: EXIT_ERROR, stdout: '', stderr: `${prefix}${e.message}${usageHint}` };
     }
-    // Anything unexpected (including the read-only guard refusing a call).
+    // Anything unexpected. A read-only guard refusal is a RefusedError, handled above.
     const msg = e instanceof Error ? e.message : String(e);
     return { exitCode: EXIT_ERROR, stdout: '', stderr: `adlint: ${msg}\n` };
   }
