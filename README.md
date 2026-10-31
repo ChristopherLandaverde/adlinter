@@ -25,8 +25,8 @@
 A conversion counted twice halves your reported CPA overnight, and Smart Bidding starts spending against numbers that aren't real. An account with no primary conversion gives Smart Bidding no target, and a revenue conversion that fires without a value leaves value-based bidding blind. The ad platform shows none of these as an error: spend keeps going out and the dashboards keep filling. AdLint reads your GTM container, Google Ads conversion export, performance report or pixel export and tells you what is broken, how badly, and how to fix it.
 
 <p align="center">
-  <img src="docs/images/audit-demo.gif" width="880" alt="Screen recording of the live demo: on the Google Full-Stack Audit page the Try with sample data button is clicked; the results page shows a Tracking Health Score of 73 out of 100 marked &quot;Needs work&quot;, 90 of 119 checks passed, and the three most critical findings; the &quot;Learn more&quot; link on &quot;Google Ads Conversions Missing GTM Tags&quot; opens its explainer, which scrolls from Why It Matters to How To Fix It; the recording ends back on the score">
-  <br><sub>Recorded on the <a href="https://adlinter.vercel.app">live demo</a> with the bundled Google Full-Stack sample, nothing uploaded: one click to a 73/100 score with 90 of 119 checks passing, the three most critical findings first, and each finding's explainer with why it matters and how to fix it.</sub>
+  <img src="docs/images/fix-demo.gif" width="880" alt="Four-frame storyboard on the bundled Google Ads Linter sample. 1 of 4: the sample conversion export, with the Purchase row highlighted because it counts &quot;One&quot;, beside the Google Ads Linter upload screen and its Try with sample data button. 2 of 4: the result, a Tracking Health Score of 74 out of 100 marked &quot;Needs work&quot; with 33 of 42 checks passed, 2 critical, 3 warnings and 4 info, and the most critical findings: No Primary Conversion Designated and High-Value Conversions with Wrong Counting Method. 3 of 4: the Wrong Counting Method finding and its explainer page, which says Google recommends &quot;Every&quot; for sales and lists the fix steps, including setting Count to &quot;Every&quot; in Google Ads. 4 of 4: a copy of the sample with only that cell changed from One to Every, re-run in the app: 87 out of 100 marked &quot;Good&quot;, 36 of 42 checks passed, 2 critical down to 1, and the three counting-method findings cleared, while No Primary Conversion Designated and 5 other findings remain">
+  <br><sub>Bundled Google Ads Linter sample, nothing uploaded. Frame 4 is a real re-run on a copy of it with one cell changed: the Purchase row's Count, from One to Every.</sub>
 </p>
 
 ## Who it's for
@@ -46,7 +46,7 @@ A conversion counted twice halves your reported CPA overnight, and Smart Bidding
 
 ## Try it
 
-**No install:** open the [live demo](https://adlinter.vercel.app), pick a tool (for example **Google Full-Stack Audit**) and click **Try with sample data**. The bundled sample files load and you land on the audit results page shown above. Every tool has a sample.
+**No install:** open the [live demo](https://adlinter.vercel.app), pick a tool (for example **Google Ads Linter**, the one in the demo above) and click **Try with sample data**. The bundled sample files load and you land on the audit results page. Every tool has a sample.
 
 **Run it locally** (Node 20, the version CI uses):
 
@@ -140,7 +140,7 @@ npx jest --ci       # tests: checks, parsers, integration scenarios, hooks, comp
 npm run build       # regenerates the check registry, then builds
 ```
 
-These are the commands CI runs on every push and pull request to `main`. Release steps are in [RELEASING.md](RELEASING.md); version history is in [progress.md](progress.md).
+These are the commands CI runs on every push and pull request to `main`. The demo GIF at the top is rebuilt from the running app with [`scripts/readme-demo`](scripts/readme-demo/README.md). Release steps are in [RELEASING.md](RELEASING.md); version history is in [progress.md](progress.md).
 
 Stack: Next.js 16, React 19, TypeScript, Tailwind CSS, Jest. Design system: [DESIGN.md](DESIGN.md). Product principles: [PRODUCT.md](PRODUCT.md).
 

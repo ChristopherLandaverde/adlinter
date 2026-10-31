@@ -1,0 +1,92 @@
+{
+  "capturedAt": "2026-10-31T01:02:02.560Z",
+  "baseUrl": "http://localhost:3107",
+  "tool": "google-ads-linter",
+  "toolName": "Google Ads Linter",
+  "checkCountLine": "42 checks will be performed",
+  "sample": "public/samples/ads-conversions-sample.csv",
+  "fix": {
+    "row": "Purchase",
+    "column": "Count",
+    "from": "One",
+    "to": "Every",
+    "file": "sample-conversions-fixed.csv"
+  },
+  "before": {
+    "score": 74,
+    "label": "Needs work",
+    "passed": 33,
+    "total": 42,
+    "critical": 2,
+    "warnings": 3,
+    "info": 4,
+    "issues": [
+      "No Primary Conversion Designated",
+      "High-Value Conversions with Wrong Counting Method",
+      "Wrong Counting Method",
+      "Insufficient Value Data for ROAS Bidding",
+      "Counting Method vs Category Mismatch",
+      "Conversion Name Quality",
+      "Naming Convention Consistency",
+      "Last-Click Attribution Opportunity",
+      "Static Round Value Detection"
+    ],
+    "top": [
+      "No Primary Conversion Designated",
+      "High-Value Conversions with Wrong Counting Method",
+      "Wrong Counting Method"
+    ]
+  },
+  "after": {
+    "score": 87,
+    "label": "Good",
+    "passed": 36,
+    "total": 42,
+    "critical": 1,
+    "warnings": 1,
+    "info": 4,
+    "issues": [
+      "No Primary Conversion Designated",
+      "Insufficient Value Data for ROAS Bidding",
+      "Conversion Name Quality",
+      "Naming Convention Consistency",
+      "Last-Click Attribution Opportunity",
+      "Static Round Value Detection"
+    ],
+    "top": [
+      "No Primary Conversion Designated",
+      "Insufficient Value Data for ROAS Bidding",
+      "Conversion Name Quality"
+    ]
+  },
+  "gone": [
+    "High-Value Conversions with Wrong Counting Method",
+    "Wrong Counting Method",
+    "Counting Method vs Category Mismatch"
+  ],
+  "stillOpen": [
+    "No Primary Conversion Designated",
+    "Insufficient Value Data for ROAS Bidding",
+    "Conversion Name Quality",
+    "Naming Convention Consistency",
+    "Last-Click Attribution Opportunity",
+    "Static Round Value Detection"
+  ],
+  "findingCard": {
+    "title": "Wrong Counting Method",
+    "description": "1 purchase conversion(s) count \"One\", so repeat purchases from the same click are dropped (Google recommends \"Every\")",
+    "learnMore": "/checks/wrong-counting-method"
+  },
+  "explainer": {
+    "id": "wrong-counting-method",
+    "title": "Wrong Conversion Counting Method",
+    "tldr": "One or more purchase or sale conversion actions count \"One\" conversion per click. Google recommends \"Every\" for sales, because a customer who buys twice after the same ad click made two sales. With \"One\", the second purchase is dropped, so conversion volume and revenue are undercounted. Switch these actions to \"Every\" unless you deliberately count only the first purchase per click.",
+    "references": "REFERENCES\n[1]\nGoogle Ads. Choose a counting setting for your conversions",
+    "stepsShown": [
+      "01 AdLint's details list each purchase or sale action that counts \"One\".",
+      "02 Decide whether repeat purchases after the same click should count. For almost every store they should.",
+      "03 In Google Ads, open Goals → Conversions → Summary, select the action, and set Count to \"Every\".",
+      "04 Note the change date. Conversion volume rises from that date because repeat purchases are now counted, so compare performance before and after with that in mind."
+    ]
+  }
+}
