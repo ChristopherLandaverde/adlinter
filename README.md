@@ -117,7 +117,88 @@ Output on the bundled samples (trimmed with `jq '{schemaVersion, tool, source, s
 - **Exit codes:** `0` no critical findings, `1` at least one critical finding, `2` a usage, input or credential error (the message goes to stderr).
 - **Options:** `--gtm-export <file>`, `--ads-csv <file>` (either or both; both adds the cross-source checks), `--format json|text` (default `json`). `npx tsx cli/adlint.ts --help` prints the full usage. `npm run adlint -- audit ...` and the `adlint` bin (after `npm link`) run the same thing.
 - **What it runs:** the GTM, Google Ads and cross-source checks. The performance report and the pixel exports are not wired into the CLI yet, and there are no flags for audit context, so the engine runs with its defaults.
-- **Where the output goes:** the CLI writes to your terminal and nowhere else. If an agent runs it (a shell tool today, or an MCP server once AdLint has one), the JSON goes to the model behind that agent, under that agent's own data terms.
+- **Where the output goes:** the CLI writes to your terminal and nowhere else. If an agent runs it through a shell tool, the JSON goes to the model behind that agent, under that agent's own data terms.
+
+### MCP server
+
+`adlint-mcp` exposes the same engine as read-only [MCP](https://modelcontextprotocol.io) tools over stdio, so an agent such as Claude Code, Claude Desktop or Cursor can call it directly. It runs from source on your machine and is not published to npm or any MCP registry. The tools call the CLI's own modules (`cli/run.ts`, `cli/live/*`, `lib/checks/*`); nothing in the server computes a finding or a number.
+
+| Tool | What it returns |
+|---|---|
+| `audit_export` | The CLI's JSON report (schema version 1) for a GTM export and/or Google Ads conversions CSV, given as file paths (only read, never written) or as text. No network. |
+| `audit_live_container` | The same report from [live mode](#live-mode): `container` (`accounts/<id>/containers/<id>`) and optional `adsCustomerId`. Same credentials, read-only request guard and network list as the CLI. |
+| `list_checks` | Check IDs, titles, platform and default severity from the check registry, filterable by `platform` and `severity`. |
+| `explain_check` | The `/checks/<id>` explainer for one check: why it matters, how to fix it, citation paragraph and sources. |
+
+Bad input (a missing file, both a path and text, a malformed container path, missing credentials) comes back as a tool error, `{"error": {"kind": "usage" | "credentials" | "api" | "refused", "message": "..."}}`, not a crash.
+
+**Connect it** (after `npm ci` in your clone; replace `/path/to/adlinter` with its absolute path):
+
+Claude Code:
+
+```bash
+claude mcp add adlint -- node /path/to/adlinter/cli/mcp/bin.cjs
+```
+
+Claude Desktop (`claude_desktop_config.json`) and Cursor (`~/.cursor/mcp.json` or `.cursor/mcp.json` in a project):
+
+```json
+{
+  "mcpServers": {
+    "adlint": {
+      "command": "node",
+      "args": ["/path/to/adlinter/cli/mcp/bin.cjs"]
+    }
+  }
+}
+```
+
+For `audit_live_container`, the server needs the same credentials as live mode on the machine that runs it: Application Default Credentials, plus `GOOGLE_ADS_DEVELOPER_TOKEN` and the other `GOOGLE_ADS_*` variables for Google Ads. Pass them with `-e KEY=value` after the server name in `claude mcp add`, or an `"env"` object in the JSON config. Values set that way are stored in that client's config file.
+
+The `claude mcp add` command above was run in this repo, and `claude mcp list` reported the server as connected. The Claude Desktop and Cursor snippets use the same command, but they weren't run in those apps.
+
+A real `audit_export` call on the bundled samples, made over stdio with the MCP SDK's client against `node cli/mcp/bin.cjs`. The arguments were `{"gtmExportPath": "public/samples/gtm-container-sample.json", "adsCsvPath": "public/samples/ads-conversions-sample.csv"}`. The output below is trimmed with `jq '{summary, findings: [.findings[1]]}'`. The full result has 15 findings and is identical to the CLI's JSON for the same files:
+
+```json
+{
+  "summary": {
+    "healthScore": 82,
+    "band": "good",
+    "checksRun": 86,
+    "checksPassed": 71,
+    "counts": {
+      "critical": 3,
+      "warning": 6,
+      "info": 6,
+      "passed": 71
+    }
+  },
+  "findings": [
+    {
+      "checkId": "edge-high-value-wrong-counting",
+      "severity": "critical",
+      "source": "ads",
+      "title": "High-Value Conversions with Wrong Counting Method",
+      "evidence": {
+        "observed": "1 high-value conversion(s) set to count \"One\" — missing repeat purchases",
+        "details": {
+          "highValueWrongCount": [
+            {
+              "name": "Purchase",
+              "value": 50,
+              "count": "One",
+              "category": "Purchase"
+            }
+          ]
+        }
+      },
+      "fix": "Set purchase conversions to count \"Every\" to track all transactions"
+    }
+  ]
+}
+```
+
+**Where MCP results go:** the server itself sends nothing anywhere except what live mode documents (Google's APIs and token endpoints). But every tool result goes to the agent that called it, and so to the model behind your own agent (Claude, Cursor's model, or whichever you use), under that agent's data terms. That includes the findings and their evidence (conversion names, values, tag names). If the agent passes an export as text (`gtmExportJson`, `adsCsv`), that text has already been through the model. A test checks that the server, like the CLI, only reaches the network through `cli/live/http.ts` (`__tests__/cli/network.test.ts`).
 
 ## Live mode
 
@@ -231,7 +312,7 @@ Counts are the distinct check IDs in [`lib/checks/registry.generated.ts`](lib/ch
 - **Your files stay in your browser.** Exports are parsed and audited by JavaScript on the page and never uploaded. Audit history is stored in your browser's localStorage. PDFs are generated in the browser.
 - **Email for PDF export (optional).** From your fifth audit, PDF export asks for an email address. The form says this before you submit: the address is sent to AdLint's `/api/subscribe` route ([`app/api/subscribe/route.ts`](app/api/subscribe/route.ts)), which forwards it to MailerLite, the email provider, tagged as a PDF-export sign-up. No audit data is sent with it.
 - **Third-party requests.** The site loads its display fonts from Fontshare (`api.fontshare.com`). It loads no analytics scripts.
-- **CLI.** `adlint` runs on your machine. In file mode it makes no network requests. In live mode it calls the Tag Manager and Google Ads APIs and Google's OAuth token endpoint, with your own credentials. With federated or impersonated credentials it also calls Google's STS and IAM Credentials endpoints and the credential source you configured; on a Google Cloud machine, that machine's metadata server. Nothing goes to AdLint. [Live mode](#live-mode) has the exact list.
+- **CLI and MCP server.** `adlint` and `adlint-mcp` run on your machine. In file mode (and the `audit_export`, `list_checks` and `explain_check` tools) they make no network requests. In live mode (and `audit_live_container`) they call the Tag Manager and Google Ads APIs and Google's OAuth token endpoint, with your own credentials. With federated or impersonated credentials it also calls Google's STS and IAM Credentials endpoints and the credential source you configured; on a Google Cloud machine, that machine's metadata server. Nothing goes to AdLint. [Live mode](#live-mode) has the exact list. Through the MCP server, tool results also reach the model behind the agent you connect it to ([MCP server](#mcp-server)).
 
 ## Development
 

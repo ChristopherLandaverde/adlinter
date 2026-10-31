@@ -147,27 +147,53 @@ function parseInput<T>(parse: () => T, flag: string, path: string): T {
   }
 }
 
-async function loadFileInputs(args: AuditArgs, deps: CliDeps) {
+/**
+ * One file-mode input. `label` is the path (read from disk) unless `text` is
+ * given, in which case `label` only names the input in the report and errors.
+ * `name` is the flag or parameter name used in error messages.
+ */
+export interface FileInput {
+  label: string;
+  name: string;
+  text?: string;
+}
+
+export interface FileAuditInputs {
+  gtmExport?: FileInput;
+  adsCsv?: FileInput;
+}
+
+export interface LiveAuditInputs {
+  gtmContainer?: string;
+  adsCustomer?: string;
+}
+
+async function loadFileInputs(inputs: FileAuditInputs, deps: CliDeps) {
   let gtm: GTMContainer | null = null;
   let ads: AdsData | null = null;
-  if (args.gtmExport) {
-    const text = await readInput(deps, args.gtmExport, '--gtm-export');
-    gtm = parseInput(() => parseGTMJSON(text), '--gtm-export', args.gtmExport);
+  const { gtmExport, adsCsv } = inputs;
+  if (gtmExport) {
+    const text = gtmExport.text ?? (await readInput(deps, gtmExport.label, gtmExport.name));
+    gtm = parseInput(() => parseGTMJSON(text), gtmExport.name, gtmExport.label);
   }
-  if (args.adsCsv) {
-    const text = await readInput(deps, args.adsCsv, '--ads-csv');
-    ads = parseInput(() => parseAdsCSV(text), '--ads-csv', args.adsCsv);
+  if (adsCsv) {
+    const text = adsCsv.text ?? (await readInput(deps, adsCsv.label, adsCsv.name));
+    ads = parseInput(() => parseAdsCSV(text), adsCsv.name, adsCsv.label);
   }
   const source: ReportSource = { mode: 'file' };
-  if (args.gtmExport) source.gtmExport = args.gtmExport;
-  if (args.adsCsv) source.adsCsv = args.adsCsv;
+  if (gtmExport) source.gtmExport = gtmExport.label;
+  if (adsCsv) source.adsCsv = adsCsv.label;
   return { gtm, ads, source };
 }
 
-async function loadLiveInputs(args: AuditArgs, deps: CliDeps) {
-  // Validate every flag and env var before asking for any token.
-  const containerPath = args.gtmContainer !== undefined ? parseContainerPath(args.gtmContainer) : undefined;
-  const customerId = args.adsCustomer !== undefined ? parseCustomerId(args.adsCustomer) : undefined;
+const LIVE_FLAG_NAMES = { gtmContainer: '--gtm-container', adsCustomer: '--ads-customer' };
+
+async function loadLiveInputs(inputs: LiveAuditInputs, deps: CliDeps, names = LIVE_FLAG_NAMES) {
+  // Validate every input and env var before asking for any token.
+  const containerPath =
+    inputs.gtmContainer !== undefined ? parseContainerPath(inputs.gtmContainer, names.gtmContainer) : undefined;
+  const customerId =
+    inputs.adsCustomer !== undefined ? parseCustomerId(inputs.adsCustomer, names.adsCustomer) : undefined;
   const adsConfig = customerId ? adsConfigFromEnv(deps.env) : undefined;
 
   let gtm: GTMContainer | null = null;
@@ -191,18 +217,42 @@ async function loadLiveInputs(args: AuditArgs, deps: CliDeps) {
   return { gtm, ads, source };
 }
 
+/** File mode: parse the exports, run the engine, build the schema-v1 report. */
+export async function auditFiles(inputs: FileAuditInputs, deps: CliDeps): Promise<AdlintReport> {
+  const { gtm, ads, source } = await loadFileInputs(inputs, deps);
+  return buildReport(runAudit(gtm, ads), source);
+}
+
+/**
+ * Live mode: read the published GTM container and/or Google Ads conversion
+ * actions through cli/live (read-only guard, credentials from this machine),
+ * run the engine, build the schema-v1 report. `names` labels the inputs in
+ * error messages.
+ */
+export async function auditLive(
+  inputs: LiveAuditInputs,
+  deps: CliDeps,
+  names: { gtmContainer: string; adsCustomer: string } = LIVE_FLAG_NAMES
+): Promise<AdlintReport> {
+  const { gtm, ads, source } = await loadLiveInputs(inputs, deps, names);
+  return buildReport(runAudit(gtm, ads), source);
+}
+
 export async function runCli(argv: string[], deps: CliDeps): Promise<CliResult> {
   try {
     const args = parseAuditArgs(argv);
     if (args === 'help') return { exitCode: EXIT_OK, stdout: USAGE, stderr: '' };
 
     const isLive = args.gtmContainer !== undefined || args.adsCustomer !== undefined;
-    const { gtm, ads, source } = isLive
-      ? await loadLiveInputs(args, deps)
-      : await loadFileInputs(args, deps);
-
-    const results = runAudit(gtm, ads);
-    const report = buildReport(results, source);
+    const report = isLive
+      ? await auditLive({ gtmContainer: args.gtmContainer, adsCustomer: args.adsCustomer }, deps)
+      : await auditFiles(
+          {
+            gtmExport: args.gtmExport !== undefined ? { label: args.gtmExport, name: '--gtm-export' } : undefined,
+            adsCsv: args.adsCsv !== undefined ? { label: args.adsCsv, name: '--ads-csv' } : undefined,
+          },
+          deps
+        );
     const stdout =
       args.format === 'json' ? JSON.stringify(report, null, 2) + '\n' : formatText(report);
     return {

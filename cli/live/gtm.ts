@@ -11,11 +11,11 @@ import { googleRequest, type FetchLike } from './http';
 export const GTM_API_BASE = 'https://tagmanager.googleapis.com/tagmanager/v2';
 const CONTAINER_PATH = /^accounts\/(\d+)\/containers\/(\d+)$/;
 
-export function parseContainerPath(path: string): string {
+export function parseContainerPath(path: string, flag = '--gtm-container'): string {
   const trimmed = path.trim().replace(/^\/+|\/+$/g, '');
   if (!CONTAINER_PATH.test(trimmed)) {
     throw new UsageError(
-      `--gtm-container must look like accounts/<accountId>/containers/<containerId> (numeric IDs from the Tag Manager URL), got "${path}"`
+      `${flag} must look like accounts/<accountId>/containers/<containerId> (numeric IDs from the Tag Manager URL), got "${path}"`
     );
   }
   return trimmed;

@@ -33,6 +33,7 @@ Data flows today (keep this list exact; every privacy claim in the product must 
 - The hosted site loads its display fonts from Fontshare (`api.fontshare.com`), so the browser requests them from that host. No analytics scripts are loaded.
 
 - The local `adlint` CLI (`cli/`, run from source) is separate from the web app. File mode makes no network requests. Live mode calls Google, with the user's own credentials: the Tag Manager API (`tagmanager.readonly`), the Google Ads API (`GoogleAdsService` search only) and Google's OAuth token endpoint. With federated or impersonated credentials it also calls Google STS and IAM Credentials, plus the credential source named in the user's credentials file. On a Google Cloud machine it also uses that machine's metadata server; elsewhere the library's metadata-server probe is off. Nothing goes to AdLint. The README's Live mode section has the exact list.
+- The local `adlint-mcp` server (`cli/mcp/`, run from source) exposes the same engine to the user's own agent over stdio. It makes the same requests as the CLI and nothing else. Its tool results (findings and their evidence) go to the agent that called them, and so to the model behind it, under that agent's terms. AdLint embeds no LLM provider.
 
 So the exact claim is "your files are never uploaded", not "no data leaves your browser".
 

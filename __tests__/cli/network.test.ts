@@ -69,6 +69,11 @@ describe('no network beyond Google APIs', () => {
     };
     walk(path.join(ROOT, 'cli'));
     expect(files.length).toBeGreaterThan(5);
+    // The MCP server lives under cli/ so this scan covers it: it reaches the
+    // network only through the live-mode modules, i.e. cli/live/http.ts.
+    for (const f of ['cli/mcp/server.ts', 'cli/mcp/stdio.ts', 'cli/mcp/bin.cjs']) {
+      expect(files).toContain(path.join(ROOT, f));
+    }
 
     for (const file of files) {
       const rel = path.relative(ROOT, file);
