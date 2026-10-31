@@ -35,6 +35,9 @@ const PRIMARY_COLUMNS = ['action optimization', 'action optimisation', 'primary 
 const PRIMARY_VALUES: Record<string, boolean> = {
   primary: true,
   secondary: false,
+  'primary action': true,
+  'secondary action': false,
+  'secondary (observe only)': false,
   yes: true,
   no: false,
   true: true,

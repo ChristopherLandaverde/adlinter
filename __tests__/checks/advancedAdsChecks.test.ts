@@ -600,6 +600,36 @@ describe('checkConversionDelayImpact', () => {
   });
 });
 
+// smart-bidding-volume's logic is unchanged by #69, but it reads the parsed
+// primary status, so its outcome depends on whether the input has the column.
+describe('checkSmartBiddingVolume with and without a primary column (#69)', () => {
+  const BASE = 'Conversion name,Category,Value,Count,Attribution model,Click-through conversion window,View-through conversion window,Status';
+  const two = (a?: string, b?: string) =>
+    [
+      `${BASE}${a !== undefined ? ',Action optimization' : ''}`,
+      `Purchase,Purchase,50,One,Last click,30 days,1 day,Enabled${a !== undefined ? `,${a}` : ''}`,
+      `Lead,Submit lead form,0,One,Last click,30 days,1 day,Enabled${b !== undefined ? `,${b}` : ''}`,
+    ].join('\n');
+
+  it('no primary column, fewer than 3 enabled: warns (as before #69)', () => {
+    const r = checkSmartBiddingVolume(parseAdsCSV(two()));
+    expect(r.passed).toBe(false);
+    expect(r.severity).toBe('warning');
+    expect(r.details).toEqual({ enabledCount: 2, primaryCount: 0 });
+  });
+
+  it('column with only Secondary actions, fewer than 3 enabled: warns', () => {
+    const r = checkSmartBiddingVolume(parseAdsCSV(two('Secondary', 'Secondary')));
+    expect(r.passed).toBe(false);
+    expect(r.details).toEqual({ enabledCount: 2, primaryCount: 0 });
+  });
+
+  it('column with an enabled Primary action, fewer than 3 enabled: passes', () => {
+    const r = checkSmartBiddingVolume(parseAdsCSV(two('Primary', 'Secondary')));
+    expect(r.passed).toBe(true);
+  });
+});
+
 // ──────────────────────────────────────────────────────────────
 // 13. checkPrimaryConversionDesignation (WARNING)
 // ──────────────────────────────────────────────────────────────
@@ -617,23 +647,23 @@ describe('checkPrimaryConversionDesignation', () => {
     expect(result.id).toBe('no-primary-conversion');
   });
 
-  it('should FAIL when multiple primaries', () => {
+  it('should PASS with several Primary actions (normal across goals), with no warning', () => {
     const adsData: AdsData = {
       conversions: [
-        { ...makeConversion({ name: 'A', status: 'Enabled' }), primary: 'true' } as any,
-        { ...makeConversion({ name: 'B', status: 'Enabled' }), primary: 'true' } as any,
+        makeConversion({ name: 'A', status: 'Enabled', primary: true }),
+        makeConversion({ name: 'B', status: 'Enabled', primary: true }),
       ],
     };
     const result = checkPrimaryConversionDesignation(adsData);
-    expect(result.passed).toBe(false);
-    expect(result.severity).toBe('warning');
+    expect(result.passed).toBe(true);
+    expect(result.severity).toBe('info');
   });
 
   it('should PASS with single primary conversion', () => {
     const adsData: AdsData = {
       conversions: [
-        { ...makeConversion({ name: 'A', status: 'Enabled' }), primary: 'true' } as any,
-        makeConversion({ name: 'B', status: 'Enabled' }),
+        makeConversion({ name: 'A', status: 'Enabled', primary: true }),
+        makeConversion({ name: 'B', status: 'Enabled', primary: false }),
       ],
     };
     const result = checkPrimaryConversionDesignation(adsData);
@@ -671,7 +701,28 @@ describe('checkPrimaryConversionDesignation', () => {
     it('a primary column with one Primary row passes', () => {
       const result = checkPrimaryConversionDesignation(parseAdsCSV(rows(['Primary', 'Secondary', 'Secondary'])));
       expect(result.passed).toBe(true);
-      expect(result.description).toBe('Primary conversion: Purchase');
+      expect(result.description).toBe('Enabled Primary conversion actions: Purchase');
+    });
+
+    it('Purchase and Lead both Primary passes with no warning, and names both', () => {
+      const result = checkPrimaryConversionDesignation(parseAdsCSV(rows(['Primary', 'Primary', 'Secondary'])));
+      expect(result.passed).toBe(true);
+      expect(result.severity).toBe('info');
+      expect(result.description).toBe('Enabled Primary conversion actions: Purchase, Lead');
+      expect(result.details).toEqual({ primaryConversions: ['Purchase', 'Lead'] });
+    });
+
+    it('a Removed Primary action does not count: Secondary-only enabled actions are critical', () => {
+      const csv = [
+        `${BASE},Action optimization`,
+        'Purchase - old,Purchase,50,One,Last click,30 days,1 day,Removed,Primary',
+        'Purchase,Purchase,50,One,Last click,30 days,1 day,Enabled,Secondary',
+        'Lead,Submit lead form,0,One,Last click,30 days,1 day,Enabled,Secondary',
+      ].join('\n');
+      const result = checkPrimaryConversionDesignation(parseAdsCSV(csv));
+      expect(result.passed).toBe(false);
+      expect(result.severity).toBe('critical');
+      expect(result.details).toEqual({ enabledConversions: 2, primaryConversions: 0 });
     });
 
     it('rows without a value count as not primary once any row carries status', () => {

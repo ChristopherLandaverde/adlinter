@@ -98,6 +98,11 @@ Test,,0,One,,,Enabled`;
       expect(parseAdsCSV(csv).conversions.map(c => c.primary)).toEqual([true, false, true, false]);
     });
 
+    it('reads "Primary action", "Secondary action" and "Secondary (observe only)" values', () => {
+      const csv = `${BASE},Action optimization\nA,Purchase,50,One,Last click,30 days,1 day,Enabled,Primary action\nB,Purchase,50,One,Last click,30 days,1 day,Enabled,Secondary action\nC,Purchase,50,One,Last click,30 days,1 day,Enabled,Secondary (observe only)`;
+      expect(parseAdsCSV(csv).conversions.map(c => c.primary)).toEqual([true, false, false]);
+    });
+
     it('leaves primary unset when the column is missing, blank or unrecognised', () => {
       const none = parseAdsCSV(`${BASE}\nA,Purchase,50,One,Last click,30 days,1 day,Enabled`).conversions[0];
       expect(none.primary).toBeUndefined();

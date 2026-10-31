@@ -636,13 +636,13 @@ export const checkPrimaryConversionDesignation = (
   adsData: AdsData,
   _context?: AuditContext
 ): AuditCheck => {
-  const primaryConversions = adsData.conversions.filter(c =>
-    (c as any).primary === 'true' || (c as any).primary === true
-  );
-
   const enabledConversions = adsData.conversions.filter(
     c => isConversionActionOn(c.status)
   );
+
+  // Only enabled actions can be a bidding target: a Removed or Hidden action
+  // marked Primary doesn't count.
+  const primaryConversions = enabledConversions.filter(c => c.primary === true);
 
   // Primary status is only known when the input carries it: a primary column
   // in the CSV, or primary_for_goal in live mode (#69). Without it, "none is
@@ -679,26 +679,17 @@ export const checkPrimaryConversionDesignation = (
     };
   }
 
-  if (primaryConversions.length > 1) {
-    return {
-      id: 'no-primary-conversion',
-      severity: 'warning',
-      passed: false,
-      title: 'Multiple Primary Conversions',
-      description: `${primaryConversions.length} conversions marked as Primary - should only be one`,
-      details: {
-        primaryConversions: primaryConversions.map(c => c.name),
-      },
-      recommendation: 'Designate only one conversion as Primary',
-    };
-  }
-
   return {
     id: 'no-primary-conversion',
     severity: 'info',
     passed: true,
     title: 'Primary Conversion Configured',
-    description: `Primary conversion: ${primaryConversions[0]?.name || 'N/A'}`,
+    // Several Primary actions are normal (Primary is set per conversion goal),
+    // so one or more enabled Primary actions passes.
+    description: primaryConversions.length
+      ? `Enabled Primary conversion actions: ${primaryConversions.map(c => c.name).join(', ')}`
+      : 'No more than one conversion action enabled',
+    ...(primaryConversions.length ? { details: { primaryConversions: primaryConversions.map(c => c.name) } } : {}),
     recommendation: 'Continue monitoring primary conversion performance',
   };
 };
