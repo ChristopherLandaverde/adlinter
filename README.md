@@ -32,7 +32,7 @@ For agencies and freelancers auditing ad tracking they didn't build, and in-hous
 
 ## Agentic
 
-AdLint is built as an agentic app in four layers: a deterministic engine, typed read-only tools over it, your own agent on top, and you deciding what to change. The agent never computes a finding or a number; it calls the engine and explains what came back.
+AdLint is built as an agentic app in four layers: a deterministic engine, typed read-only tools over it, your own agent on top, and you deciding what to change. AdLint's tools give your agent the engine's findings and numbers to quote, not recompute; the agent explains what came back.
 
 <p align="center">
   <img src="docs/images/agentic-stack.svg" width="880" alt="AdLint's agentic stack in four layers. Layer 1, Engine: the check registry, 178 checks in lib/checks, which owns every verdict, score and count (the base every level builds on). Layer 2, Tools: the adlint audit CLI and the adlint-mcp server with audit_export, audit_live_container, list_checks and explain_check, read-only and enforced in code (L1 JSON, L2 MCP). Layer 3, Your agent: Claude, Cursor or any MCP client, reading the live GTM container and Google Ads conversion actions read-only (L3 live read, fixture-verified). Layer 4, You decide: nothing writes; you decide what to change and make the change yourself, from each finding's evidence, fix and citation.">
