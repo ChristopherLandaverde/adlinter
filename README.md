@@ -41,7 +41,7 @@ AdLint is built as an agentic app in four layers: a deterministic engine, typed 
 | Ask your agent… | Tool | Reads | Writes |
 |---|---|---|---|
 | "Audit the GTM export and Google Ads conversions CSV in ~/clients/acme and list the critical findings." | `audit_export` | The files you name (absolute paths or pasted text). No network. | nothing |
-| "Check the live GTM container accounts/123/containers/456 and Ads account 123-456-7890 for broken conversion tracking." | `audit_live_container` | The published container version (`versions:live`) and the account's conversion actions (GAQL search), with your credentials | nothing (any `mutate` call is refused in code) |
+| "Check the live GTM container accounts/123/containers/456 and Ads account 123-456-7890 for broken conversion tracking." | `audit_live_container` | The published container version (`versions:live`) and the account's conversion actions (GAQL search only; a `mutate` call is refused in code), with your credentials | nothing |
 | "Which critical Google Ads checks does AdLint run?" | `list_checks` | The check registry | nothing |
 | "Why does `no-primary-conversion` matter? Give me a citation for the client report." | `explain_check` | The check's `/checks/<id>` explainer | nothing |
 
