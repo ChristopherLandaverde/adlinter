@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <title>AdLint</title>
+  <!-- Tile: the single product accent (--accent #1E3A8A, DESIGN.md) -->
+  <rect width="128" height="128" rx="24" fill="#1E3A8A"/>
+  <!-- The health-score ring, DESIGN.md's signature moment: track plus a three-quarter arc -->
+  <circle cx="64" cy="64" r="36" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="14"/>
+  <path d="M64 28 A36 36 0 1 1 28 64" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+</svg>
