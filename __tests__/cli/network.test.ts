@@ -7,6 +7,9 @@ import type { AddressInfo } from 'node:net';
 import { mkdtempSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { disableMetadataServerProbe } from '../../cli/live/auth';
 import { runCli } from '../../cli/run';
 import { fixture, ROOT, testDeps } from './helpers';
@@ -49,6 +52,46 @@ describe('no network beyond Google APIs', () => {
     }
   }, 60000);
 
+  it('adlint-mcp audit_live_container with no credentials fails without probing the metadata server (real process)', async () => {
+    const hits: string[] = [];
+    const server = http.createServer((req, res) => {
+      hits.push(req.url ?? '');
+      res.writeHead(404).end();
+    });
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+    const { port } = server.address() as AddressInfo;
+    const empty = mkdtempSync(path.join(os.tmpdir(), 'adlint-mcp-noadc-'));
+    const client = new Client({ name: 'adlint-test', version: '0.0.0' });
+    try {
+      await client.connect(
+        new StdioClientTransport({
+          command: process.execPath,
+          args: [path.join(ROOT, 'cli/mcp/bin.cjs')],
+          cwd: ROOT,
+          env: {
+            PATH: process.env.PATH ?? '',
+            HOME: empty,
+            CLOUDSDK_CONFIG: empty,
+            GCE_METADATA_HOST: `127.0.0.1:${port}`,
+          },
+          stderr: 'pipe',
+        })
+      );
+      const res = (await client.callTool({
+        name: 'audit_live_container',
+        arguments: { container: 'accounts/6000000001/containers/7000000001' },
+      })) as CallToolResult;
+      expect(res.isError).toBe(true);
+      const { error } = JSON.parse((res.content[0] as { text: string }).text);
+      expect(error.kind).toBe('credentials');
+      expect(error.message).toContain('Could not get Tag Manager credentials');
+      expect(hits).toEqual([]);
+    } finally {
+      await client.close();
+      await new Promise(resolve => server.close(resolve));
+    }
+  }, 60000);
+
   it('respects a METADATA_SERVER_DETECTION the user set', () => {
     const env: Record<string, string | undefined> = { METADATA_SERVER_DETECTION: 'assume-present' };
     disableMetadataServerProbe(env);
@@ -69,6 +112,11 @@ describe('no network beyond Google APIs', () => {
     };
     walk(path.join(ROOT, 'cli'));
     expect(files.length).toBeGreaterThan(5);
+    // The MCP server lives under cli/ so this scan covers it: it reaches the
+    // network only through the live-mode modules, i.e. cli/live/http.ts.
+    for (const f of ['cli/mcp/server.ts', 'cli/mcp/stdio.ts', 'cli/mcp/bin.cjs']) {
+      expect(files).toContain(path.join(ROOT, f));
+    }
 
     for (const file of files) {
       const rel = path.relative(ROOT, file);
