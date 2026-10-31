@@ -146,7 +146,7 @@ Live mode is verified against synthetic API responses; it has not yet been run a
 
 **Read-only, and what that means for Google Ads.** The Google Ads API has a single OAuth scope, `adwords`, and that scope can technically make changes. AdLint only ever reads: the only Google Ads call it makes is `GoogleAdsService` search. Every request goes through one function ([`cli/live/http.ts`](cli/live/http.ts)), which refuses any `mutate` path, any other Google Ads endpoint and any host besides `tagmanager.googleapis.com` and `googleads.googleapis.com`, and a test checks this. To be safe anyway, authorize with a Google Ads user whose access level is **Read only**.
 
-**What leaves your machine:** requests to Google, and nothing to AdLint or anyone else. Exactly:
+**What leaves your machine:** requests to Google, plus (only if you configured federated credentials) your own credential source. Nothing goes to AdLint. Exactly:
 
 - `tagmanager.googleapis.com` and `googleads.googleapis.com`: the reads above.
 - `oauth2.googleapis.com`: Google's OAuth token endpoint, to get or refresh an access token.
@@ -231,7 +231,7 @@ Counts are the distinct check IDs in [`lib/checks/registry.generated.ts`](lib/ch
 - **Your files stay in your browser.** Exports are parsed and audited by JavaScript on the page and never uploaded. Audit history is stored in your browser's localStorage. PDFs are generated in the browser.
 - **Email for PDF export (optional).** From your fifth audit, PDF export asks for an email address. The form says this before you submit: the address is sent to AdLint's `/api/subscribe` route ([`app/api/subscribe/route.ts`](app/api/subscribe/route.ts)), which forwards it to MailerLite, the email provider, tagged as a PDF-export sign-up. No audit data is sent with it.
 - **Third-party requests.** The site loads its display fonts from Fontshare (`api.fontshare.com`). It loads no analytics scripts.
-- **CLI.** `adlint` runs on your machine. In file mode it makes no network requests. In live mode it calls only Google: the Tag Manager and Google Ads APIs and Google's OAuth token endpoint, plus Google's STS and IAM Credentials endpoints for federated or impersonated credentials, with your own credentials. [Live mode](#live-mode) has the exact list.
+- **CLI.** `adlint` runs on your machine. In file mode it makes no network requests. In live mode it calls the Tag Manager and Google Ads APIs and Google's OAuth token endpoint, with your own credentials. With federated or impersonated credentials it also calls Google's STS and IAM Credentials endpoints and the credential source you configured; on a Google Cloud machine, that machine's metadata server. Nothing goes to AdLint. [Live mode](#live-mode) has the exact list.
 
 ## Development
 
