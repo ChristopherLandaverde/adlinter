@@ -336,5 +336,80 @@
     }
   ],
   "fingerprint": "1700000000042",
+  "folder": [
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "folderId": "30",
+      "name": "Google Ads",
+      "fingerprint": "170000000030",
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/folders/30",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/folders/30"
+    }
+  ],
+  "zone": [
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "zoneId": "31",
+      "name": "Partner zone",
+      "fingerprint": "170000000031",
+      "childContainer": [
+        {
+          "publicId": "GTM-TEST002",
+          "nickname": "partner"
+        }
+      ],
+      "boundary": {
+        "condition": [
+          {
+            "type": "contains",
+            "parameter": [
+              {
+                "type": "template",
+                "key": "arg0",
+                "value": "{{Page URL}}"
+              },
+              {
+                "type": "template",
+                "key": "arg1",
+                "value": "/partner"
+              }
+            ]
+          }
+        ]
+      },
+      "typeRestriction": {
+        "enable": false
+      },
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/zones/31",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/zones/31"
+    }
+  ],
+  "client": [
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "clientId": "32",
+      "name": "GA4 client",
+      "type": "gaaw_client",
+      "priority": 0,
+      "fingerprint": "170000000032",
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/clients/32",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/clients/32"
+    }
+  ],
+  "customTemplate": [
+    {
+      "accountId": "6000000001",
+      "containerId": "7000000001",
+      "templateId": "33",
+      "name": "Example template",
+      "fingerprint": "170000000033",
+      "templateData": "___INFO___\n{\"type\": \"TAG\", \"displayName\": \"Example template\"}",
+      "path": "accounts/6000000001/containers/7000000001/workspaces/0/templates/33",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6000000001/containers/7000000001/workspaces/0/templates/33"
+    }
+  ],
   "tagManagerUrl": "https://tagmanager.google.com/#/versions/accounts/6000000001/containers/7000000001/versions/42?apiLink=version"
 }

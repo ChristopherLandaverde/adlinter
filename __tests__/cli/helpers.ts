@@ -24,10 +24,11 @@ export interface RecordedRequest {
   method: string;
   headers: Record<string, string>;
   body?: string;
+  redirect?: RequestRedirect;
 }
 
-/** A fetch that answers from recorded fixtures and records every request. */
-export function recordedFetch(routes: Array<(r: RecordedRequest) => Response | undefined>) {
+/** A fetch that answers from the synthetic API fixtures and records every request. */
+export function fixtureFetch(routes: Array<(r: RecordedRequest) => Response | undefined>) {
   const requests: RecordedRequest[] = [];
   const fetchImpl = async (url: string, init?: RequestInit) => {
     const req: RecordedRequest = {
@@ -35,6 +36,7 @@ export function recordedFetch(routes: Array<(r: RecordedRequest) => Response | u
       method: init?.method ?? 'GET',
       headers: { ...(init?.headers as Record<string, string>) },
       body: typeof init?.body === 'string' ? init.body : undefined,
+      redirect: init?.redirect,
     };
     requests.push(req);
     for (const route of routes) {
@@ -51,7 +53,11 @@ export function recordedFetch(routes: Array<(r: RecordedRequest) => Response | u
 export const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
-/** The recorded GTM versions:live and GAQL conversion_action responses. */
+/**
+ * Synthetic GTM versions:live and GAQL conversion_action responses, built from
+ * the shapes Google's API references document, with made-up IDs. Not recorded
+ * from a real account.
+ */
 export function liveRoutes() {
   const gtmLive = readJson(fixture('live', 'gtm-versions-live.json'));
   const page1 = readJson(fixture('live', 'gaql-conversion-actions.page1.json'));

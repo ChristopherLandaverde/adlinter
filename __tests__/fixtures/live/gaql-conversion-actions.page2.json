@@ -35,6 +35,38 @@
           "defaultCurrencyCode": "USD"
         }
       }
+    },
+    {
+      "conversionAction": {
+        "resourceName": "customers/1234567890/conversionActions/900000004",
+        "name": "Store visits",
+        "category": "STORE_VISIT",
+        "status": "HIDDEN",
+        "countingType": "MANY_PER_CLICK",
+        "attributionModelSettings": {
+          "attributionModel": "GOOGLE_SEARCH_ATTRIBUTION_TIME_DECAY"
+        },
+        "clickThroughLookbackWindowDays": "30",
+        "viewThroughLookbackWindowDays": "1",
+        "valueSettings": {
+          "defaultValue": 0.0,
+          "defaultCurrencyCode": "USD"
+        }
+      }
+    },
+    {
+      "conversionAction": {
+        "resourceName": "customers/1234567890/conversionActions/900000005",
+        "name": "Legacy import",
+        "category": "UNSPECIFIED",
+        "status": "ENABLED",
+        "countingType": "UNSPECIFIED",
+        "attributionModelSettings": {
+          "attributionModel": "GOOGLE_SEARCH_ATTRIBUTION_LINEAR"
+        },
+        "clickThroughLookbackWindowDays": "60",
+        "viewThroughLookbackWindowDays": "0"
+      }
     }
   ],
   "fieldMask": "conversionAction.name,conversionAction.category,conversionAction.status,conversionAction.countingType,conversionAction.attributionModelSettings.attributionModel,conversionAction.clickThroughLookbackWindowDays,conversionAction.viewThroughLookbackWindowDays,conversionAction.valueSettings.defaultValue,conversionAction.valueSettings.defaultCurrencyCode",

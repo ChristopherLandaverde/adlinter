@@ -8,7 +8,7 @@ import { assertReadOnlyRequest, googleRequest } from '../../cli/live/http';
 import { gtmTokenFromAdc, adsTokenProvider } from '../../cli/live/auth';
 import { parseAdsCSV } from '../../lib/parsers/adsParser';
 import { runCli } from '../../cli/run';
-import { FAKE, fixture, json, liveEnv, liveRoutes, readJson, recordedFetch, ROOT, testDeps } from './helpers';
+import { FAKE, fixture, json, liveEnv, liveRoutes, readJson, fixtureFetch, ROOT, testDeps } from './helpers';
 
 const LIVE_ARGS = ['audit', '--gtm-container', FAKE.container, '--ads-customer', FAKE.customer];
 const FILE_ARGS = [
@@ -17,9 +17,9 @@ const FILE_ARGS = [
   '--ads-csv', fixture('live', 'ads-conversions.csv'),
 ];
 
-describe('adlint live mode against recorded API responses', () => {
+describe('adlint live mode against synthetic API fixtures (documented response shapes)', () => {
   it('reads the live GTM version and Ads conversion actions with read-only requests', async () => {
-    const { fetchImpl, requests } = recordedFetch(liveRoutes());
+    const { fetchImpl, requests } = fixtureFetch(liveRoutes());
     const res = await runCli(LIVE_ARGS, testDeps({ fetch: fetchImpl }));
 
     expect(res.stderr).toBe('');
@@ -29,7 +29,7 @@ describe('adlint live mode against recorded API responses', () => {
       gtmContainer: FAKE.container,
       gtmContainerVersionId: '42',
       adsCustomer: FAKE.customerDigits,
-      adsConversionActions: 4,
+      adsConversionActions: 6,
     });
 
     expect(requests).toHaveLength(3);
@@ -46,6 +46,7 @@ describe('adlint live mode against recorded API responses', () => {
       expect(r.headers['login-customer-id']).toBe(FAKE.login);
       expect(JSON.parse(r.body!).query).toBe(googleAds.CONVERSION_ACTION_QUERY);
     }
+    for (const r of requests) expect(r.redirect).toBe('error');
     expect(JSON.parse(ads1.body!).pageToken).toBeUndefined();
     expect(JSON.parse(ads2.body!).pageToken).toBe('PAGE-TOKEN-2');
 
@@ -63,7 +64,7 @@ describe('adlint live mode against recorded API responses', () => {
   });
 
   it('gives identical findings to file mode on the same container and conversion actions', async () => {
-    const { fetchImpl } = recordedFetch(liveRoutes());
+    const { fetchImpl } = fixtureFetch(liveRoutes());
     const live = await runCli(LIVE_ARGS, testDeps({ fetch: fetchImpl }));
     const file = await runCli(FILE_ARGS, testDeps());
 
@@ -108,8 +109,31 @@ describe('adlint live mode against recorded API responses', () => {
     });
   });
 
+  it('leaves UNSPECIFIED enums and a missing valueSettings blank', () => {
+    const row = googleAds.toCsvRow({
+      conversionAction: {
+        name: 'Legacy import',
+        category: 'UNSPECIFIED',
+        status: 'UNKNOWN',
+        countingType: 'UNSPECIFIED',
+        attributionModelSettings: { attributionModel: 'UNSPECIFIED' },
+      },
+    });
+    expect(row).toEqual({
+      'Conversion name': 'Legacy import',
+      Category: '',
+      Value: '',
+      Count: '',
+      'Attribution model': '',
+      'Click-through conversion window': '',
+      'View-through conversion window': '',
+      Status: '',
+      'Currency code': '',
+    });
+  });
+
   it('returns no findings for an account with no conversion actions', async () => {
-    const { fetchImpl } = recordedFetch([
+    const { fetchImpl } = fixtureFetch([
       r => (r.url.includes('googleAds:search') ? json({ fieldMask: 'conversionAction.name' }) : undefined),
     ]);
     const res = await runCli(['audit', '--ads-customer', FAKE.customer], testDeps({ fetch: fetchImpl }));
@@ -153,7 +177,7 @@ describe('read-only enforcement', () => {
   });
 
   it('a refused request never reaches the network', async () => {
-    const { fetchImpl, requests } = recordedFetch(liveRoutes());
+    const { fetchImpl, requests } = fixtureFetch(liveRoutes());
     await expect(
       googleRequest(
         fetchImpl,
@@ -168,7 +192,7 @@ describe('read-only enforcement', () => {
 
 describe('credential errors exit 2 with a clear message', () => {
   const noNetwork = () => {
-    const { fetchImpl, requests } = recordedFetch([]);
+    const { fetchImpl, requests } = fixtureFetch([]);
     return { fetchImpl, requests };
   };
 
@@ -219,7 +243,7 @@ describe('credential errors exit 2 with a clear message', () => {
   });
 
   it.each([401, 403])('Google answers HTTP %i', async status => {
-    const { fetchImpl } = recordedFetch([
+    const { fetchImpl } = fixtureFetch([
       () =>
         json({ error: { code: status, message: 'Request had invalid authentication credentials.', status: 'UNAUTHENTICATED' } }, status),
     ]);
@@ -230,7 +254,7 @@ describe('credential errors exit 2 with a clear message', () => {
   });
 
   it('other API errors and bad IDs also exit 2', async () => {
-    const { fetchImpl } = recordedFetch([
+    const { fetchImpl } = fixtureFetch([
       () => json({ error: { code: 404, message: 'Not found', status: 'NOT_FOUND' } }, 404),
     ]);
     const notFound = await runCli(['audit', '--gtm-container', FAKE.container], testDeps({ fetch: fetchImpl }));

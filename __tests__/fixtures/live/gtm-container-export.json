@@ -313,6 +313,73 @@
         "name": "Event"
       }
     ],
-    "fingerprint": "1700000000042"
+    "fingerprint": "1700000000042",
+    "folder": [
+      {
+        "accountId": "6000000001",
+        "containerId": "7000000001",
+        "folderId": "30",
+        "name": "Google Ads",
+        "fingerprint": "170000000030"
+      }
+    ],
+    "zone": [
+      {
+        "accountId": "6000000001",
+        "containerId": "7000000001",
+        "zoneId": "31",
+        "name": "Partner zone",
+        "fingerprint": "170000000031",
+        "childContainer": [
+          {
+            "publicId": "GTM-TEST002",
+            "nickname": "partner"
+          }
+        ],
+        "boundary": {
+          "condition": [
+            {
+              "type": "contains",
+              "parameter": [
+                {
+                  "type": "template",
+                  "key": "arg0",
+                  "value": "{{Page URL}}"
+                },
+                {
+                  "type": "template",
+                  "key": "arg1",
+                  "value": "/partner"
+                }
+              ]
+            }
+          ]
+        },
+        "typeRestriction": {
+          "enable": false
+        }
+      }
+    ],
+    "client": [
+      {
+        "accountId": "6000000001",
+        "containerId": "7000000001",
+        "clientId": "32",
+        "name": "GA4 client",
+        "type": "gaaw_client",
+        "priority": 0,
+        "fingerprint": "170000000032"
+      }
+    ],
+    "customTemplate": [
+      {
+        "accountId": "6000000001",
+        "containerId": "7000000001",
+        "templateId": "33",
+        "name": "Example template",
+        "fingerprint": "170000000033",
+        "templateData": "___INFO___\n{\"type\": \"TAG\", \"displayName\": \"Example template\"}"
+      }
+    ]
   }
 }

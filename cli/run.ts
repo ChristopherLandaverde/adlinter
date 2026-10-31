@@ -101,6 +101,13 @@ function parseAuditArgs(argv: string[]): AuditArgs | 'help' {
   }
   if (values.help) return 'help';
 
+  for (const flag of ['gtm-export', 'ads-csv', 'gtm-container', 'ads-customer', 'format']) {
+    const v = values[flag];
+    if (typeof v === 'string' && v.trim() === '') {
+      throw new UsageError(`--${flag} needs a value, got an empty string`);
+    }
+  }
+
   const format = values.format as string;
   if (format !== 'json' && format !== 'text') {
     throw new UsageError(`--format must be json or text, got "${format}"`);

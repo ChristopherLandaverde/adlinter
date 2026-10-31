@@ -17,8 +17,22 @@ function credentialMessage(what: string, e: unknown): string {
   return `Could not get ${what} credentials: ${reason}`;
 }
 
+/**
+ * With no credentials file, google-auth-library pings the GCE metadata server
+ * (169.254.169.254 / metadata.google.internal) to see whether it runs on
+ * Google Cloud. AdLint switches that network probe off, so on a laptop with no
+ * credentials ADC fails at once instead of calling out. The library's local
+ * check (BIOS and Cloud Run/Functions env vars, no network) still runs, so on a
+ * Google Cloud machine its metadata server is still used as the credential
+ * source. Set METADATA_SERVER_DETECTION yourself to override.
+ */
+export function disableMetadataServerProbe(env: Env = process.env): void {
+  if (!env.METADATA_SERVER_DETECTION) env.METADATA_SERVER_DETECTION = 'none';
+}
+
 async function adcToken(scope: string, what: string, hint: string): Promise<string> {
   try {
+    disableMetadataServerProbe();
     const { GoogleAuth } = await import('google-auth-library');
     const auth = new GoogleAuth({ scopes: [scope] });
     const client = await auth.getClient();

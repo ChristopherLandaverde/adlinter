@@ -52,7 +52,9 @@ export async function googleRequest(
 
   let res: Response;
   try {
-    res = await fetchImpl(url, init);
+    // redirect: 'error' so a redirect can never carry the request (and its
+    // Authorization header) to a host the guard above did not check.
+    res = await fetchImpl(url, { ...init, redirect: 'error' });
   } catch (e) {
     throw new ApiError(`${apiName}: network error (${e instanceof Error ? e.message : String(e)})`, 0);
   }

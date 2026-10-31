@@ -67,7 +67,9 @@ const COUNTING_LABELS: Record<string, string> = {
   MANY_PER_CLICK: 'Every',
 };
 
-// AttributionModelEnum
+// AttributionModelEnum. Google retired the rule-based models (first click,
+// linear, time decay, position-based) for new selections, but accounts can
+// still return them, so they keep their UI labels.
 const ATTRIBUTION_LABELS: Record<string, string> = {
   EXTERNAL: 'External',
   GOOGLE_ADS_LAST_CLICK: 'Last click',
@@ -88,8 +90,10 @@ const STATUS_LABELS: Record<string, string> = {
 const titleCase = (v: string) =>
   v.toLowerCase().replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
 
+// UNSPECIFIED and UNKNOWN carry no information, so they become a blank cell,
+// as a missing value in the download would.
 const label = (map: Record<string, string>, v: unknown): string =>
-  typeof v === 'string' && v ? map[v] ?? titleCase(v) : '';
+  typeof v === 'string' && v && v !== 'UNSPECIFIED' && v !== 'UNKNOWN' ? map[v] ?? titleCase(v) : '';
 
 // int64 fields arrive as strings in the REST JSON encoding.
 const days = (v: unknown): string => {
@@ -124,7 +128,12 @@ export const CSV_COLUMNS = [
   'Currency code',
 ] as const;
 
-/** One API row → one row of the conversions download, keyed by its column header. */
+/**
+ * One API row → one row of the conversions download, keyed by its column header.
+ * Value is value_settings.default_value. For an action that takes dynamic
+ * values from the tag (always_use_default_value false), that is only the
+ * fallback value, so value checks read the fallback (see README, Known limits).
+ */
 export function toCsvRow(row: ConversionActionRow): Record<(typeof CSV_COLUMNS)[number], string> {
   const ca = row.conversionAction ?? {};
   const value = ca.valueSettings?.defaultValue;
