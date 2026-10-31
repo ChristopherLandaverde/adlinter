@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="604" viewBox="0 0 880 604" role="img" aria-labelledby="t d">
   <title id="t">AdLint agentic stack</title>
-  <desc id="d">Four stacked layers. Engine: the check registry, 178 checks in lib/checks, the base every level builds on. Tools: the adlint audit CLI and the adlint-mcp server with audit_export, audit_live_container, list_checks and explain_check, levels L1 and L2. Your agent: Claude, Cursor or any MCP client, reading live GTM and Google Ads read-only, level L3 fixture-verified. You approve: nothing writes; findings are evidence for you to act on; L4 planned.</desc>
+  <desc id="d">Four stacked layers. Engine: the check registry, 178 checks in lib/checks, the base every level builds on. Tools: the adlint audit CLI and the adlint-mcp server with audit_export, audit_live_container, list_checks and explain_check, levels L1 and L2. Your agent: Claude, Cursor or any MCP client, reading live GTM and Google Ads read-only, level L3 fixture-verified. You decide: nothing writes; you decide what to change and make the change yourself.</desc>
   <style>
     .sans { font-family: 'General Sans', 'Instrument Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
     .mono { font-family: 'Geist Mono', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -26,15 +26,15 @@
   <!-- connector spine -->
   <line x1="44" y1="208" x2="44" y2="444" stroke="#E7E5E0" stroke-width="2"/>
 
-  <!-- 4 · You approve -->
+  <!-- 4 · You decide -->
   <rect x="32.5" y="108.5" width="815" height="99" rx="6" fill="#FFFFFF" stroke="#E7E5E0"/>
   <text x="56" y="138" class="mono layer muted">LAYER 4</text>
-  <text x="56" y="164" class="sans name ink">You approve</text>
-  <text x="240" y="146" class="sans body ink">Nothing writes. Findings are evidence for you</text>
-  <text x="240" y="167" class="sans body ink">to act on, each with what the engine observed,</text>
-  <text x="240" y="188" class="sans body ink">a fix and a citation.</text>
-  <rect x="718.5" y="131.5" width="105" height="25" rx="4" fill="none" stroke="#57534E" stroke-dasharray="4 3"/>
-  <text x="771" y="148" text-anchor="middle" class="mono chip muted">L4 · planned</text>
+  <text x="56" y="164" class="sans name ink">You decide</text>
+  <text x="240" y="146" class="sans body ink">Nothing writes. You decide what to change and</text>
+  <text x="240" y="167" class="sans body ink">make the change yourself, from each finding's</text>
+  <text x="240" y="188" class="sans body ink">evidence, fix and citation.</text>
+  <rect x="779.5" y="131.5" width="44" height="25" rx="4" fill="#FFFFFF" stroke="#57534E"/>
+  <text x="801.5" y="148" text-anchor="middle" class="mono chip ink">you</text>
 
   <!-- 3 · Your agent -->
   <rect x="32.5" y="220.5" width="815" height="99" rx="6" fill="#FFFFFF" stroke="#E7E5E0"/>
@@ -71,5 +71,5 @@
   <rect x="770.5" y="467.5" width="53" height="25" rx="4" fill="#FFFFFF" stroke="#57534E"/>
   <text x="797" y="484" text-anchor="middle" class="mono chip ink">base</text>
 
-  <text x="32" y="580" class="mono note muted">Filled = shipped on main · dashed = planned · L3 tested on synthetic API responses only</text>
+  <text x="32" y="580" class="mono note muted">Filled = shipped on main · read-only by design · L3 tested on synthetic API responses only</text>
 </svg>

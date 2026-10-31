@@ -35,7 +35,7 @@ For agencies and freelancers auditing ad tracking they didn't build, and in-hous
 AdLint is built as an agentic app in four layers: a deterministic engine, typed read-only tools over it, your own agent on top, and you deciding what to change. The agent never computes a finding or a number; it calls the engine and explains what came back.
 
 <p align="center">
-  <img src="docs/images/agentic-stack.svg" width="880" alt="AdLint's agentic stack in four layers. Layer 1, Engine: the check registry, 178 checks in lib/checks, which owns every verdict, score and count (the base every level builds on). Layer 2, Tools: the adlint audit CLI and the adlint-mcp server with audit_export, audit_live_container, list_checks and explain_check, read-only and enforced in code (L1 JSON, L2 MCP). Layer 3, Your agent: Claude, Cursor or any MCP client, reading the live GTM container and Google Ads conversion actions read-only (L3 live read, fixture-verified). Layer 4, You approve: nothing writes; findings are evidence for you to act on (L4 planned).">
+  <img src="docs/images/agentic-stack.svg" width="880" alt="AdLint's agentic stack in four layers. Layer 1, Engine: the check registry, 178 checks in lib/checks, which owns every verdict, score and count (the base every level builds on). Layer 2, Tools: the adlint audit CLI and the adlint-mcp server with audit_export, audit_live_container, list_checks and explain_check, read-only and enforced in code (L1 JSON, L2 MCP). Layer 3, Your agent: Claude, Cursor or any MCP client, reading the live GTM container and Google Ads conversion actions read-only (L3 live read, fixture-verified). Layer 4, You decide: nothing writes; you decide what to change and make the change yourself, from each finding's evidence, fix and citation.">
 </p>
 
 | Ask your agent… | Tool | Reads | Writes |
@@ -45,7 +45,7 @@ AdLint is built as an agentic app in four layers: a deterministic engine, typed 
 | "Which critical Google Ads checks does AdLint run?" | `list_checks` | The check registry | nothing |
 | "Why does `no-primary-conversion` matter? Give me a citation for the client report." | `explain_check` | The check's `/checks/<id>` explainer | nothing |
 
-Agentic levels: L1 machine-readable · L2 agent-callable · L3 live read · L4 proposes changes for you to approve. AdLint: L1 (`adlint audit` JSON) · L2 (`adlint-mcp`) · L3 (fixture-verified: tested against synthetic API responses, not yet a real account). L4 is [planned](#roadmap).
+Agentic levels: L1 machine-readable · L2 agent-callable · L3 live read · L4 proposes changes for you to approve. AdLint: L1 (`adlint audit` JSON) · L2 (`adlint-mcp`) · L3 (fixture-verified: tested against synthetic API responses, not yet a real account). AdLint is read-only by design: it never writes to GTM or Google Ads, and you make any change yourself.
 
 The CLI and MCP tools run the GTM, Google Ads and cross-source checks; the performance report and pixel checks are web-app only for now. Details: [Use it from an agent / CLI](#use-it-from-an-agent--cli) · [MCP server](#mcp-server) · [Live mode](#live-mode) · [where the data goes](#privacy).
 
@@ -336,10 +336,6 @@ Counts are the distinct check IDs in [`lib/checks/registry.generated.ts`](lib/ch
 - **Email for PDF export (optional).** From your fifth audit, PDF export asks for an email address. The form says this before you submit: the address is sent to AdLint's `/api/subscribe` route ([`app/api/subscribe/route.ts`](app/api/subscribe/route.ts)), which forwards it to MailerLite, the email provider, tagged as a PDF-export sign-up. No audit data is sent with it.
 - **Third-party requests.** The site loads its display fonts from Fontshare (`api.fontshare.com`). It loads no analytics scripts.
 - **CLI and MCP server.** `adlint` and `adlint-mcp` run on your machine. In file mode (and the `audit_export`, `list_checks` and `explain_check` tools) they make no network requests. In live mode (and `audit_live_container`) they call the Tag Manager and Google Ads APIs and Google's OAuth token endpoint, with your own credentials. With federated or impersonated credentials it also calls Google's STS and IAM Credentials endpoints and the credential source you configured; on a Google Cloud machine, that machine's metadata server. Nothing goes to AdLint. [Live mode](#live-mode) has the exact list. Through the MCP server, tool results also reach the model behind the agent you connect it to ([MCP server](#mcp-server)).
-
-## Roadmap
-
-- **Planned, not built: L4, proposes changes.** The agent would draft a fix into an unpublished GTM workspace, verify it, and leave publishing to a named person who approves it. Today nothing in AdLint writes to GTM or Google Ads.
 
 ## Development
 
