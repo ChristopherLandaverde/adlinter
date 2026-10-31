@@ -1,19 +1,33 @@
-# AdLint
+<p align="center">
+  <img src="docs/images/logo.png" width="96" height="96" alt="AdLint logo: a white health-score ring, three-quarters drawn, on a navy tile">
+</p>
 
-**Broken conversion tracking doesn't announce itself. AdLint finds it in the exports you already have.**
+<h1 align="center">AdLint</h1>
 
-**178 checks** across Google Ads, Google Tag Manager and 6 pixel platforms · runs in your browser, files never uploaded · [try it on sample data](https://adlinter.vercel.app)
+<p align="center">
+  <strong>Broken conversion tracking doesn't announce itself. AdLint finds it in the exports you already have.</strong>
+</p>
 
-[![CI](https://github.com/ChristopherLandaverde/adlinter/actions/workflows/ci.yml/badge.svg)](https://github.com/ChristopherLandaverde/adlinter/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+<p align="center">
+  178 checks · Google Ads, Google Tag Manager and 6 pixel platforms · runs in your browser, files never uploaded
+</p>
 
-[Live demo](https://adlinter.vercel.app) · [Try it](#try-it) · [What it checks](#what-it-checks) · [Known limits](#known-limits) · [Privacy](#privacy)
+<p align="center">
+  <a href="https://github.com/ChristopherLandaverde/adlinter/actions/workflows/ci.yml"><img src="https://github.com/ChristopherLandaverde/adlinter/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="package.json"><img src="https://img.shields.io/github/package-json/v/ChristopherLandaverde/adlinter?color=1E3A8A&label=version" alt="Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/ChristopherLandaverde/adlinter?color=1E3A8A" alt="License: MIT"></a>
+</p>
+
+<p align="center">
+  <a href="https://adlinter.vercel.app">Live demo</a> · <a href="#try-it">Try it</a> · <a href="#what-it-checks">What it checks</a> · <a href="#known-limits">Known limits</a> · <a href="#privacy">Privacy</a>
+</p>
 
 A conversion counted twice halves your reported CPA overnight, and Smart Bidding starts spending against numbers that aren't real. An account with no primary conversion gives Smart Bidding no target, and a revenue conversion that fires without a value leaves value-based bidding blind. The ad platform shows none of these as an error: spend keeps going out and the dashboards keep filling. AdLint reads your GTM container, Google Ads conversion export, performance report or pixel export and tells you what is broken, how badly, and how to fix it.
 
-![Screen recording of the live demo: on the Google Full-Stack Audit page the Try with sample data button is clicked; the results page shows a Tracking Health Score of 73 out of 100 marked "Needs work", 90 of 119 checks passed, and the three most critical findings; the "Learn more" link on "Google Ads Conversions Missing GTM Tags" opens its explainer, which scrolls from Why It Matters to How To Fix It; the recording ends back on the score](docs/images/audit-demo.gif)
-
-*Recorded on the [live demo](https://adlinter.vercel.app) with the bundled Google Full-Stack sample, nothing uploaded: one click to a 73/100 score with 90 of 119 checks passing, the three most critical findings first, and each finding's explainer with why it matters and how to fix it.*
+<p align="center">
+  <img src="docs/images/audit-demo.gif" width="880" alt="Screen recording of the live demo: on the Google Full-Stack Audit page the Try with sample data button is clicked; the results page shows a Tracking Health Score of 73 out of 100 marked &quot;Needs work&quot;, 90 of 119 checks passed, and the three most critical findings; the &quot;Learn more&quot; link on &quot;Google Ads Conversions Missing GTM Tags&quot; opens its explainer, which scrolls from Why It Matters to How To Fix It; the recording ends back on the score">
+  <br><sub>Recorded on the <a href="https://adlinter.vercel.app">live demo</a> with the bundled Google Full-Stack sample, nothing uploaded: one click to a 73/100 score with 90 of 119 checks passing, the three most critical findings first, and each finding's explainer with why it matters and how to fix it.</sub>
+</p>
 
 ## Who it's for
 
