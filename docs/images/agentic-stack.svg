@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="604" viewBox="0 0 880 604" role="img" aria-labelledby="t d">
+  <title id="t">AdLint agentic stack</title>
+  <desc id="d">Four stacked layers. Engine: the check registry, 178 checks in lib/checks, the base every level builds on. Tools: the adlint audit CLI and the adlint-mcp server with audit_export, audit_live_container, list_checks and explain_check, levels L1 and L2. Your agent: Claude, Cursor or any MCP client, reading live GTM and Google Ads read-only, level L3 fixture-verified. You decide: nothing writes; you decide what to change and make the change yourself.</desc>
+  <style>
+    .sans { font-family: 'General Sans', 'Instrument Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+    .mono { font-family: 'Geist Mono', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .ink { fill: #1C1917; }
+    .muted { fill: #57534E; }
+    .accent { fill: #1E3A8A; }
+    .title { font-size: 20px; font-weight: 600; }
+    .eyebrow { font-size: 12px; letter-spacing: 0.08em; }
+    .layer { font-size: 11px; letter-spacing: 0.08em; }
+    .name { font-size: 19px; font-weight: 600; }
+    .body { font-size: 14px; }
+    .code { font-size: 13px; }
+    .chip { font-size: 12px; }
+    .note { font-size: 11px; }
+  </style>
+
+  <!-- paper tile: solid, so it reads on GitHub light and dark -->
+  <rect x="0.5" y="0.5" width="879" height="603" rx="12" fill="#FAFAF7" stroke="#E7E5E0"/>
+
+  <text x="32" y="48" class="mono eyebrow muted">ADLINT · AGENTIC STACK</text>
+  <text x="32" y="78" class="sans title ink">The engine owns every number. Your agent calls it. Nothing writes.</text>
+
+  <!-- connector spine -->
+  <line x1="44" y1="208" x2="44" y2="444" stroke="#E7E5E0" stroke-width="2"/>
+
+  <!-- 4 · You decide -->
+  <rect x="32.5" y="108.5" width="815" height="99" rx="6" fill="#FFFFFF" stroke="#E7E5E0"/>
+  <text x="56" y="138" class="mono layer muted">LAYER 4</text>
+  <text x="56" y="164" class="sans name ink">You decide</text>
+  <text x="240" y="146" class="sans body ink">Nothing writes. You decide what to change and</text>
+  <text x="240" y="167" class="sans body ink">make the change yourself, from each finding's</text>
+  <text x="240" y="188" class="sans body ink">evidence, fix and citation.</text>
+  <rect x="779.5" y="131.5" width="44" height="25" rx="4" fill="#FFFFFF" stroke="#57534E"/>
+  <text x="801.5" y="148" text-anchor="middle" class="mono chip ink">you</text>
+
+  <!-- 3 · Your agent -->
+  <rect x="32.5" y="220.5" width="815" height="99" rx="6" fill="#FFFFFF" stroke="#E7E5E0"/>
+  <text x="56" y="250" class="mono layer muted">LAYER 3</text>
+  <text x="56" y="276" class="sans name ink">Your agent</text>
+  <text x="240" y="258" class="sans body ink">Claude, Cursor, any MCP client. Picks the tools,</text>
+  <text x="240" y="279" class="sans body ink">reads the live GTM container and Google Ads</text>
+  <text x="240" y="300" class="sans body ink">conversion actions read-only, explains findings.</text>
+  <rect x="694" y="243" width="130" height="26" rx="4" fill="#1E3A8A"/>
+  <text x="759" y="260" text-anchor="middle" class="mono chip" fill="#FFFFFF">L3 · live read</text>
+  <text x="824" y="288" text-anchor="end" class="mono note muted">fixture-verified</text>
+
+  <!-- 2 · Tools -->
+  <rect x="32.5" y="332.5" width="815" height="99" rx="6" fill="#FFFFFF" stroke="#E7E5E0"/>
+  <text x="56" y="362" class="mono layer muted">LAYER 2</text>
+  <text x="56" y="388" class="sans name ink">Tools</text>
+  <text x="240" y="370" class="mono code accent">adlint audit  ·  adlint-mcp</text>
+  <text x="240" y="391" class="mono code ink">audit_export · audit_live_container</text>
+  <text x="240" y="412" class="mono code ink">list_checks · explain_check</text>
+  <rect x="644" y="355" width="86" height="26" rx="4" fill="#1E3A8A"/>
+  <text x="687" y="372" text-anchor="middle" class="mono chip" fill="#FFFFFF">L1 · JSON</text>
+  <rect x="738" y="355" width="86" height="26" rx="4" fill="#1E3A8A"/>
+  <text x="781" y="372" text-anchor="middle" class="mono chip" fill="#FFFFFF">L2 · MCP</text>
+  <text x="824" y="400" text-anchor="end" class="mono note muted">read-only, enforced in code</text>
+
+  <!-- 1 · Engine -->
+  <rect x="32.5" y="444.5" width="815" height="99" rx="6" fill="#F5F4EE" stroke="#E7E5E0"/>
+  <rect x="32" y="444" width="6" height="100" rx="3" fill="#1E3A8A"/>
+  <text x="56" y="474" class="mono layer muted">LAYER 1</text>
+  <text x="56" y="500" class="sans name ink">Engine</text>
+  <text x="240" y="482" class="sans body ink">Check registry: <tspan class="mono code accent">178 checks</tspan> in <tspan class="mono code">lib/checks</tspan>.</text>
+  <text x="240" y="503" class="sans body ink">Deterministic. It owns every verdict, score and</text>
+  <text x="240" y="524" class="sans body ink">count, with evidence on each finding.</text>
+  <rect x="770.5" y="467.5" width="53" height="25" rx="4" fill="#FFFFFF" stroke="#57534E"/>
+  <text x="797" y="484" text-anchor="middle" class="mono chip ink">base</text>
+
+  <text x="32" y="580" class="mono note muted">Filled = shipped on main · read-only by design · L3 tested on synthetic API responses only</text>
+</svg>

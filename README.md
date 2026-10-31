@@ -5,29 +5,49 @@
 <h1 align="center">AdLint</h1>
 
 <p align="center">
-  <strong>Broken conversion tracking doesn't announce itself. AdLint finds it in the exports you already have.</strong>
+  <strong>Broken conversion tracking doesn't announce itself. Audit your GTM and Google Ads setup from the browser, CLI or your AI agent.</strong>
 </p>
 
 <p align="center">
-  178 checks · Google Ads, Google Tag Manager and 6 pixel platforms · runs in your browser, files never uploaded
+  178 checks · Google Ads, Google Tag Manager and 6 pixel platforms · MCP server for Claude, Cursor and any MCP client · web app runs in your browser, files never uploaded
 </p>
 
 <p align="center">
   <a href="https://github.com/ChristopherLandaverde/adlinter/actions/workflows/ci.yml"><img src="https://github.com/ChristopherLandaverde/adlinter/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <a href="package.json"><img src="https://img.shields.io/github/package-json/v/ChristopherLandaverde/adlinter?color=1E3A8A&label=version" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/ChristopherLandaverde/adlinter?color=1E3A8A" alt="License: MIT"></a>
+  <a href="#agentic"><img src="https://img.shields.io/badge/agentic-L1%C2%B7L2%C2%B7L3-1E3A8A" alt="Agentic: L1, L2 and L3"></a>
 </p>
 
 <p align="center">
-  <a href="https://adlinter.vercel.app">Live demo</a> · <a href="#try-it">Try it</a> · <a href="#what-it-checks">What it checks</a> · <a href="#known-limits">Known limits</a> · <a href="#privacy">Privacy</a>
+  <a href="https://adlinter.vercel.app">Live demo</a> · <a href="#agentic">For agents</a> · <a href="#try-it">Try it</a> · <a href="#what-it-checks">What it checks</a> · <a href="#known-limits">Known limits</a> · <a href="#privacy">Privacy</a>
 </p>
 
-A conversion counted twice halves your reported CPA overnight, and Smart Bidding starts spending against numbers that aren't real. An account with no primary conversion gives Smart Bidding no target, and a revenue conversion that fires without a value leaves value-based bidding blind. The ad platform shows none of these as an error: spend keeps going out and the dashboards keep filling. AdLint reads your GTM container, Google Ads conversion export, performance report or pixel export and tells you what is broken, how badly, and how to fix it.
+For agencies and freelancers auditing ad tracking they didn't build, and in-house marketers who suspect the numbers are off. A conversion counted twice, an account with no primary conversion, a revenue conversion that fires without a value: the ad platform shows none of these as an error. AdLint reads your GTM container, Google Ads conversion export, performance report or pixel export and tells you what is broken, how badly, and how to fix it. Your own agent can call the same checks through the local `adlint-mcp` server, on exports or the live GTM container and Google Ads conversion actions; every tool is read-only, so deciding what to change stays with you.
 
 <p align="center">
   <img src="docs/images/fix-demo.gif" width="880" alt="Four-frame storyboard on the bundled Google Ads Linter sample. 1 of 4: the sample conversion export, with the Purchase row highlighted because it counts &quot;One&quot;, beside the Google Ads Linter upload screen and its Try with sample data button. 2 of 4: the result, a Tracking Health Score of 74 out of 100 marked &quot;Needs work&quot; with 33 of 42 checks passed, 2 critical, 3 warnings and 4 info, and the most critical findings: No Primary Conversion Designated and High-Value Conversions with Wrong Counting Method. 3 of 4: the Wrong Counting Method finding and its explainer page, which says Google recommends &quot;Every&quot; for sales and lists the fix steps, including setting Count to &quot;Every&quot; in Google Ads. 4 of 4: a copy of the sample with only that cell changed from One to Every, re-run in the app: 87 out of 100 marked &quot;Good&quot;, 36 of 42 checks passed, 2 critical down to 1, and the three counting-method findings cleared, while No Primary Conversion Designated and 5 other findings remain">
   <br><sub>Bundled Google Ads Linter sample, nothing uploaded. Frame 4 is a real re-run on a copy of it with one cell changed: the Purchase row's Count, from One to Every.</sub>
 </p>
+
+## Agentic
+
+AdLint is built as an agentic app in four layers: a deterministic engine, typed read-only tools over it, your own agent on top, and you deciding what to change. AdLint's tools give your agent the engine's findings and numbers to quote, not recompute; the agent explains what came back.
+
+<p align="center">
+  <img src="docs/images/agentic-stack.svg" width="880" alt="AdLint's agentic stack in four layers. Layer 1, Engine: the check registry, 178 checks in lib/checks, which owns every verdict, score and count (the base every level builds on). Layer 2, Tools: the adlint audit CLI and the adlint-mcp server with audit_export, audit_live_container, list_checks and explain_check, read-only and enforced in code (L1 JSON, L2 MCP). Layer 3, Your agent: Claude, Cursor or any MCP client, reading the live GTM container and Google Ads conversion actions read-only (L3 live read, fixture-verified). Layer 4, You decide: nothing writes; you decide what to change and make the change yourself, from each finding's evidence, fix and citation.">
+</p>
+
+| Ask your agent… | Tool | Reads | Writes |
+|---|---|---|---|
+| "Audit the GTM export and Google Ads conversions CSV in ~/clients/acme and list the critical findings." | `audit_export` | The files you name (absolute paths or pasted text). No network. | nothing |
+| "Check the live GTM container accounts/123/containers/456 and Ads account 123-456-7890 for broken conversion tracking." | `audit_live_container` | The published container version (`versions:live`) and the account's conversion actions (GAQL search only; a `mutate` call is refused in code), with your credentials | nothing |
+| "Which critical Google Ads checks does AdLint run?" | `list_checks` | The check registry | nothing |
+| "Why does `no-primary-conversion` matter? Give me a citation for the client report." | `explain_check` | The check's `/checks/<id>` explainer | nothing |
+
+Agentic levels: L1 machine-readable · L2 agent-callable · L3 live read. AdLint: L1 (`adlint audit` JSON) · L2 (`adlint-mcp`) · L3 (fixture-verified: tested against synthetic API responses, not yet a real account). Read-only by design: nothing writes.
+
+The CLI and MCP tools run the GTM, Google Ads and cross-source checks; the performance report and pixel checks are web-app only for now. Details: [Use it from an agent / CLI](#use-it-from-an-agent--cli) · [MCP server](#mcp-server) · [Live mode](#live-mode) · [where the data goes](#privacy).
 
 ## Who it's for
 
