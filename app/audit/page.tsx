@@ -15,6 +15,7 @@ import { AuditHistoryLink } from '@/components/AuditHistoryLink';
 import { CheckLearnMoreLink } from '@/components/CheckLearnMoreLink';
 import { HealthScoreBadge } from '@/components/HealthScoreBadge';
 import { PDFExportButton } from '@/components/PDFExportButton';
+import { PracticeCTA } from '@/components/PracticeCTA';
 import { ShareAuditButton } from '@/components/ShareAuditButton';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
@@ -1826,6 +1827,11 @@ function AuditPageContent() {
           selectedCheck={selectedCheck}
           onSelectCheck={setSelectedCheck}
         />
+
+        {/* Conversion surface: results are the highest-intent moment and
+            every other action here is self-serve. Guarded by the
+            `!results` early return above, so it only renders with findings. */}
+        <PracticeCTA />
       </main>
 
       {/* Slide-over detail panel */}
