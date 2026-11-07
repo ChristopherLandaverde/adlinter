@@ -320,6 +320,12 @@ Friction items: ~1h 45min. Polish and Strategic items deferred to taste.**
    Revisit after: real GSC impressions (BACKLOG #2), first 3 users (BACKLOG #9),
    and 1-2 testimonials to anchor the offer.
 
+   **Second half addressed in v1.28.1.** The "is this real or aspirational?"
+   question is treated as real (focosys.io runs the offer live), so the
+   practice is now credited on `/about` per this entry's own
+   recommendation. `/audit` is untouched and the gates above still stand.
+   Homepage and `/checks` still carry no mention.
+
 ### 🔵 Polish — backlog (sequence by appetite)
 
 6. **TT-01: TikTok voice — pick "Pixel" or "Events Manager"** _(~5 min)_

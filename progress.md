@@ -1,5 +1,53 @@
 # AdLint — Progress Log
 
+## v1.28.1 — Credit the practice on /about (A-03, second half)
+**Commit:** Pending
+
+`UX_AUDIT.md` A-03 had two parts. The first was resolved in v1.26.2 by
+removing the paid-consultation CTA from `/audit`, deferred until real
+traffic, first users, and testimonials exist. **Those gates are unchanged
+and this does not touch them — `/audit` stays clean.**
+
+The second part was never resolved. A-03's original entry reads: "there's no
+mention of this offering anywhere else — homepage, /about, /checks. A
+first-time visitor sees the CTA cold and may discount it. Decision needed:
+is this a real productized offer, or aspirational? If real, surface it on
+/about."
+
+Treated as real, on the evidence that focosys.io runs this exact offer as
+its live primary CTA ("Discuss a system review"). Correct this entry if that
+reading is wrong.
+
+Why `/about` and not `/audit`: `PRODUCT.md` calls the audit page "the brand
+surface. The report the agency delivers," and counts "screenshotted and
+shared as proof of work" as success. The primary user audits *client* work,
+so an offer on that surface solicits the agency's own client on the agency's
+own deliverable. `/about` is where a reader goes to find out who made the
+tool, which is the one place the question is theirs to ask.
+
+Addressing the "seen cold" problem is also a precondition for A-03's
+revisit: an offer mentioned nowhere else is exactly what made the `/audit`
+placement read as a cold pitch.
+
+### Changes
+- `app/about/page.tsx` — "Elsewhere" gains a Practice entry linking
+  focosys.io, naming the repair work (server-side tracking, consent
+  architecture, CRM source drift). Tagged
+  `utm_source=adlint&utm_medium=about&utm_campaign=practice_credit`.
+- `app/about/page.tsx` — `sameAs` in the Person schema now carries
+  focosys.io alongside GitHub. Two independent hosts bearing the name make
+  the entity harder for an LLM to confuse, which is what that schema block
+  exists for.
+- No analytics added. The data-flow list in `PRODUCT.md` is unchanged and
+  still exact.
+
+### Not done
+- `/audit` is untouched. A-03's gates (BACKLOG #2 GSC, #9 first 3 users,
+  testimonials) are still unmet.
+- Homepage and `/checks` still carry no mention. A-03 named three surfaces;
+  this does one. `/about` is the one where the credit is expected rather
+  than sold.
+
 ## v1.28.0 — Editorial check pages, accurate privacy claims, honest check counts
 **Commit:** Pending (Christopher tags `v1.28.0` and publishes the GitHub release after the release PR merges)
 

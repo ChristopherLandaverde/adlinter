@@ -20,8 +20,9 @@ export const metadata: Metadata = {
 
 // Person schema gives LLMs a stable entity to anchor any mention of
 // "Christopher Landaverde" against (rather than disambiguating to a
-// different person with the same name). sameAs links to GitHub for
-// cross-corroboration.
+// different person with the same name). sameAs links to GitHub and the
+// practice site for cross-corroboration — two independent hosts that both
+// carry the name make the entity harder to confuse.
 const personSchema = {
   '@context': 'https://schema.org',
   '@type': 'Person',
@@ -47,7 +48,7 @@ const personSchema = {
     'Consent Mode v2',
     'GDPR ad-tech compliance',
   ],
-  sameAs: ['https://github.com/ChristopherLandaverde'],
+  sameAs: ['https://github.com/ChristopherLandaverde', 'https://focosys.io/'],
 };
 
 const breadcrumbSchema = {
@@ -175,6 +176,20 @@ export default function AboutPage() {
               >
                 @ChristopherLandaverde
               </a>
+            </li>
+            <li>
+              Practice:{' '}
+              <a
+                href="https://focosys.io/?utm_source=adlint&utm_medium=about&utm_campaign=practice_credit"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-accent hover:text-accent-hover hover:underline"
+              >
+                Focosys
+              </a>{' '}
+              &mdash; the independent marketing systems practice I run. Repair
+              work on the systems behind these findings: server-side tracking,
+              consent architecture, and CRM source drift.
             </li>
           </ul>
         </section>
