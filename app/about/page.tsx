@@ -176,6 +176,18 @@ export default function AboutPage() {
                 @ChristopherLandaverde
               </a>
             </li>
+            <li>
+              Practice:{' '}
+              <a
+                href="https://focosys.io/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-accent hover:text-accent-hover hover:underline"
+              >
+                Focosys
+              </a>{' '}
+              &mdash; the independent marketing systems practice I run.
+            </li>
           </ul>
         </section>
 
