@@ -1,10 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import AboutPage from '@/app/about/page';
 
-// A-03 (UX_AUDIT.md / progress.md v1.26.2) defers the paid-consultation
-// decision past three gates. These tests pin this change to a factual
-// authorship credit and assert it does not become that offer: no scope
-// promise on /about, and nothing on /audit.
+// A-03 (UX_AUDIT.md / progress.md v1.26.2) deferred the paid-consultation
+// offer past three gates. These tests pin /about to a factual authorship
+// credit with no scope promise. /audit and /checks/[id] now carry a separate
+// credit-plus-mailto (PracticeCredit, reopened 2026-11-17), still without the
+// paid offer; its tests live in __tests__/components/PracticeCredit.test.tsx.
 describe('About page — practice credit', () => {
   it('should link the practice, in a new tab, safely', () => {
     render(<AboutPage />);

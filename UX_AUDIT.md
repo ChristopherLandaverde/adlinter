@@ -27,7 +27,7 @@ captured to `screenshots/`. Each finding cites the screenshot it came from.
 - **0 Critical (open)** — both Critical findings shipped: G-01 (sample-data picker friction) + G-03 (Recharts container instability)
 - **4 Friction** — A-01, CD-01, FS-01, S-01 — all under ~30 min each
 - **11 Polish** — copy, visual consistency, edge cases
-- **0 Strategic decisions** — A-03 resolved by removal in v1.26.2 (deferred until AdLint has real traffic)
+- **0 Strategic decisions** — A-03 resolved by removal in v1.26.2 (deferred until AdLint has real traffic); reopened 2026-11-17 by Christopher as a credit plus mailto on /audit and /checks/[id], with no paid-review offer (see progress.md)
 
 **Session highlights:**
 - 🔴 **G-01 + G-02 fixed in v1.26.0** — sample-data path now bypasses the 5-question survey across all 10 tools (one shared-component fix, 10 surfaces). "Skip — use defaults" promoted to a real secondary button.

@@ -67,4 +67,15 @@ describe('/audit history saving (#53)', () => {
 
     expect(getHistory()).toHaveLength(2);
   });
+
+  it('ends the results page with the practice credit (A-03, reopened)', async () => {
+    startAuditRun();
+    render(<AuditPage />);
+    await screen.findAllByText(/Learn more/i);
+    const credit = screen.getByRole('complementary', { name: 'Who builds AdLint' });
+    expect(credit).toHaveTextContent('FOCO Systems');
+    expect(screen.getByRole('link', { name: /^focosys\.io/i }).getAttribute('href')).toContain(
+      'utm_content=audit_results',
+    );
+  });
 });

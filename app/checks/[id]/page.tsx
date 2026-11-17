@@ -21,6 +21,7 @@ import { RelatedChecksRow } from '@/components/check-detail/RelatedChecksRow';
 import { EditorialBannerCTA } from '@/components/check-detail/EditorialBannerCTA';
 import { InlineProse } from '@/components/check-detail/InlineProse';
 import { parseNumberedList, splitParagraphs } from '@/components/check-detail/prose';
+import { PracticeCredit } from '@/components/PracticeCredit';
 
 // "Why" prose: one <p> per paragraph with a little more leading than body
 // default, capped at DESIGN.md's 72ch prose width. A few entries write why as
@@ -465,6 +466,9 @@ export default async function CheckDetailPage({ params }: PageProps) {
                 that runs this check. A mid-page repeat after "Why" is plan
                 phase 5, deferred until scroll-depth data exists. */}
             <EditorialBannerCTA variant="check" source={explainer.source} />
+
+            {/* A-03, reopened 2026-11-17: quiet credit under the primary banner. */}
+            <PracticeCredit placement="check" />
           </div>
         </article>
 

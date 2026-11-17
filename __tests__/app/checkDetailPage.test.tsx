@@ -44,6 +44,18 @@ describe('/checks/[id] editorial layout', () => {
     );
   });
 
+  it('credits the practice after the primary banner (A-03, reopened)', async () => {
+    await renderPage('missing-conversion-linker');
+    const banner = screen.getByRole('complementary', {
+      name: 'Audit your own files for this check',
+    });
+    const credit = screen.getByRole('complementary', { name: 'Who builds AdLint' });
+    expect(follows(banner, credit)).toBe(true);
+    expect(screen.getByRole('link', { name: /^focosys\.io/i }).getAttribute('href')).toContain(
+      'utm_content=check_page',
+    );
+  });
+
   it('places the broken-state mockup inside Why, before How To Fix', async () => {
     await renderPage('missing-conversion-linker');
     const legend = screen.getByText('Coloured rows show the configuration AdLint flags.');
