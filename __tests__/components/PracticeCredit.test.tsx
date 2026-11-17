@@ -24,13 +24,16 @@ describe('PracticeCredit', () => {
     },
   );
 
-  it('offers a mailto whose subject says where it came from', () => {
-    render(<PracticeCredit placement="audit" />);
+  it.each([
+    ['audit', 'AdLint audit finding'],
+    ['check', 'AdLint check'],
+  ] as const)('offers a mailto on the %s surface whose subject says where it came from', (placement, subject) => {
+    render(<PracticeCredit placement={placement} />);
     const mail = screen.getByRole('link', { name: /christopher@focosys\.io/i });
     const href = mail.getAttribute('href') ?? '';
 
     expect(href.startsWith('mailto:christopher@focosys.io?')).toBe(true);
-    expect(decodeURIComponent(href)).toContain('subject=AdLint audit finding');
+    expect(decodeURIComponent(href)).toContain(`subject=${subject}`);
   });
 
   it('reads as a credit, not as a paid-review offer', () => {

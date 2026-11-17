@@ -56,7 +56,7 @@ export function PracticeCredit({ placement }: { placement: CreditPlacement }) {
           rel="noopener noreferrer"
           className="text-muted hover:text-ink hover:underline"
         >
-          focosys.io ↗
+          focosys.io ↗<span className="sr-only"> (opens in new tab)</span>
         </a>
       </p>
     </aside>
