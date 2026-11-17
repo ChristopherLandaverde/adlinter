@@ -16,6 +16,7 @@ import { CheckLearnMoreLink } from '@/components/CheckLearnMoreLink';
 import { HealthScoreBadge } from '@/components/HealthScoreBadge';
 import { PDFExportButton } from '@/components/PDFExportButton';
 import { ShareAuditButton } from '@/components/ShareAuditButton';
+import { PracticeCredit } from '@/components/PracticeCredit';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
@@ -1826,6 +1827,12 @@ function AuditPageContent() {
           selectedCheck={selectedCheck}
           onSelectCheck={setSelectedCheck}
         />
+
+        {/* A-03, reopened 2026-11-17: a credit plus a mailto, below the
+            findings. Page only; the jsPDF export never includes it. */}
+        <div className="mt-12">
+          <PracticeCredit placement="audit" />
+        </div>
       </main>
 
       {/* Slide-over detail panel */}

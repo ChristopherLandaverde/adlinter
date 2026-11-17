@@ -1,5 +1,23 @@
 # AdLint — Progress Log
 
+## Unreleased — Practice credit on /audit and /checks/[id] (A-03, reopened)
+**Decision:** Christopher, 2026-11-17. This reopens the loop from AdLint to focosys.io ahead of the v1.26.2 gates (real traffic, first users, testimonials), in a softer form than the CTA removed then.
+
+### What changed
+- `components/PracticeCredit.tsx`: a quiet card on the page that credits FOCO Systems, plus two links. One is a mailto to christopher@focosys.io, with a subject naming the surface. The other goes to focosys.io with `utm_source=adlint`, `utm_medium=referral`, `utm_campaign=practice_credit`, and `utm_content=audit_results` or `check_page`. There is no booking, no "free review" and no pricing.
+- `/audit`: the card sits below the findings, after the cross-check section. The jsPDF export is built separately and does not include it, so the client deliverable is unchanged.
+- `/checks/[id]`: the card sits under the primary "Run a free audit" banner.
+- Privacy: AdLint still loads no analytics. The UTM parameters let focosys.io's own analytics see referrals, and PRODUCT.md's data-flow list is unchanged.
+
+### Measuring the loop
+In focosys.io's GA4, filter `session_source = adlint`. Mailto clicks are not measurable from AdLint; the email subject ("AdLint audit finding" or "AdLint check") identifies them on arrival. The loop counts as closed at the first conversation that arrives through it, not when this ships.
+
+### Tests
+- New: `__tests__/components/PracticeCredit.test.tsx` covers the UTM values, the mailto subject, and copy with no paid-review terms.
+- New page tests: the credit follows the banner on check pages and ends the `/audit` results.
+
+---
+
 ## v1.28.0 — Editorial check pages, accurate privacy claims, honest check counts
 **Commit:** Pending (Christopher tags `v1.28.0` and publishes the GitHub release after the release PR merges)
 
